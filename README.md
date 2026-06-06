@@ -60,6 +60,9 @@ The durable workflow runtime runs locally via the Workflow DevKit
 - **One org per deployment.** The MCP key in env scopes everything to one org.
   To serve multiple orgs/users, front `/api/chat` with your own auth and pass a
   per-request `x-ampup-mcp-key` header.
+- **Cold starts.** The durable workflow runtime can be slow to warm on a fresh
+  deploy; the first request or two after deploying may occasionally truncate
+  before the agent finishes — just retry. Steady-state requests are reliable.
 - Conversation history lives in the durable run (the stream *is* the transcript);
   there's no separate database. Cold-reopen replay is available at
   `/api/conversation/[runId]` but is not access-controlled in this template —
