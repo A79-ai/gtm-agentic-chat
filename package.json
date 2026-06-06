@@ -1,0 +1,30 @@
+{
+  "name": "gtm-agentic-chat",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-deployable agentic chat over your CRM / notetaker / knowledge base, powered by the AmpUp MCP server and the Vercel AI SDK + Workflow DevKit.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "workflow:web": "workflow web"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "3.0.81",
+    "@ai-sdk/google": "3.0.80",
+    "@ai-sdk/react": "^3.0.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@workflow/ai": "^4.1.2",
+    "ai": "^6.0.193",
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "workflow": "^4.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.19",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  }
+}
