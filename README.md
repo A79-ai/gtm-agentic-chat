@@ -37,8 +37,10 @@ Pick **one** LLM path — `ANTHROPIC_API_KEY` wins if both are set.
 
 ## How it works
 
-- **`app/page.tsx`** — a minimal chat UI (`@ai-sdk/react`) that posts to
-  `/api/chat` and threads the durable run id across turns.
+- **`app/page.tsx`** — the chat UI, built with [Vercel AI Elements](https://elements.ai-sdk.dev/)
+  (shadcn/ui components) on `@ai-sdk/react`: streaming Markdown + tables
+  (Streamdown), collapsible tool-call cards, and a composer. Posts to `/api/chat`
+  and threads the durable run id across turns.
 - **`app/api/chat/route.ts`** — starts one durable workflow run per conversation
   (first turn) and resumes it for follow-ups.
 - **`workflows/chat.ts`** — the durable agent loop. Runs on the Vercel Workflow
