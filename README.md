@@ -16,6 +16,10 @@ AmpUp MCP endpoint** — this app is a thin, durable chat client in front of it.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/RahulBalakavi/gtm-agentic-chat)
 
+> **Note:** this repo is currently **private**, so the one-click Deploy button
+> only works for collaborators. To enable the button for everyone, make the repo
+> public. Otherwise, clone it and deploy with the Vercel CLI (`vercel deploy`).
+
 Set these environment variables (Vercel will prompt for the required ones):
 
 | Variable | Required | What it is |
@@ -60,9 +64,9 @@ The durable workflow runtime runs locally via the Workflow DevKit
 - **One org per deployment.** The MCP key in env scopes everything to one org.
   To serve multiple orgs/users, front `/api/chat` with your own auth and pass a
   per-request `x-ampup-mcp-key` header.
-- **Cold starts.** The durable workflow runtime can be slow to warm on a fresh
-  deploy; the first request or two after deploying may occasionally truncate
-  before the agent finishes — just retry. Steady-state requests are reliable.
+- **Cold starts (observed, cause unconfirmed).** Right after a deploy, a request
+  occasionally truncated before the agent finished; retrying succeeded, and
+  steady-state requests were reliable. If you see a turn cut short, retry.
 - Conversation history lives in the durable run (the stream *is* the transcript);
   there's no separate database. Cold-reopen replay is available at
   `/api/conversation/[runId]` but is not access-controlled in this template —
