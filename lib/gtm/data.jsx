@@ -109,6 +109,19 @@ export function setCounts(counts) {
 }
 export const countOf = (type) => (typeof COUNTS[type] === "number" ? COUNTS[type] : (STORE[type] || []).length);
 
+// ---- Uploaded files (session-scoped; no global datasource-list MCP tool, so
+// the Files surface lists what was uploaded from this client, persisted locally). ----
+const UPLOADS_KEY = "ampup-uploads";
+export function getUploads() {
+  try { const v = JSON.parse(localStorage.getItem(UPLOADS_KEY) || "[]"); return Array.isArray(v) ? v : []; } catch { return []; }
+}
+export function addUpload(file) {
+  const list = getUploads().filter((f) => f.datasourceId !== file.datasourceId);
+  list.unshift(file);
+  try { localStorage.setItem(UPLOADS_KEY, JSON.stringify(list.slice(0, 100))); } catch {}
+  return list;
+}
+
 export const recordsOf = (type) => STORE[type] || [];
 export const byId = (id) => ALL.find((r) => r.id === id);
 export const titleOf = (r) => r.name;

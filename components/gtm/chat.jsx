@@ -4,7 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Icons, LogoMark } from "./icons";
 import { EntityIcon, RefChip } from "./ui";
-import { ENTITIES, FIELDS, SUGGESTIONS, byId, related, subtitleOf } from "@/lib/gtm/data";
+import { ENTITIES, FIELDS, SUGGESTIONS, byId, related, subtitleOf, addUpload } from "@/lib/gtm/data";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { LoadingIndicator } from "./LoadingIndicator";
 
@@ -113,26 +113,45 @@ function AttachPicker({ attached, onPick, onClose }) {
   );
 }
 
-function Composer({ onSend, attached, onRemove, onOpenPicker, busy }) {
+function FileChip({ file, onRemove }) {
+  const pending = file.status === "uploading" || file.datasourceId == null;
+  return (
+    <span className="file-chip" title={file.fileName}>
+      {pending ? <Icons.Refresh size={13} className="spin" /> : <Icons.Paperclip size={13} />}
+      <span className="file-chip-name">{file.fileName}</span>
+      <button className="file-chip-x" onClick={() => onRemove(file)}><Icons.X size={12} /></button>
+    </span>
+  );
+}
+
+function Composer({ onSend, attached, onRemove, files, onUploadFile, onRemoveFile, uploading, onOpenPicker, busy }) {
   const [text, setText] = useState("");
   const [focus, setFocus] = useState(false);
   const ref = useRef(null);
+  const fileRef = useRef(null);
   const grow = (el) => { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 140) + "px"; };
   const send = () => { if (text.trim() && !busy) { onSend(text.trim()); setText(""); if (ref.current) ref.current.style.height = "auto"; } };
+  const pickFile = (e) => { const f = e.target.files?.[0]; if (f) onUploadFile(f); e.target.value = ""; };
   return (
     <div className="composer-wrap" style={{ position: "relative" }}>
       <div className={"composer" + (focus ? " focus" : "")}>
-        {attached.length > 0 && (
-          <div className="chip-tray">{attached.map((r) => <RefChip key={r.id} record={r} removable onRemove={onRemove} />)}</div>
+        {(attached.length > 0 || files.length > 0) && (
+          <div className="chip-tray">
+            {attached.map((r) => <RefChip key={r.id} record={r} removable onRemove={onRemove} />)}
+            {files.map((f) => <FileChip key={f.datasourceId ?? f.fileName} file={f} onRemove={onRemoveFile} />)}
+          </div>
         )}
         <textarea ref={ref} value={text} rows={1}
-          placeholder={attached.length ? "Ask about the attached records or type to chat…" : "Ask anything — attach a deal, account or meeting with @"}
+          placeholder={attached.length || files.length ? "Ask about the attached records and files or type to chat…" : "Ask anything — attach a record with @ or a file with the clip"}
           onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
           onChange={(e) => { setText(e.target.value); grow(e.target); }}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
         <div className="composer-row">
-          <button className="icon-btn" title="Attach record" onClick={onOpenPicker}><Icons.Paperclip size={16} /></button>
-          <button className="icon-btn" title="Mention" onClick={onOpenPicker}><Icons.At size={16} /></button>
+          <input ref={fileRef} type="file" hidden onChange={pickFile} />
+          <button className="icon-btn" title="Upload a file" disabled={uploading} onClick={() => fileRef.current?.click()}>
+            {uploading ? <Icons.Refresh size={16} className="spin" /> : <Icons.Paperclip size={16} />}
+          </button>
+          <button className="icon-btn" title="Attach a record" onClick={onOpenPicker}><Icons.At size={16} /></button>
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: 11.5, color: "var(--fg-muted)", marginRight: 6 }} className="hide-mobile">↵ send · ⇧↵ new line</span>
           <button className="btn btn-icon btn-primary" onClick={send} disabled={!text.trim() || busy} style={{ borderRadius: "50%" }}><Icons.ArrowUp size={16} /></button>
@@ -223,20 +242,32 @@ function ContextPanel({ attached, onOpenRecord, onAttach, onRemove, open, onClos
   );
 }
 
-function contextPreamble(records) {
-  if (!records.length) return "";
-  const lines = records.map((r) => `- ${ENTITIES[r.type].label}: ${r.name}${subtitleOf(r) ? ` (${subtitleOf(r)})` : ""}`).join("\n");
-  return `The user has attached these CRM records. Ground your answer in them and use tools to fetch more detail as needed:\n${lines}`;
+function contextPreamble(records, files = []) {
+  const blocks = [];
+  if (records.length) {
+    const lines = records.map((r) => `- ${ENTITIES[r.type].label}: ${r.name}${subtitleOf(r) ? ` (${subtitleOf(r)})` : ""}`).join("\n");
+    blocks.push(`The user has attached these CRM records. Ground your answer in them and use tools to fetch more detail as needed:\n${lines}`);
+  }
+  const withId = files.filter((f) => f.datasourceId != null);
+  if (withId.length) {
+    const lines = withId.map((f) => `- ${f.fileName} (datasource_id: ${f.datasourceId})`).join("\n");
+    blocks.push(`The user uploaded these files. Read their contents with the read_file tool (pass the datasource_id) before answering questions about them:\n${lines}`);
+  }
+  return blocks.join("\n\n");
 }
 
 export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
   const conversationId = useMemo(() => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `c-${Date.now()}`), []);
   const runIdRef = useRef(undefined);
   const [attached, setAttached] = useState(() => (seedAttached || []).filter(Boolean));
+  const [files, setFiles] = useState([]); // { datasourceId, fileName, status }
+  const [uploading, setUploading] = useState(false);
   const [ctxOpen, setCtxOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const attachedRef = useRef(attached);
   attachedRef.current = attached;
+  const filesRef = useRef(files);
+  filesRef.current = files;
 
   const transport = useMemo(
     () =>
@@ -250,7 +281,7 @@ export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
         },
         prepareSendMessagesRequest: ({ messages }) => {
           const last = messages[messages.length - 1];
-          const pre = contextPreamble(attachedRef.current);
+          const pre = contextPreamble(attachedRef.current, filesRef.current);
           const msg = pre
             ? { ...last, parts: (last.parts || []).map((p) => (p.type === "text" ? { ...p, text: `${pre}\n\n${p.text}` } : p)) }
             : last;
@@ -267,8 +298,41 @@ export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
 
   const addRec = (r) => setAttached((a) => (a.some((x) => x.id === r.id) ? a : [...a, r]));
   const removeRec = (r) => setAttached((a) => a.filter((x) => x.id !== r.id));
+  const removeFile = (f) => setFiles((fs) => fs.filter((x) => x.datasourceId !== f.datasourceId));
   const clear = () => { runIdRef.current = undefined; setMessages([]); };
   const send = (t) => sendMessage({ text: t });
+
+  // Read a file as base64 and upload it; link to an attached deal/account.
+  const uploadFile = async (file) => {
+    if (!file || uploading) return;
+    setUploading(true);
+    try {
+      const b64 = await new Promise((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(String(fr.result).split(",")[1] || "");
+        fr.onerror = rej;
+        fr.readAsDataURL(file);
+      });
+      const deal = attachedRef.current.find((r) => r.type === "deal");
+      const acct = attachedRef.current.find((r) => r.type === "account");
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ file_name: file.name, file_content_base64: b64, opportunity_id: deal?.id, account_id: acct?.id }),
+      }).then((r) => r.json());
+      if (res.ok) {
+        const entry = { datasourceId: res.datasourceId, fileName: res.fileName, status: res.status, ts: Date.now(), linkedName: deal?.name || acct?.name || "" };
+        setFiles((fs) => [...fs.filter((x) => x.datasourceId !== entry.datasourceId), entry]);
+        addUpload(entry);
+        onToast(`Uploaded ${file.name} — the agent can read it now`, "success");
+      } else {
+        onToast(`Upload failed: ${res.error || "error"}`, "error");
+      }
+    } catch {
+      onToast("Upload failed", "error");
+    }
+    setUploading(false);
+  };
 
   const subjectType = attached[0] ? attached[0].type : "none";
   const suggestions = SUGGESTIONS[subjectType] || SUGGESTIONS.none;
@@ -318,7 +382,7 @@ export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
           </div>
         </div>
 
-        <Composer onSend={send} attached={attached} onRemove={removeRec} onOpenPicker={() => setPickerOpen(true)} busy={busy} />
+        <Composer onSend={send} attached={attached} onRemove={removeRec} files={files} onUploadFile={uploadFile} onRemoveFile={removeFile} uploading={uploading} onOpenPicker={() => setPickerOpen(true)} busy={busy} />
       </div>
 
       <ContextPanel attached={attached} onOpenRecord={onOpenRecord} onAttach={() => setPickerOpen(true)} onRemove={removeRec} open={ctxOpen} onClose={() => setCtxOpen(false)} />

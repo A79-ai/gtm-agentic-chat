@@ -477,6 +477,12 @@ select.create-input { cursor: pointer; appearance: none; background-image: linea
 .create-picked { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--radius-md); font-family: var(--font-sans); font-size: 14px; font-weight: 500; color: var(--fg-primary); cursor: pointer; max-width: 100%; }
 .create-picked span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* Uploaded-file chips (chat composer) */
+.file-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 220px; padding: 4px 8px; background: var(--bg-muted); border: 1px solid var(--border-subtle); border-radius: var(--radius-full); font-size: 12.5px; font-weight: 500; color: var(--fg-secondary); }
+.file-chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-chip-x { display: inline-flex; border: none; background: transparent; color: var(--fg-muted); cursor: pointer; padding: 0; }
+.file-chip-x:hover { color: var(--fg-primary); }
+
 /* ============================================================
    Onboarding wizard (ported from prototype flows.css)
    ============================================================ */

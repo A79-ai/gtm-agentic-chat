@@ -60,6 +60,7 @@ function ProfileMenu({ anchor, profile, on, onClose }) {
       </div>
       <div className="menu-section">
         <Item icon={Icons.Brain} label="Notetaker" onClick={() => on("notetaker")} />
+        <Item icon={Icons.Paperclip} label="Files" onClick={() => on("files")} />
         <Item icon={Icons.Sliders} label="Tweaks" onClick={() => on("tweaks")} />
       </div>
       <div className="menu-divider" />

@@ -8,6 +8,7 @@ import { EntityList } from "./entitylist";
 import { EntityDetail } from "./entitydetail";
 import { ChatScreen } from "./chat";
 import { NotetakerScreen } from "./notetaker";
+import { FilesScreen } from "./files";
 import { SideNav, BottomNav } from "./nav";
 import { Onboarding } from "./onboarding";
 import { AGENTS, ENTITY_ORDER, ENTITIES, countOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
@@ -129,6 +130,7 @@ export function App() {
 
   const onProfileAction = (action) => {
     if (action === "notetaker") go("notetaker");
+    else if (action === "files") go("files");
     else if (action === "tweaks") setTweaksOpen(true);
     else if (action === "onboarding") setFlow({ name: "onboarding", firstRun: false });
     else if (action === "restart") restartDemo();
@@ -142,6 +144,7 @@ export function App() {
         {route.name === "home" && <HomeScreen agents={AGENTS} connectors={connectors} openChat={openChat} openList={openList} onNav={go} />}
         {route.name === "connectors" && <ConnectorsScreen connectors={connectors} onToast={showToast} />}
         {route.name === "notetaker" && <NotetakerScreen onToast={showToast} />}
+        {route.name === "files" && <FilesScreen onNewChat={openChat} />}
         {route.name === "list" && <EntityList key={route.type} type={route.type} onOpen={openRecord} onChat={(recs) => openChat(recs || [])} onToast={showToast} onRefresh={refresh} />}
         {route.name === "detail" && <EntityDetail key={route.record.id} record={route.record} onOpen={openRecord} onChat={(r) => openChat([r])} onBack={() => openList(route.record.type)} />}
         {route.name === "chat" && <ChatScreen key={chatSeed.map((r) => r.id).join(",")} seedAttached={chatSeed} onBack={() => go("home")} onOpenRecord={openRecord} onToast={showToast} />}
