@@ -483,6 +483,10 @@ select.create-input { cursor: pointer; appearance: none; background-image: linea
 .file-chip-x { display: inline-flex; border: none; background: transparent; color: var(--fg-muted); cursor: pointer; padding: 0; }
 .file-chip-x:hover { color: var(--fg-primary); }
 
+/* Connected connector — clickable "manage/disconnect" affordance */
+.conn-manage { background: var(--mint-glow-subtle); color: var(--fg-success); border: 1px solid transparent; cursor: pointer; }
+.conn-manage:hover { border-color: var(--fg-success); }
+
 /* ============================================================
    Onboarding wizard (ported from prototype flows.css)
    ============================================================ */

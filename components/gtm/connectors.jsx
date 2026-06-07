@@ -1,17 +1,20 @@
 // Connectors gallery screen
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { Icons } from "./icons";
 import { ConnLogo } from "./ui";
-import { CAT_TABS, getAmpersand } from "@/lib/gtm/data";
+import { CAT_TABS, getAmpersand, setConnectors, getConnectors } from "@/lib/gtm/data";
 
 const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
 
 // CRM connectors are Enterprise-only (self-serve connect is gated behind sales).
 const isEnterprise = (c) => c.cat === "CRM";
 
-function ConnectorCard({ c, onConnect, onContact }) {
+function ConnectorCard({ c, onConnect, onContact, onManage }) {
   const connected = c.connected;
   const enterprise = isEnterprise(c);
+  // Enterprise connections stay read-only; self-serve ones can be managed
+  // (Ampersand surfaces the disconnect/uninstall flow when already installed).
+  const manageable = connected && !enterprise && c.ampersandName;
   return (
     <div className={"card conn-card" + (connected ? " connected" : "")}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -27,9 +30,15 @@ function ConnectorCard({ c, onConnect, onContact }) {
       <div style={{ fontSize: 13.5, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1 }}>{c.desc}</div>
       <div>
         {connected ? (
-          <span className="btn btn-sm" style={{ background: "var(--mint-glow-subtle)", color: "var(--fg-success)", border: "1px solid transparent", cursor: "default" }}>
-            <Icons.CheckCircle size={15} /> Connected
-          </span>
+          manageable ? (
+            <button className="btn btn-sm conn-manage" onClick={() => onManage(c)} title="Manage or disconnect">
+              <Icons.CheckCircle size={15} /> Connected <Icons.Sliders size={13} style={{ marginLeft: 2, opacity: 0.7 }} />
+            </button>
+          ) : (
+            <span className="btn btn-sm" style={{ background: "var(--mint-glow-subtle)", color: "var(--fg-success)", border: "1px solid transparent", cursor: "default" }}>
+              <Icons.CheckCircle size={15} /> Connected
+            </span>
+          )
         ) : enterprise ? (
           <button className="btn btn-sm btn-outline" onClick={() => onContact(c)}>
             <Icons.Spark size={14} /> Contact sales
@@ -44,13 +53,13 @@ function ConnectorCard({ c, onConnect, onContact }) {
   );
 }
 
-function ConnectModal({ connector, amp, onClose, onToast }) {
+function ConnectModal({ connector, amp, mode = "connect", onClose, onToast }) {
   return (
     <div className="sheet-backdrop" style={{ alignItems: "center", justifyContent: "center" }} onClick={onClose}>
       <div className="card" style={{ width: "min(520px, 92vw)", maxHeight: "86vh", overflow: "auto", padding: 0 }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
           <ConnLogo logo={connector.logo} size={32} />
-          <div style={{ flex: 1, fontWeight: 600, color: "var(--fg-primary)" }}>Connect {connector.name}</div>
+          <div style={{ flex: 1, fontWeight: 600, color: "var(--fg-primary)" }}>{mode === "manage" ? "Manage" : "Connect"} {connector.name}</div>
           <button className="icon-btn" onClick={onClose}><Icons.X size={18} /></button>
         </div>
         <div style={{ padding: 16 }}>
@@ -73,13 +82,27 @@ function ConnectModal({ connector, amp, onClose, onToast }) {
 
 export function ConnectorsScreen({ connectors, onToast }) {
   const [tab, setTab] = useState("All");
-  const [connecting, setConnecting] = useState(null);
+  const [connecting, setConnecting] = useState(null); // { connector, mode }
+  const [conns, setConns] = useState(connectors);
+  useEffect(() => { setConns(connectors); }, [connectors]);
   const amp = getAmpersand();
-  const list = connectors.filter((c) => tab === "All" || c.cat === tab);
-  const connectedCount = connectors.filter((c) => c.connected).length;
+  const list = conns.filter((c) => tab === "All" || c.cat === tab);
+  const connectedCount = conns.filter((c) => c.connected).length;
+
+  // Re-pull the live catalog + connection state (after a connect/disconnect).
+  const refetch = () =>
+    fetch("/api/connectors")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data) { setConnectors(data); setConns(getConnectors()); } })
+      .catch(() => {});
+
   const onConnect = (c) => {
-    if (amp.configured && amp.apiKey) setConnecting(c);
+    if (amp.configured && amp.apiKey) setConnecting({ connector: c, mode: "connect" });
     else onToast("Ampersand isn't configured for this org yet — set sales_agent.ampersand_project_id / ampersand_api_key.", "info");
+  };
+  const onManage = (c) => {
+    if (amp.configured && amp.apiKey) setConnecting({ connector: c, mode: "manage" });
+    else onToast("Ampersand isn't configured for this org yet.", "info");
   };
   const onContact = (c) => onToast(`${c.name} is an Enterprise connector — contact sales to enable it.`, "info");
 
@@ -103,9 +126,17 @@ export function ConnectorsScreen({ connectors, onToast }) {
           </div>
         </div>
 
-        <div className="conn-grid">{list.map((c) => <ConnectorCard key={c.id} c={c} onConnect={onConnect} onContact={onContact} />)}</div>
+        <div className="conn-grid">{list.map((c) => <ConnectorCard key={c.id} c={c} onConnect={onConnect} onContact={onContact} onManage={onManage} />)}</div>
       </div>
-      {connecting && <ConnectModal connector={connecting} amp={amp} onClose={() => setConnecting(null)} onToast={onToast} />}
+      {connecting && (
+        <ConnectModal
+          connector={connecting.connector}
+          amp={amp}
+          mode={connecting.mode}
+          onClose={() => { setConnecting(null); refetch(); }}
+          onToast={onToast}
+        />
+      )}
     </div>
   );
 }
