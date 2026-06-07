@@ -89,10 +89,14 @@ export function setRecords(data) {
 
 // ---- Live connectors (real integration catalog + connected state) ----
 let CONNECTOR_STORE = [];
-let AMPERSAND = { configured: false, projectId: "", apiKey: "" };
+let AMPERSAND = { configured: false, projectId: "", apiKey: "", groupRef: "", consumerRef: "" };
 export function setConnectors(payload) {
   CONNECTOR_STORE = Array.isArray(payload?.connectors) ? payload.connectors : [];
-  AMPERSAND = payload?.ampersand || AMPERSAND;
+  AMPERSAND = {
+    ...(payload?.ampersand || {}),
+    groupRef: payload?.groupRef || "",
+    consumerRef: payload?.consumerRef || "",
+  };
 }
 export const getConnectors = () => (CONNECTOR_STORE.length ? CONNECTOR_STORE : CONNECTORS);
 export const getAmpersand = () => AMPERSAND;

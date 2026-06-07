@@ -1,8 +1,10 @@
 // Connectors gallery screen
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { Icons } from "./icons";
 import { ConnLogo } from "./ui";
-import { CAT_TABS } from "@/lib/gtm/data";
+import { CAT_TABS, getAmpersand } from "@/lib/gtm/data";
+
+const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
 
 function ConnectorCard({ c, onConnect }) {
   const connected = c.connected;
@@ -31,11 +33,43 @@ function ConnectorCard({ c, onConnect }) {
   );
 }
 
+function ConnectModal({ connector, amp, onClose, onToast }) {
+  return (
+    <div className="sheet-backdrop" style={{ alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div className="card" style={{ width: "min(520px, 92vw)", maxHeight: "86vh", overflow: "auto", padding: 0 }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
+          <ConnLogo logo={connector.logo} size={32} />
+          <div style={{ flex: 1, fontWeight: 600, color: "var(--fg-primary)" }}>Connect {connector.name}</div>
+          <button className="icon-btn" onClick={onClose}><Icons.X size={18} /></button>
+        </div>
+        <div style={{ padding: 16 }}>
+          <Suspense fallback={<div style={{ padding: 24, textAlign: "center", color: "var(--fg-muted)" }}>Loading…</div>}>
+            <AmpersandConnect
+              integration={connector.provider || connector.id}
+              project={amp.projectId}
+              apiKey={amp.apiKey}
+              groupRef={amp.groupRef}
+              consumerRef={amp.consumerRef}
+              onToast={onToast}
+              onDone={onClose}
+            />
+          </Suspense>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ConnectorsScreen({ connectors, onToast }) {
   const [tab, setTab] = useState("All");
+  const [connecting, setConnecting] = useState(null);
+  const amp = getAmpersand();
   const list = connectors.filter((c) => tab === "All" || c.cat === tab);
   const connectedCount = connectors.filter((c) => c.connected).length;
-  const onConnect = (c) => onToast(`Connect ${c.name} via Ampersand — coming soon`, "info");
+  const onConnect = (c) => {
+    if (amp.configured && amp.apiKey) setConnecting(c);
+    else onToast("Ampersand isn't configured for this org yet — set sales_agent.ampersand_project_id / ampersand_api_key.", "info");
+  };
 
   return (
     <div className="scroll" style={{ flex: 1 }}>
@@ -59,6 +93,7 @@ export function ConnectorsScreen({ connectors, onToast }) {
 
         <div className="conn-grid">{list.map((c) => <ConnectorCard key={c.id} c={c} onConnect={onConnect} />)}</div>
       </div>
+      {connecting && <ConnectModal connector={connecting} amp={amp} onClose={() => setConnecting(null)} onToast={onToast} />}
     </div>
   );
 }

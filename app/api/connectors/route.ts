@@ -1,6 +1,8 @@
 // Connectors = the org's real integration catalog + which are registered
 // (connected) for the org, plus the Ampersand project details. All fetched from
 // the AmpUp backend with the org's key (same key the MCP uses).
+import { callAmpupTool } from "@/lib/mcp";
+
 export const maxDuration = 30;
 
 const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
@@ -59,10 +61,14 @@ export async function GET(req: Request) {
     return Response.json({ error: "AMPUP_MCP_API_KEY not configured" }, { status: 401, headers: CORS });
   }
 
-  const [catalogRaw, installsRaw, configsRaw] = await Promise.all([
+  const orgP = callAmpupTool("get_org", {}, key)
+    .then((r) => (r.ok ? (JSON.parse(r.content).org as Rec) : null))
+    .catch(() => null);
+  const [catalogRaw, installsRaw, configsRaw, org] = await Promise.all([
     getJson("/api/v1/tool/integrations", key),
     getJson("/sales-agents/api/v1/ampersand/installations", key),
     getJson("/api/v1/configs", key),
+    orgP,
   ]);
 
   const catalog: Rec[] = Array.isArray(catalogRaw) ? (catalogRaw as Rec[]) : [];
@@ -93,9 +99,15 @@ export async function GET(req: Request) {
   const projectId = configValue(configsRaw, "sales_agent", "ampersand_project_id");
   const apiKey = configValue(configsRaw, "sales_agent", "ampersand_api_key");
 
+  const orgId = org ? s(org.id) : "";
   return Response.json(
     {
       ampersand: { configured: Boolean(projectId), projectId, apiKey },
+      // Ampersand refs: org-scoped installs key off the org (groupRef). One
+      // deploy = one org, so the consumer is the org itself.
+      groupRef: orgId,
+      consumerRef: orgId,
+      org: { id: orgId, name: org ? s(org.name) : "" },
       connectedCount: installs.length,
       connectors,
     },
