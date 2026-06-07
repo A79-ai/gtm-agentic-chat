@@ -1,5 +1,5 @@
 // EntityDetail — generic record detail + "Chat with this entity"
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Icons } from "./icons";
 import { EntityIcon, TBadge, RefChip } from "./ui";
 import { ENTITIES, FIELDS, CONNECTORS, byId, subtitleOf, related } from "@/lib/gtm/data";
@@ -13,6 +13,68 @@ function FieldVal({ rec, spec, onOpen }) {
     case "min": return <span className="val">{v ? `${v} min` : "—"}</span>;
     default: return <span className="val">{v == null || v === "" ? "—" : String(v)}</span>;
   }
+}
+
+function Bullets({ items }) {
+  if (!items?.length) return null;
+  return (
+    <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 13, color: "var(--fg-body)", lineHeight: 1.5 }}>
+      {items.map((t, i) => <li key={i}>{t}</li>)}
+    </ul>
+  );
+}
+
+function MeetingBriefs({ meetingId }) {
+  const [pre, setPre] = useState(undefined);
+  const [post, setPost] = useState(undefined);
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/meeting-brief?type=pre&id=${encodeURIComponent(meetingId)}`).then((r) => r.json()).then((d) => alive && setPre(d)).catch(() => alive && setPre({ empty: true }));
+    fetch(`/api/meeting-brief?type=post&id=${encodeURIComponent(meetingId)}`).then((r) => r.json()).then((d) => alive && setPost(d)).catch(() => alive && setPost({ empty: true }));
+    return () => { alive = false; };
+  }, [meetingId]);
+
+  const Field = ({ label, value }) => value ? (
+    <div style={{ marginTop: 8 }}><div className="overline" style={{ fontSize: 10, marginBottom: 2 }}>{label}</div><div style={{ fontSize: 13.5, color: "var(--fg-primary)" }}>{value}</div></div>
+  ) : null;
+  const List = ({ label, items }) => items?.length ? (
+    <div style={{ marginTop: 8 }}><div className="overline" style={{ fontSize: 10 }}>{label}</div><Bullets items={items} /></div>
+  ) : null;
+
+  return (
+    <>
+      <div className="card" style={{ padding: 22, marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <Icons.FileText size={16} style={{ color: "var(--fg-emphasis)" }} />
+          <span style={{ fontWeight: 600, fontSize: 15, color: "var(--fg-primary)" }}>Pre-meeting brief</span>
+        </div>
+        {pre === undefined ? <p style={{ fontSize: 13, color: "var(--fg-muted)" }}>Loading…</p>
+          : pre.empty ? <p style={{ fontSize: 13, color: "var(--fg-muted)" }}>No pre-meeting brief yet.</p>
+          : <>
+              <Field label="Stage" value={pre.stage} />
+              <Field label="Next milestone" value={pre.nextMilestone} />
+              <List label="Confirmed needs" items={pre.confirmedNeeds} />
+              <List label="Outstanding questions" items={pre.outstandingQuestions} />
+              <List label="Risks & blockers" items={pre.risks} />
+            </>}
+      </div>
+      <div className="card" style={{ padding: 22, marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <Icons.CheckCircle size={16} style={{ color: "var(--fg-success)" }} />
+          <span style={{ fontWeight: 600, fontSize: 15, color: "var(--fg-primary)" }}>Post-meeting brief</span>
+        </div>
+        {post === undefined ? <p style={{ fontSize: 13, color: "var(--fg-muted)" }}>Loading…</p>
+          : post.empty ? <p style={{ fontSize: 13, color: "var(--fg-muted)" }}>No post-meeting brief yet.</p>
+          : <>
+              <Field label="Result" value={post.result} />
+              <Field label="Summary" value={post.summary} />
+              <Field label="Outcome" value={post.outcome} />
+              <List label="Key discussion points" items={post.keyPoints} />
+              <Field label="Follow-up email" value={post.emailSubject} />
+            </>}
+      </div>
+    </>
+  );
 }
 
 const REL_LABEL = { deal: "Deals", account: "Accounts", contact: "Contacts", meeting: "Meetings", task: "Tasks", owner: "Owner" };
@@ -60,6 +122,7 @@ export function EntityDetail({ record, onOpen, onChat, onBack }) {
               <p style={{ fontSize: 14.5, lineHeight: 1.6, color: "var(--fg-body)" }}>{record.summary}</p>
             </div>
           )}
+          {record.type === "meeting" && <MeetingBriefs meetingId={record.id} />}
           {record.type === "task" && record.note && (
             <div className="card" style={{ padding: 22, marginBottom: 16 }}>
               <div className="overline" style={{ marginBottom: 8 }}>Notes</div>

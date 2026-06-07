@@ -7,6 +7,8 @@ import { ConnectorsScreen } from "./connectors";
 import { EntityList } from "./entitylist";
 import { EntityDetail } from "./entitydetail";
 import { ChatScreen } from "./chat";
+import { NotetakerScreen } from "./notetaker";
+import { PlansScreen } from "./plans";
 import { AGENTS, ENTITY_ORDER, ENTITIES, recordsOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
 
 const mq = () => window.matchMedia("(prefers-color-scheme: dark)");
@@ -45,6 +47,8 @@ function Rail({ route, go, openList, openChat, themeResolved, toggleTheme, onTwe
         ))}
         <div className="rail-divider" />
         <Btn active={route.name === "connectors"} title="Connectors" icon={Icons.Plug} onClick={() => go("connectors")} />
+        <Btn active={route.name === "notetaker"} title="Notetaker" icon={Icons.Brain} onClick={() => go("notetaker")} />
+        <Btn active={route.name === "plans"} title="Plans" icon={Icons.Zap} onClick={() => go("plans")} />
       </div>
       <button className="rail-btn" title="Toggle theme" onClick={toggleTheme}>{React.createElement(themeResolved === "dark" ? Icons.Sun : Icons.Moon, { size: 20 })}</button>
       <button className="rail-btn" title="Tweaks" onClick={onTweaks}><Icons.Sliders size={20} /></button>
@@ -148,6 +152,8 @@ export function App() {
       <main className="main">
         {route.name === "home" && <HomeScreen agents={AGENTS} connectors={connectors} openChat={openChat} openList={openList} onNav={go} />}
         {route.name === "connectors" && <ConnectorsScreen connectors={connectors} onToast={showToast} />}
+        {route.name === "notetaker" && <NotetakerScreen onToast={showToast} />}
+        {route.name === "plans" && <PlansScreen onToast={showToast} />}
         {route.name === "list" && <EntityList key={route.type} type={route.type} onOpen={openRecord} onChat={() => openChat([])} />}
         {route.name === "detail" && <EntityDetail key={route.record.id} record={route.record} onOpen={openRecord} onChat={(r) => openChat([r])} onBack={() => openList(route.record.type)} />}
         {route.name === "chat" && <ChatScreen key={chatSeed.map((r) => r.id).join(",")} seedAttached={chatSeed} onBack={() => go("home")} onOpenRecord={openRecord} onToast={showToast} />}

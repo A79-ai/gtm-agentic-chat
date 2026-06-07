@@ -14,7 +14,7 @@ AmpUp MCP endpoint** — this app is a thin, durable chat client in front of it.
 
 ## Deploy
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/RahulBalakavi/gtm-agentic-chat)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/a79-ai/gtm-agentic-chat)
 
 > **Note:** this repo is currently **private**, so the one-click Deploy button
 > only works for collaborators. To enable the button for everyone, make the repo
