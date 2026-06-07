@@ -37,10 +37,14 @@ Pick **one** LLM path — `ANTHROPIC_API_KEY` wins if both are set.
 
 ## How it works
 
-- **`app/page.tsx`** — the chat UI, built with [Vercel AI Elements](https://elements.ai-sdk.dev/)
-  (shadcn/ui components) on `@ai-sdk/react`: streaming Markdown + tables
-  (Streamdown), collapsible tool-call cards, and a composer. Posts to `/api/chat`
-  and threads the durable run id across turns.
+- **`app/page.tsx` + `components/gtm/`** — the AmpUp GTM Agent UI: a dark left
+  rail, Home (agents gallery + connected sources), Connectors, CRM entity
+  list/detail, and the grounded Chat workspace (attach picker + context panel),
+  with light/dark theme. Styled by the design system in `app/ds/`.
+- **`app/api/records/route.ts`** — MCP-backed listing of accounts / deals /
+  meetings / tasks, mapped to the entity schema the UI reads (`lib/gtm/data.jsx`).
+- The Chat surface still streams Markdown (Streamdown) and threads the durable
+  run id across turns; sends are augmented with attached-record context.
 - **`app/api/chat/route.ts`** — starts one durable workflow run per conversation
   (first turn) and resumes it for follow-ups.
 - **`workflows/chat.ts`** — the durable agent loop. Runs on the Vercel Workflow
