@@ -6,15 +6,22 @@ import { CAT_TABS, getAmpersand } from "@/lib/gtm/data";
 
 const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
 
-function ConnectorCard({ c, onConnect }) {
+// CRM connectors are Enterprise-only (self-serve connect is gated behind sales).
+const isEnterprise = (c) => c.cat === "CRM";
+
+function ConnectorCard({ c, onConnect, onContact }) {
   const connected = c.connected;
+  const enterprise = isEnterprise(c);
   return (
     <div className={"card conn-card" + (connected ? " connected" : "")}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <ConnLogo logo={c.logo} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontWeight: 600, fontSize: 16, color: "var(--fg-primary)" }}>{c.name}</div>
-          <div className="badge" style={{ marginTop: 5, padding: "2px 8px", fontSize: 11 }}>{c.cat}</div>
+          <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>{c.cat}</span>
+            {enterprise && <span className="badge badge-enterprise" style={{ padding: "2px 8px", fontSize: 11 }}>Enterprise</span>}
+          </div>
         </div>
       </div>
       <div style={{ fontSize: 13.5, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1 }}>{c.desc}</div>
@@ -23,6 +30,10 @@ function ConnectorCard({ c, onConnect }) {
           <span className="btn btn-sm" style={{ background: "var(--mint-glow-subtle)", color: "var(--fg-success)", border: "1px solid transparent", cursor: "default" }}>
             <Icons.CheckCircle size={15} /> Connected
           </span>
+        ) : enterprise ? (
+          <button className="btn btn-sm btn-outline" onClick={() => onContact(c)}>
+            <Icons.Spark size={14} /> Contact sales
+          </button>
         ) : (
           <button className="btn btn-sm btn-outline" onClick={() => onConnect(c)}>
             <Icons.Plug size={14} /> Connect
@@ -70,6 +81,7 @@ export function ConnectorsScreen({ connectors, onToast }) {
     if (amp.configured && amp.apiKey) setConnecting(c);
     else onToast("Ampersand isn't configured for this org yet — set sales_agent.ampersand_project_id / ampersand_api_key.", "info");
   };
+  const onContact = (c) => onToast(`${c.name} is an Enterprise connector — contact sales to enable it.`, "info");
 
   return (
     <div className="scroll" style={{ flex: 1 }}>
@@ -91,7 +103,7 @@ export function ConnectorsScreen({ connectors, onToast }) {
           </div>
         </div>
 
-        <div className="conn-grid">{list.map((c) => <ConnectorCard key={c.id} c={c} onConnect={onConnect} />)}</div>
+        <div className="conn-grid">{list.map((c) => <ConnectorCard key={c.id} c={c} onConnect={onConnect} onContact={onContact} />)}</div>
       </div>
       {connecting && <ConnectModal connector={connecting} amp={amp} onClose={() => setConnecting(null)} onToast={onToast} />}
     </div>
