@@ -42,7 +42,7 @@ export const FIELDS = {
   account: [["Industry", "industry"], ["Pipeline", "arr"], ["Open opps", "openOpps"], ["Health", "health", "badge"], ["Owner", "ownerId", "ref"]],
   contact: [["Title", "title"], ["Account", "accountId", "ref"], ["Email", "email"], ["Phone", "phone"], ["Owner", "ownerId", "ref"]],
   meeting: [["Date", "date"], ["Duration", "durationMin", "min"], ["Source", "source"], ["Account", "accountId", "ref"], ["Deal", "dealId", "ref"]],
-  task: [["Status", "status", "badge"], ["Due", "due"], ["Priority", "priority", "badge"], ["Owner", "ownerId", "ref"], ["Deal", "dealId", "ref"]],
+  task: [["Status", "status", "badge"], ["Due", "due"], ["Priority", "priority", "badge"], ["Source", "source"], ["Deal", "dealId", "ref"]],
   owner: [["Role", "role"], ["Region", "region"], ["Email", "email"], ["Open deals", "openDeals"]],
 };
 
@@ -51,7 +51,7 @@ export const COLUMNS = {
   account: [["name", "Account", "title"], ["industry", "Industry", "text"], ["arr", "Pipeline", "text"], ["health", "Health", "badge"], ["ownerId", "Owner", "avatar"]],
   contact: [["name", "Contact", "avatarTitle"], ["title", "Title", "text"], ["accountId", "Account", "ref"], ["email", "Email", "text"]],
   meeting: [["name", "Meeting", "title"], ["date", "Date", "text"], ["source", "Source", "text"], ["accountId", "Account", "ref"], ["durationMin", "Length", "min"]],
-  task: [["name", "Task", "title"], ["status", "Status", "badge"], ["due", "Due", "text"], ["priority", "Priority", "badge"], ["ownerId", "Owner", "avatar"]],
+  task: [["name", "Task", "title"], ["status", "Status", "badge"], ["due", "Due", "text"], ["priority", "Priority", "badge"], ["source", "Source", "text"]],
   owner: [["name", "Owner", "avatarTitle"], ["role", "Role", "text"], ["openDeals", "Open deals", "text"]],
 };
 

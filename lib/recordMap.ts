@@ -5,12 +5,32 @@ export type Rec = Record<string, unknown>;
 
 export const s = (v: unknown): string => (v == null ? "" : String(v));
 
+// Render a CRM date/timestamp as a short, human date (e.g. "Apr 30, 2025").
+export function friendlyDate(v: unknown): string {
+  const str = s(v);
+  if (!str) return "";
+  const d = new Date(str);
+  if (Number.isNaN(d.getTime())) return str;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 export function money(n: unknown): string {
   const v = typeof n === "number" ? n : Number(n);
   if (!v || Number.isNaN(v)) return "";
   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(v % 1_000_000 ? 1 : 0)}M`;
   if (v >= 1_000) return `$${Math.round(v / 1_000)}K`;
   return `$${v}`;
+}
+
+// Tasks carry no owner; `producer` records where the task came from.
+export function taskSource(producer: unknown): string {
+  const p = s(producer).toLowerCase();
+  if (!p) return "";
+  if (p.includes("chat")) return "Chat";
+  if (p.includes("crm")) return "CRM";
+  if (p.includes("agent")) return "Agent";
+  if (p.includes("meeting")) return "Meeting";
+  return s(producer).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // List tools may wrap the row (e.g. { task: {...} }) — unwrap it.
@@ -45,8 +65,8 @@ export const NORMALIZE: Record<string, (r: Rec, i: number) => Rec> = {
   }),
   task: (t, i) => ({
     id: s(t.id) || `task-${i}`, type: "task", name: s(t.subject) || s(t.name) || "Task",
-    due: s(t.due_date), status: s(t.status) ? s(t.status)[0].toUpperCase() + s(t.status).slice(1) : "",
-    priority: s(t.priority), ownerId: s(t.owner_id),
+    due: friendlyDate(t.due_date), status: s(t.status) ? s(t.status)[0].toUpperCase() + s(t.status).slice(1) : "",
+    priority: s(t.priority), ownerId: s(t.owner_id), source: taskSource(t.producer),
     dealId: Array.isArray(t.associated_deal_ids) && t.associated_deal_ids.length ? s((t.associated_deal_ids as unknown[])[0]) : s(t.opportunity_id),
     note: s(t.body) || s(t.note),
   }),

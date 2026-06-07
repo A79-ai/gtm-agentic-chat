@@ -1,4 +1,5 @@
 import { callAmpupTool } from "@/lib/mcp";
+import { friendlyDate, taskSource } from "@/lib/recordMap";
 
 export const maxDuration = 60;
 
@@ -146,17 +147,18 @@ export async function GET(req: Request) {
     };
   });
 
+  // list_tasks carries no owner; `producer` records where the task came from.
   const tasks = rawTasks.map((t, i) => {
-    noteOwner(t.owner_id, t.owner_name);
     const deal = Array.isArray(t.associated_deal_ids) && t.associated_deal_ids.length ? s((t.associated_deal_ids as unknown[])[0]) : s(t.opportunity_id);
     return {
       id: s(t.id) || `task-${i}`,
       type: "task",
       name: s(t.subject) || s(t.name) || "Task",
-      due: s(t.due_date),
+      due: friendlyDate(t.due_date),
       status: s(t.status) ? s(t.status)[0].toUpperCase() + s(t.status).slice(1) : "",
       priority: s(t.priority),
       ownerId: s(t.owner_id),
+      source: taskSource(t.producer),
       dealId: deal,
       note: s(t.body) || s(t.note),
     };
