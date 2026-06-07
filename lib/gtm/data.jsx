@@ -101,6 +101,14 @@ export function setConnectors(payload) {
 export const getConnectors = () => (CONNECTOR_STORE.length ? CONNECTOR_STORE : CONNECTORS);
 export const getAmpersand = () => AMPERSAND;
 
+// ---- Live totals (accurate per-type counts from /api/counts) ----
+// Falls back to the (capped) loaded store length until the totals arrive.
+let COUNTS = {};
+export function setCounts(counts) {
+  COUNTS = counts && typeof counts === "object" ? counts : {};
+}
+export const countOf = (type) => (typeof COUNTS[type] === "number" ? COUNTS[type] : (STORE[type] || []).length);
+
 export const recordsOf = (type) => STORE[type] || [];
 export const byId = (id) => ALL.find((r) => r.id === id);
 export const titleOf = (r) => r.name;
@@ -171,14 +179,18 @@ export function DataProvider({ children }) {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (alive && data) setConnectors(data); })
       .catch(() => {});
-    Promise.allSettled([records, connectors]).then(() => { if (alive) setState((s) => ({ ...s, ready: true, error: null })); });
+    const counts = fetch("/api/counts")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (alive && data) setCounts(data.counts); })
+      .catch(() => {});
+    Promise.allSettled([records, connectors, counts]).then(() => { if (alive) setState((s) => ({ ...s, ready: true, error: null })); });
     return () => { alive = false; };
   }, []);
-  // Re-pull records after a mutation; bump version to force a re-render.
+  // Re-pull records + counts after a mutation; bump version to force a re-render.
   const refresh = () =>
-    fetch("/api/records")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => { if (data) { setRecords(data); setState((s) => ({ ...s, version: s.version + 1 })); } })
-      .catch(() => {});
+    Promise.allSettled([
+      fetch("/api/records").then((r) => (r.ok ? r.json() : null)).then((data) => { if (data) setRecords(data); }),
+      fetch("/api/counts").then((r) => (r.ok ? r.json() : null)).then((data) => { if (data) setCounts(data.counts); }),
+    ]).then(() => setState((s) => ({ ...s, version: s.version + 1 }))).catch(() => {});
   return <DataCtx.Provider value={{ ...state, refresh }}>{children}</DataCtx.Provider>;
 }

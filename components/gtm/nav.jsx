@@ -4,7 +4,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Icons, LogoMark } from "./icons";
 import { EntityIcon } from "./ui";
-import { ENTITY_ORDER, ENTITIES, recordsOf, initials } from "@/lib/gtm/data";
+import { ENTITY_ORDER, ENTITIES, countOf, initials } from "@/lib/gtm/data";
 
 // close on outside-click / Escape
 function useDismiss(onClose) {
@@ -30,7 +30,7 @@ function RecordsFlyout({ anchor, onPick, onClose }) {
           <button key={t} className="navpop-item" onClick={() => { onPick(t); onClose(); }}>
             <EntityIcon type={t} size={30} />
             <span className="nm">{ENTITIES[t].plural}</span>
-            <span className="ct">{recordsOf(t).length}</span>
+            <span className="ct">{countOf(t).toLocaleString()}</span>
             <Icons.ChevronRight size={16} style={{ color: "var(--fg-muted)" }} />
           </button>
         ))}

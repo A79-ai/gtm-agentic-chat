@@ -10,7 +10,7 @@ import { ChatScreen } from "./chat";
 import { NotetakerScreen } from "./notetaker";
 import { SideNav, BottomNav } from "./nav";
 import { Onboarding } from "./onboarding";
-import { AGENTS, ENTITY_ORDER, ENTITIES, recordsOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
+import { AGENTS, ENTITY_ORDER, ENTITIES, countOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
 
 const mq = () => window.matchMedia("(prefers-color-scheme: dark)");
 const systemTheme = () => (mq().matches ? "dark" : "light");
@@ -44,7 +44,7 @@ function RecordsSheet({ openList, onClose }) {
           <div key={t} className="sheet-item" onClick={() => { openList(t); onClose(); }}>
             <EntityIcon type={t} size={38} />
             <span className="nm">{ENTITIES[t].plural}</span>
-            <span className="ct">{recordsOf(t).length}</span>
+            <span className="ct">{countOf(t).toLocaleString()}</span>
             <Icons.ChevronRight size={18} style={{ color: "var(--fg-muted)" }} />
           </div>
         ))}

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Icons, LogoMark, Logos } from "./icons";
 import { EntityIcon, TBadge, TONES } from "./ui";
-import { ENTITY_ORDER, ENTITIES, recordsOf } from "@/lib/gtm/data";
+import { ENTITY_ORDER, ENTITIES, recordsOf, countOf } from "@/lib/gtm/data";
 
 function AgentTile({ agent, connectors, onOpen }) {
   const Icon = Icons[agent.icon] || Icons.Spark;
@@ -83,7 +83,7 @@ export function HomeScreen({ agents, connectors, openChat, openList, onNav }) {
               <EntityIcon type={t} size={40} />
               <div>
                 <div style={{ fontWeight: 600, fontSize: 15, color: "var(--fg-primary)" }}>{ENTITIES[t].plural}</div>
-                <div style={{ fontSize: 12.5, color: "var(--fg-muted)" }}>{recordsOf(t).length} records</div>
+                <div style={{ fontSize: 12.5, color: "var(--fg-muted)" }}>{countOf(t).toLocaleString()} records</div>
               </div>
             </button>
           ))}
