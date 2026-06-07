@@ -68,6 +68,174 @@ function useDismiss(onClose) {
   return ref;
 }
 
+// Per-type create forms. `entity` fields resolve an id via /api/search;
+// `stage` reuses the deal-stage options. meeting/owner have no create tool.
+const CREATE_FIELDS = {
+  account: [
+    { key: "name", label: "Account name", kind: "text", required: true, placeholder: "Acme Corp" },
+    { key: "industry", label: "Industry", kind: "text", placeholder: "SaaS" },
+  ],
+  deal: [
+    { key: "name", label: "Deal name", kind: "text", required: true, placeholder: "Acme — Platform expansion" },
+    { key: "account_id", label: "Account", kind: "entity", searchType: "account", required: true },
+    { key: "amount", label: "Amount ($)", kind: "number", required: true, placeholder: "50000" },
+    { key: "close_date", label: "Close date", kind: "date", required: true },
+    { key: "stage", label: "Stage", kind: "stage", required: true },
+  ],
+  contact: [
+    { key: "first_name", label: "First name", kind: "text", placeholder: "Jane" },
+    { key: "last_name", label: "Last name", kind: "text", placeholder: "Doe" },
+    { key: "email", label: "Email", kind: "text", placeholder: "jane@acme.com" },
+    { key: "title", label: "Title", kind: "text", placeholder: "VP Sales" },
+    { key: "company", label: "Company", kind: "text", placeholder: "Acme Corp" },
+  ],
+  task: [
+    { key: "parent_type", label: "Attach to", kind: "select", required: true, default: "opportunity",
+      options: [["opportunity", "Deal"], ["account", "Account"], ["meeting", "Meeting"]] },
+    { key: "parent_id", label: "Parent record", kind: "parent", required: true },
+    { key: "subject", label: "Task", kind: "text", required: true, placeholder: "Send pricing follow-up" },
+    { key: "priority", label: "Priority", kind: "select", default: "P1",
+      options: [["P0", "P0 — urgent"], ["P1", "P1 — high"], ["P2", "P2 — normal"]] },
+    { key: "due_date", label: "Due date", kind: "date" },
+  ],
+};
+const PARENT_SEARCH = { opportunity: "deal", account: "account", meeting: "meeting" };
+
+// Search-as-you-type picker that resolves a record id from the org's CRM.
+function EntityPicker({ searchType, valueLabel, onPick }) {
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const reqId = useRef(0);
+  useEffect(() => {
+    if (!open) return;
+    const id = setTimeout(async () => {
+      const query = q.trim();
+      if (!query) { setItems([]); return; }
+      const my = ++reqId.current;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`).then((r) => r.json());
+        if (my !== reqId.current) return;
+        const g = (res.groups || []).find((x) => x.type === searchType);
+        setItems(g ? g.items : []);
+      } catch { if (my === reqId.current) setItems([]); }
+      if (my === reqId.current) setLoading(false);
+    }, 250);
+    return () => clearTimeout(id);
+  }, [q, open, searchType]);
+  if (valueLabel) {
+    return (
+      <button type="button" className="create-picked" onClick={() => onPick(null)}>
+        <span>{valueLabel}</span><Icons.X size={14} />
+      </button>
+    );
+  }
+  return (
+    <div className="create-picker">
+      <div className="search-box" style={{ height: 38 }}>
+        <Icons.Search size={15} style={{ color: "var(--fg-muted)", flexShrink: 0 }} />
+        <input placeholder={`Search ${searchType}s…`} value={q}
+          onFocus={() => setOpen(true)} onChange={(e) => { setQ(e.target.value); setOpen(true); }} />
+      </div>
+      {open && q.trim() && (
+        <div className="create-picker-list">
+          {loading ? <div className="sel-picker-empty">Searching…</div>
+            : items.length === 0 ? <div className="sel-picker-empty">No matches</div>
+            : items.map((it) => (
+              <button key={it.id} type="button" className="sel-picker-item" onClick={() => { onPick({ id: it.id, label: it.name }); setOpen(false); setQ(""); }}>
+                {it.name}{it.subtitle ? <span style={{ color: "var(--fg-muted)" }}> · {it.subtitle}</span> : null}
+              </button>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CreateModal({ type, onClose, onCreated, onToast }) {
+  const meta = ENTITIES[type];
+  const fields = CREATE_FIELDS[type] || [];
+  const [vals, setVals] = useState(() => {
+    const init = {};
+    fields.forEach((f) => { if (f.default) init[f.key] = f.default; });
+    return init;
+  });
+  const [labels, setLabels] = useState({}); // id -> human label for entity pickers
+  const [busy, setBusy] = useState(false);
+  const set = (k, v) => setVals((s) => ({ ...s, [k]: v }));
+
+  const stageOpts = pickOptions("stage");
+  const nameOk = type !== "contact" || vals.first_name || vals.last_name || vals.email;
+  const missing = fields.some((f) => f.required && !vals[f.key]) || !nameOk;
+
+  const submit = async () => {
+    if (missing || busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, fields: vals }),
+      }).then((r) => r.json());
+      if (res.ok) { onToast(`${meta.label} created`, "success"); onCreated && (await onCreated()); onClose(); }
+      else onToast(`Couldn't create ${meta.label.toLowerCase()}: ${res.error || "error"}`, "error");
+    } catch {
+      onToast(`Couldn't create ${meta.label.toLowerCase()}`, "error");
+    }
+    setBusy(false);
+  };
+
+  const renderField = (f) => {
+    if (f.kind === "select") {
+      return <select className="create-input" value={vals[f.key] || ""} onChange={(e) => { set(f.key, e.target.value); if (f.key === "parent_type") { set("parent_id", ""); setLabels((l) => ({ ...l, parent_id: "" })); } }}>
+        {f.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>;
+    }
+    if (f.kind === "stage") {
+      if (stageOpts.length) return <select className="create-input" value={vals[f.key] || ""} onChange={(e) => set(f.key, e.target.value)}>
+        <option value="">Select a stage…</option>
+        {stageOpts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>;
+      return <input className="create-input" placeholder="Discovery" value={vals[f.key] || ""} onChange={(e) => set(f.key, e.target.value)} />;
+    }
+    if (f.kind === "entity" || f.kind === "parent") {
+      const searchType = f.kind === "parent" ? PARENT_SEARCH[vals.parent_type || "opportunity"] : f.searchType;
+      return <EntityPicker searchType={searchType} valueLabel={labels[f.key]}
+        onPick={(p) => { set(f.key, p ? p.id : ""); setLabels((l) => ({ ...l, [f.key]: p ? p.label : "" })); }} />;
+    }
+    return <input className="create-input" type={f.kind === "number" ? "number" : f.kind === "date" ? "date" : "text"}
+      placeholder={f.placeholder || ""} value={vals[f.key] || ""} onChange={(e) => set(f.key, e.target.value)} />;
+  };
+
+  return (
+    <div className="sheet-backdrop" style={{ alignItems: "center", justifyContent: "center", zIndex: 95 }} onClick={onClose}>
+      <div className="card" style={{ width: "min(460px, 92vw)", maxHeight: "88vh", overflow: "auto", padding: 0 }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
+          <EntityIcon type={type} size={30} />
+          <div style={{ flex: 1, fontWeight: 600, color: "var(--fg-primary)" }}>New {meta.label.toLowerCase()}</div>
+          <button className="icon-btn" onClick={onClose}><Icons.X size={18} /></button>
+        </div>
+        <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+          {fields.map((f) => (
+            <div key={f.key}>
+              <label className="create-label">{f.label}{f.required && <span style={{ color: "var(--accent)" }}> *</span>}</label>
+              {renderField(f)}
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
+            <button className="btn btn-sm btn-outline" onClick={onClose} disabled={busy}>Cancel</button>
+            <button className="btn btn-sm btn-primary" onClick={submit} disabled={missing || busy}>
+              {busy ? <><Icons.Refresh size={14} className="spin" /> Creating…</> : <><Icons.Plus size={14} /> Create {meta.label.toLowerCase()}</>}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Check({ on, indeterminate }) {
   return (
     <span className={"row-check" + (on ? " on" : "") + (indeterminate ? " mixed" : "")}>
@@ -158,6 +326,8 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
   const [colsOpen, setColsOpen] = useState(false);
   const [picker, setPicker] = useState(null); // { action, options }
   const [pending, setPending] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const canCreate = !!CREATE_FIELDS[type];
   const [visible, setVisible] = useState(() => {
     try { const s = JSON.parse(localStorage.getItem("ampup-cols-" + type)); if (Array.isArray(s)) return new Set([cols[0][0], ...s]); } catch {}
     return new Set(cols.map((c) => c[0]));
@@ -280,6 +450,7 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
             </div>
           )}
           <button className="btn btn-sm btn-outline" onClick={() => onChat && onChat([])}><Icons.Spark size={14} /> Chat with {meta.plural.toLowerCase()}</button>
+          {canCreate && <button className="btn btn-sm btn-primary" onClick={() => setCreateOpen(true)}><Icons.Plus size={14} /> New {meta.label.toLowerCase()}</button>}
         </div>
 
         {loading && rows.length === 0 ? (
@@ -329,6 +500,10 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
       )}
       {picker && (
         <ValuePicker title={picker.action.label} options={picker.options} onPick={(v) => runBulk(picker.action, v)} onClose={() => setPicker(null)} />
+      )}
+      {createOpen && (
+        <CreateModal type={type} onClose={() => setCreateOpen(false)} onToast={onToast}
+          onCreated={async () => { onRefresh && (await onRefresh()); setPage(0); await fetchPage(); }} />
       )}
     </div>
   );

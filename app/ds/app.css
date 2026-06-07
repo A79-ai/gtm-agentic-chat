@@ -466,6 +466,17 @@ body {
 .sel-picker-item:hover { background: var(--bg-muted); }
 .sel-picker-empty { padding: 8px 10px; font-size: 13px; color: var(--fg-muted); }
 
+/* Create-record form */
+.create-label { display: block; font-size: 12px; font-weight: 600; color: var(--fg-secondary); margin-bottom: 6px; }
+.create-input { width: 100%; height: 38px; padding: 0 12px; background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: var(--radius-md); font-family: var(--font-sans); font-size: 14px; color: var(--fg-primary); outline: none; }
+.create-input:focus { border-color: var(--accent); }
+select.create-input { cursor: pointer; appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--fg-muted) 50%), linear-gradient(135deg, var(--fg-muted) 50%, transparent 50%); background-position: calc(100% - 16px) 16px, calc(100% - 11px) 16px; background-size: 5px 5px; background-repeat: no-repeat; }
+.create-picker { position: relative; }
+.create-picker .search-box { max-width: none; }
+.create-picker-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 5; max-height: 220px; overflow-y: auto; background: var(--bg-elevated); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); padding: 5px 6px; animation: popIn .14s ease both; }
+.create-picked { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--radius-md); font-family: var(--font-sans); font-size: 14px; font-weight: 500; color: var(--fg-primary); cursor: pointer; max-width: 100%; }
+.create-picked span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ============================================================
    Onboarding wizard (ported from prototype flows.css)
    ============================================================ */
