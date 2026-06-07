@@ -22,7 +22,11 @@ function useTweaks() {
   const [density, setDensity] = useState(() => load("density", "comfortable"));
   const set = (k, v, fn) => { fn(v); try { localStorage.setItem("ampup-" + k, v); } catch {} };
   useEffect(() => {
-    const apply = () => { document.documentElement.dataset.theme = themePref === "system" ? systemTheme() : themePref; };
+    const apply = () => {
+      const resolved = themePref === "system" ? systemTheme() : themePref;
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.classList.toggle("dark", resolved === "dark");
+    };
     apply();
     if (themePref === "system") { const m = mq(); m.addEventListener("change", apply); return () => m.removeEventListener("change", apply); }
   }, [themePref]);

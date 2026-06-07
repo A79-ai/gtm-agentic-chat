@@ -10,7 +10,9 @@ export const metadata: Metadata = {
 const themeScript = `(function(){try{
   var pref = localStorage.getItem('ampup-theme') || 'dark';
   var sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  document.documentElement.dataset.theme = pref === 'system' ? sys : pref;
+  var resolved = pref === 'system' ? sys : pref;
+  document.documentElement.dataset.theme = resolved;
+  document.documentElement.classList.toggle('dark', resolved === 'dark');
   document.documentElement.dataset.accent = localStorage.getItem('ampup-accent') || 'gold';
   document.documentElement.dataset.density = localStorage.getItem('ampup-density') || 'comfortable';
 }catch(e){}})();`;
