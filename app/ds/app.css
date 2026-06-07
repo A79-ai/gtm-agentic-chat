@@ -129,7 +129,7 @@ body {
 .badge-accent { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; }
 .badge-success { background: var(--mint-glow-subtle); color: var(--fg-success); border-color: transparent; }
 .badge-enterprise { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; font-weight: 600; }
-.overline { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-muted); }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-muted); }
 
 /* ---- pill tabs ---- */
 .pilltabs { display: inline-flex; padding: 3px; border: 1px solid var(--border-subtle); border-radius: var(--radius-full); background: var(--bg-surface); gap: 2px; }
@@ -328,7 +328,7 @@ body {
 .detail-wrap { max-width: 980px; margin: 0 auto; }
 .detail-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
 .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; }
-.field .overline { font-size: 10px; margin-bottom: 4px; }
+.field .eyebrow { font-size: 10px; margin-bottom: 4px; }
 .field .val { font-size: 14.5px; color: var(--fg-primary); font-weight: 500; }
 .related-group { margin-top: 8px; }
 .related-group .lbl { font-size: 12px; font-weight: 600; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 10px; }

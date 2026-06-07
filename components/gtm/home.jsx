@@ -53,7 +53,7 @@ export function HomeScreen({ agents, connectors, openChat, openList, onNav }) {
       <div className="screen-pad" style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div className="card fade-up" style={{ padding: 28, marginBottom: 24, display: "flex", alignItems: "center", gap: 24, background: "linear-gradient(135deg, var(--accent-soft), var(--bg-card) 60%)", overflow: "hidden" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="overline" style={{ marginBottom: 8 }}>GTM Agent Workspace</div>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>GTM Agent Workspace</div>
             <h2 style={{ fontSize: 32, marginBottom: 10 }}>Chat with your pipeline</h2>
             <p style={{ fontSize: 14.5, color: "var(--fg-body)", maxWidth: 520, marginBottom: 18 }}>Attach any deal, account, meeting or contact and let the agent reason over your connected CRM, calls and notes.</p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>

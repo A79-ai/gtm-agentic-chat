@@ -139,7 +139,7 @@ function ContextCard({ rec, onOpenRecord, onRemove }) {
         <EntityIcon type={rec.type} size={34} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 14.5, color: "var(--fg-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{rec.name}</div>
-          <div className="overline" style={{ fontSize: 10 }}>{meta.label}</div>
+          <div className="eyebrow" style={{ fontSize: 10 }}>{meta.label}</div>
         </div>
         <button className="icon-btn" title="Open" style={{ width: 28, height: 28 }} onClick={() => onOpenRecord(rec)}><Icons.ChevronRight size={16} /></button>
         <button className="icon-btn" title="Remove" style={{ width: 28, height: 28 }} onClick={() => onRemove(rec)}><Icons.X size={15} /></button>
@@ -152,7 +152,7 @@ function ContextCard({ rec, onOpenRecord, onRemove }) {
           if (kind === "min") val = val ? `${val} min` : "—";
           return (
             <div key={label}>
-              <div className="overline" style={{ fontSize: 9.5, marginBottom: 2 }}>{label}</div>
+              <div className="eyebrow" style={{ fontSize: 9.5, marginBottom: 2 }}>{label}</div>
               <div style={{ fontSize: 13, color: "var(--fg-primary)", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{val == null || val === "" ? "—" : String(val)}</div>
             </div>
           );
@@ -160,7 +160,7 @@ function ContextCard({ rec, onOpenRecord, onRemove }) {
       </div>
       {rec.type === "meeting" && rec.summary && (
         <div style={{ marginTop: 14, borderTop: "1px solid var(--border-subtle)", paddingTop: 12 }}>
-          <div className="overline" style={{ fontSize: 10, marginBottom: 6 }}>Summary</div>
+          <div className="eyebrow" style={{ fontSize: 10, marginBottom: 6 }}>Summary</div>
           <div style={{ fontSize: 13, color: "var(--fg-body)", lineHeight: 1.5 }}>{rec.summary}</div>
         </div>
       )}
@@ -170,7 +170,7 @@ function ContextCard({ rec, onOpenRecord, onRemove }) {
         if (!chips.length) return null;
         return (
           <div style={{ marginTop: 14, borderTop: "1px solid var(--border-subtle)", paddingTop: 12 }}>
-            <div className="overline" style={{ fontSize: 10, marginBottom: 8 }}>Related</div>
+            <div className="eyebrow" style={{ fontSize: 10, marginBottom: 8 }}>Related</div>
             <div className="chip-wrap">{chips.map((r) => <RefChip key={r.id} record={r} onOpen={onOpenRecord} />)}</div>
           </div>
         );

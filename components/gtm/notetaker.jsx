@@ -51,7 +51,7 @@ export function NotetakerScreen({ onToast }) {
         ) : (
           <div className="card" style={{ padding: 22, display: "flex", flexDirection: "column", gap: 22 }}>
             <div>
-              <div className="overline" style={{ marginBottom: 10 }}>When should it join?</div>
+              <div className="eyebrow" style={{ marginBottom: 10 }}>When should it join?</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {MODES.map((m) => (
                   <button key={m.id} onClick={() => setMode(m.id)}
@@ -69,7 +69,7 @@ export function NotetakerScreen({ onToast }) {
             </div>
 
             <div>
-              <div className="overline" style={{ marginBottom: 8 }}>Notetaker name</div>
+              <div className="eyebrow" style={{ marginBottom: 8 }}>Notetaker name</div>
               <div className="search-box" style={{ maxWidth: "100%" }}>
                 <Icons.User size={16} style={{ color: "var(--fg-muted)", flexShrink: 0 }} />
                 <input value={name} onChange={(e) => setName(e.target.value)} placeholder="AmpUp Notetaker" />

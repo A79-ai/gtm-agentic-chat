@@ -33,7 +33,7 @@ export function PlansScreen({ onToast }) {
     <div className="scroll" style={{ flex: 1 }}>
       <div className="screen-pad" style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div className="overline" style={{ marginBottom: 8 }}>Pricing</div>
+          <div className="eyebrow" style={{ marginBottom: 8 }}>Pricing</div>
           <h2 style={{ marginBottom: 8 }}>Simple, usage-ready pricing</h2>
           <p style={{ fontSize: 14.5, color: "var(--fg-muted)", maxWidth: 520, margin: "0 auto" }}>
             Start free for 30 days. Keep going for $50/month — or talk to us for enterprise.

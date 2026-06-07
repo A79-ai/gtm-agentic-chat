@@ -88,7 +88,7 @@ export function ConnectorsScreen({ connectors, onToast }) {
       <div className="screen-pad" style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
           <div style={{ flex: 1, minWidth: 220 }}>
-            <div className="overline" style={{ marginBottom: 6 }}>Org tools</div>
+            <div className="eyebrow" style={{ marginBottom: 6 }}>Org tools</div>
             <h2 style={{ marginBottom: 6 }}>Connect your stack</h2>
             <p style={{ fontSize: 14, color: "var(--fg-muted)", maxWidth: 520 }}>Wire up CRM, call recordings and notes. Every agent reasons over exactly what you connect here.</p>
           </div>

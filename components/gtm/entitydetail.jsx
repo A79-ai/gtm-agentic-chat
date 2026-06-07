@@ -35,10 +35,10 @@ function MeetingBriefs({ meetingId }) {
   }, [meetingId]);
 
   const Field = ({ label, value }) => value ? (
-    <div style={{ marginTop: 8 }}><div className="overline" style={{ fontSize: 10, marginBottom: 2 }}>{label}</div><div style={{ fontSize: 13.5, color: "var(--fg-primary)" }}>{value}</div></div>
+    <div style={{ marginTop: 8 }}><div className="eyebrow" style={{ fontSize: 10, marginBottom: 2 }}>{label}</div><div style={{ fontSize: 13.5, color: "var(--fg-primary)" }}>{value}</div></div>
   ) : null;
   const List = ({ label, items }) => items?.length ? (
-    <div style={{ marginTop: 8 }}><div className="overline" style={{ fontSize: 10 }}>{label}</div><Bullets items={items} /></div>
+    <div style={{ marginTop: 8 }}><div className="eyebrow" style={{ fontSize: 10 }}>{label}</div><Bullets items={items} /></div>
   ) : null;
 
   return (
@@ -96,7 +96,7 @@ export function EntityDetail({ record, onOpen, onChat, onBack }) {
           <div className="detail-head">
             <EntityIcon type={record.type} size={56} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="overline" style={{ marginBottom: 4 }}>{meta.label}</div>
+              <div className="eyebrow" style={{ marginBottom: 4 }}>{meta.label}</div>
               <h2 style={{ fontSize: 30, marginBottom: 6 }}>{record.name}</h2>
               <p style={{ fontSize: 14, color: "var(--fg-muted)" }}>{subtitleOf(record)}</p>
             </div>
@@ -109,7 +109,7 @@ export function EntityDetail({ record, onOpen, onChat, onBack }) {
             <div className="detail-grid">
               {fields.map((f) => (
                 <div className="field" key={f[1]}>
-                  <div className="overline">{f[0]}</div>
+                  <div className="eyebrow">{f[0]}</div>
                   <FieldVal rec={record} spec={f} onOpen={onOpen} />
                 </div>
               ))}
@@ -118,14 +118,14 @@ export function EntityDetail({ record, onOpen, onChat, onBack }) {
 
           {record.type === "meeting" && record.summary && (
             <div className="card" style={{ padding: 22, marginBottom: 16 }}>
-              <div className="overline" style={{ marginBottom: 8 }}>Summary</div>
+              <div className="eyebrow" style={{ marginBottom: 8 }}>Summary</div>
               <p style={{ fontSize: 14.5, lineHeight: 1.6, color: "var(--fg-body)" }}>{record.summary}</p>
             </div>
           )}
           {record.type === "meeting" && <MeetingBriefs meetingId={record.id} />}
           {record.type === "task" && record.note && (
             <div className="card" style={{ padding: 22, marginBottom: 16 }}>
-              <div className="overline" style={{ marginBottom: 8 }}>Notes</div>
+              <div className="eyebrow" style={{ marginBottom: 8 }}>Notes</div>
               <p style={{ fontSize: 14.5, lineHeight: 1.6, color: "var(--fg-body)" }}>{record.note}</p>
             </div>
           )}
