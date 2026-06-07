@@ -9,6 +9,7 @@ import { EntityDetail } from "./entitydetail";
 import { ChatScreen } from "./chat";
 import { NotetakerScreen } from "./notetaker";
 import { SideNav, BottomNav } from "./nav";
+import { Onboarding } from "./onboarding";
 import { AGENTS, ENTITY_ORDER, ENTITIES, recordsOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
 
 const mq = () => window.matchMedia("(prefers-color-scheme: dark)");
@@ -96,7 +97,10 @@ export function App() {
   const [sheet, setSheet] = useState(false);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
-  const [profile] = useState(() => { try { return JSON.parse(localStorage.getItem("ampup-profile") || "{}"); } catch { return {}; } });
+  const [profile, setProfile] = useState(() => { try { return JSON.parse(localStorage.getItem("ampup-profile") || "{}"); } catch { return {}; } });
+  const [flow, setFlow] = useState(() => {
+    try { return localStorage.getItem("ampup-onboarded") === "1" ? null : { name: "onboarding", firstRun: true }; } catch { return null; }
+  });
 
   const showToast = (msg, type = "info") => { setToast({ msg, type }); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 2400); };
   const toggleTheme = () => t.setThemePref(themeResolved === "dark" ? "light" : "dark");
@@ -110,10 +114,19 @@ export function App() {
     ["onboarded", "profile"].forEach((k) => { try { localStorage.removeItem("ampup-" + k); } catch {} });
     window.location.reload();
   };
+  const onboardingDone = (data) => {
+    const p = { name: data.name, email: data.email, company: data.company, role: data.role, size: data.size, goals: data.goals, calendar: !!data.calendar };
+    setProfile(p);
+    try { localStorage.setItem("ampup-profile", JSON.stringify(p)); localStorage.setItem("ampup-onboarded", "1"); } catch {}
+    const firstRun = flow && flow.firstRun;
+    setFlow(null);
+    if (firstRun) showToast("Welcome to AmpUp" + (data.name ? `, ${data.name.split(" ")[0]}` : "") + " 👋", "success");
+  };
+
   const onProfileAction = (action) => {
     if (action === "notetaker") go("notetaker");
     else if (action === "tweaks") setTweaksOpen(true);
-    else if (action === "onboarding") showToast("Onboarding coming soon", "info");
+    else if (action === "onboarding") setFlow({ name: "onboarding", firstRun: false });
     else if (action === "restart") restartDemo();
     else if (action === "signout") showToast("Signed out (demo)", "info");
   };
@@ -132,6 +145,9 @@ export function App() {
       <BottomNav route={route} go={go} openChat={openChat} onRecords={() => setSheet(true)} onProfile={() => setTweaksOpen((v) => !v)} />
       {sheet && <RecordsSheet openList={openList} onClose={() => setSheet(false)} />}
       {tweaksOpen && <TweaksPanel t={t} onClose={() => setTweaksOpen(false)} />}
+      {flow && flow.name === "onboarding" && (
+        <Onboarding initial={profile} onFinish={onboardingDone} onCancel={flow.firstRun ? null : () => setFlow(null)} />
+      )}
       <Toast toast={toast} />
     </div>
   );
