@@ -5,6 +5,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Icons, LogoMark } from "./icons";
 import { EntityIcon } from "./ui";
 import { ENTITY_ORDER, ENTITIES, countOf, initials } from "@/lib/gtm/data";
+import { CONFIG } from "@/lib/gtm/config";
 
 // close on outside-click / Escape
 function useDismiss(onClose) {
@@ -61,6 +62,7 @@ function ProfileMenu({ anchor, profile, on, onClose }) {
       <div className="menu-section">
         <Item icon={Icons.Brain} label="Notetaker" onClick={() => on("notetaker")} />
         <Item icon={Icons.Paperclip} label="Files" onClick={() => on("files")} />
+        {CONFIG.billing.enabled ? <Item icon={Icons.Spark} label="Plans & billing" onClick={() => on("plans")} /> : null}
         <Item icon={Icons.Sliders} label="Tweaks" onClick={() => on("tweaks")} />
       </div>
       <div className="menu-divider" />

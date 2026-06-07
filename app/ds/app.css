@@ -170,6 +170,14 @@ body {
 }
 .ctx-scroll { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
 
+/* trial banner (app shell) + status strip (plans page) — intentionally soft */
+.trial-banner { display: flex; align-items: center; gap: 10px; padding: 9px 16px; background: var(--accent-soft); color: var(--accent-text); border-bottom: 1px solid var(--border-subtle); font-size: 13px; flex-shrink: 0; }
+.trial-banner > .btn { margin-left: auto; }
+.trial-banner svg { flex-shrink: 0; }
+.trial-strip { display: flex; align-items: center; gap: 9px; padding: 11px 15px; border-radius: var(--radius-md); background: var(--accent-soft); color: var(--accent-text); font-size: 13.5px; margin-bottom: 22px; }
+.trial-strip.ok { background: var(--mint-glow-subtle); color: var(--fg-success); }
+.trial-strip strong { font-weight: 700; }
+
 /* public read-only shared conversation */
 .share-page { height: 100vh; display: flex; flex-direction: column; background: var(--bg-page); }
 .share-bar { display: flex; align-items: center; gap: 12px; padding: 12px var(--pad); border-bottom: 1px solid var(--border-subtle); background: var(--bg-surface); min-height: 60px; }

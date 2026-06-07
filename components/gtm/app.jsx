@@ -9,12 +9,13 @@ import { EntityDetail } from "./entitydetail";
 import { ChatScreen } from "./chat";
 import { NotetakerScreen } from "./notetaker";
 import { FilesScreen } from "./files";
+import { PlansScreen } from "./plans";
 import { SideNav, BottomNav } from "./nav";
 import { Onboarding } from "./onboarding";
 import { Signup } from "./signup";
 import { AGENTS, ENTITY_ORDER, ENTITIES, countOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
 import { CONFIG } from "@/lib/gtm/config";
-import { getAccount, isSignedUp, saveAccount, startTrial, resetBilling } from "@/lib/gtm/billing";
+import { getAccount, isSignedUp, saveAccount, startTrial, resetBilling, billingStatus } from "@/lib/gtm/billing";
 
 const mq = () => window.matchMedia("(prefers-color-scheme: dark)");
 const systemTheme = () => (mq().matches ? "dark" : "light");
@@ -79,6 +80,23 @@ function TweaksPanel({ t, onClose }) {
         <div><div className="tweak-label">Accent</div><div className="swatch-row">{accents.map(([k, c]) => <button key={k} className={"swatch" + (t.accent === k ? " on" : "")} style={{ background: c }} onClick={() => t.setAccent(k)} title={k}>{t.accent === k && <Icons.Check size={16} style={{ color: "#1a1200", position: "absolute", inset: 0, margin: "auto" }} />}</button>)}</div></div>
         <div><div className="tweak-label">Density</div><Seg value={t.density} set={t.setDensity} opts={[["comfortable", "Comfortable"], ["compact", "Compact"]]} /></div>
       </div>
+    </div>
+  );
+}
+
+// Soft trial nag in the app shell. Never hard-blocks (demo trial clock is
+// trivially bypassed; hard gating only makes sense once a real provider is the
+// source of truth). Hidden on the plans page, which shows its own status strip.
+function TrialBanner({ route, onUpgrade }) {
+  if (!CONFIG.billing.enabled || route.name === "plans") return null;
+  const st = billingStatus();
+  if (st.state !== "trialing" && st.state !== "expired") return null;
+  const expired = st.state === "expired";
+  return (
+    <div className="trial-banner">
+      {expired ? <Icons.Bell size={15} /> : <Icons.Spark size={15} />}
+      <span>{expired ? "Your free trial has ended." : `${st.daysLeft} day${st.daysLeft === 1 ? "" : "s"} left in your free trial.`}</span>
+      <button className="btn btn-sm btn-primary" onClick={onUpgrade}>Upgrade</button>
     </div>
   );
 }
@@ -153,6 +171,7 @@ export function App() {
   const onProfileAction = (action) => {
     if (action === "notetaker") go("notetaker");
     else if (action === "files") go("files");
+    else if (action === "plans") go("plans");
     else if (action === "tweaks") setTweaksOpen(true);
     else if (action === "onboarding") setFlow({ name: "onboarding", firstRun: false });
     else if (action === "restart") restartDemo();
@@ -163,10 +182,12 @@ export function App() {
     <div className="app">
       <SideNav route={route} go={go} openList={openList} openChat={openChat} themeResolved={themeResolved} toggleTheme={toggleTheme} profile={profile} on={onProfileAction} />
       <main className="main">
+        <TrialBanner route={route} onUpgrade={() => go("plans")} />
         {route.name === "home" && <HomeScreen agents={AGENTS} connectors={connectors} openChat={openChat} openList={openList} onNav={go} />}
         {route.name === "connectors" && <ConnectorsScreen connectors={connectors} onToast={showToast} />}
         {route.name === "notetaker" && <NotetakerScreen onToast={showToast} />}
         {route.name === "files" && <FilesScreen onNewChat={openChat} />}
+        {route.name === "plans" && <PlansScreen onToast={showToast} />}
         {route.name === "list" && <EntityList key={route.type} type={route.type} onOpen={openRecord} onChat={(recs) => openChat(recs || [])} onToast={showToast} onRefresh={refresh} />}
         {route.name === "detail" && <EntityDetail key={route.record.id} record={route.record} onOpen={openRecord} onChat={(r) => openChat([r])} onBack={() => openList(route.record.type)} />}
         {route.name === "chat" && <ChatScreen key={chatKey} seedAttached={chatSeed} resume={chatResume} onBack={() => go("home")} onOpenRecord={openRecord} onToast={showToast} onOpenConversation={openConversation} onNewChat={() => openChat([])} />}
