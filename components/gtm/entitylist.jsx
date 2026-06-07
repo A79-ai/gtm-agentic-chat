@@ -294,13 +294,14 @@ function MobileCard({ rec, selected, selecting, onToggle, onOpen }) {
   );
 }
 
-function SelectionBar({ count, plural, actions, pending, onAction, onChat, onClear }) {
+function SelectionBar({ count, label, plural, actions, pending, onAction, onChat, onClear }) {
+  const noun = (count === 1 ? label : plural).toLowerCase();
   return (
     <div className="sel-bar">
       <button className="sel-clear" onClick={onClear} title="Clear selection"><Icons.X size={15} /></button>
       <span className="sel-count">{pending ? "Working…" : `${count} selected`}</span>
       <div className="sel-divider" />
-      <button className="sel-act primary" disabled={pending} onClick={onChat}><Icons.Spark size={14} /> Chat with {count} {plural.toLowerCase()}</button>
+      <button className="sel-act primary" disabled={pending} onClick={onChat}><Icons.Spark size={14} /> Chat with {count} {noun}</button>
       {actions.map((a) => (
         <button key={a.id} className="sel-act" disabled={pending} onClick={() => onAction(a)}>
           {React.createElement(Icons[a.icon] || Icons.Activity, { size: 14 })} {a.label}
@@ -496,7 +497,7 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
       </div>
 
       {selCount > 0 && (
-        <SelectionBar count={selCount} plural={meta.plural} actions={BULK_ACTIONS[type] || []} pending={pending} onAction={bulkAction} onChat={bulkChat} onClear={() => { setSel(new Set()); setPicker(null); }} />
+        <SelectionBar count={selCount} label={meta.label} plural={meta.plural} actions={BULK_ACTIONS[type] || []} pending={pending} onAction={bulkAction} onChat={bulkChat} onClear={() => { setSel(new Set()); setPicker(null); }} />
       )}
       {picker && (
         <ValuePicker title={picker.action.label} options={picker.options} onPick={(v) => runBulk(picker.action, v)} onClose={() => setPicker(null)} />

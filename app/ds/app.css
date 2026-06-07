@@ -438,14 +438,17 @@ body {
 .ecard.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 
 /* floating selection / bulk-action bar */
-.sel-bar { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 80; display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--fg-primary); color: var(--bg-surface); border-radius: var(--radius-full); box-shadow: var(--shadow-xl); animation: fadeUp .2s ease both; max-width: calc(100vw - 32px); flex-wrap: wrap; }
-.sel-clear { width: 30px; height: 30px; border-radius: 50%; border: none; background: transparent; color: rgba(255,255,255,.7); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.sel-clear:hover { background: rgba(255,255,255,.14); color: #fff; }
-.sel-count { font-size: 13px; font-weight: 600; padding: 0 2px; white-space: nowrap; }
-.sel-divider { width: 1px; height: 20px; background: rgba(255,255,255,.2); margin: 0 2px; }
-.sel-act { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 13px; border-radius: var(--radius-full); border: none; background: rgba(255,255,255,.12); color: var(--bg-surface); font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-sans); white-space: nowrap; }
-.sel-act:hover { background: rgba(255,255,255,.22); }
+/* Always a dark floating bar (matches the rail) so it reads the same in both themes. */
+.sel-bar { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 80; display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: var(--n-900); color: var(--n-050); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius-full); box-shadow: var(--shadow-xl); animation: fadeUp .2s ease both; max-width: calc(100vw - 32px); flex-wrap: wrap; }
+.sel-clear { width: 30px; height: 30px; border-radius: 50%; border: none; background: transparent; color: rgba(255,255,255,.6); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.sel-clear:hover { background: rgba(255,255,255,.12); color: #fff; }
+.sel-count { font-size: 13px; font-weight: 600; padding: 0 4px 0 2px; white-space: nowrap; color: rgba(255,255,255,.92); }
+.sel-divider { width: 1px; height: 20px; background: rgba(255,255,255,.16); margin: 0 2px; }
+.sel-act { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 13px; border-radius: var(--radius-full); border: 1px solid transparent; background: rgba(255,255,255,.1); color: rgba(255,255,255,.92); font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-sans); white-space: nowrap; }
+.sel-act:hover { background: rgba(255,255,255,.18); }
+.sel-act .lucide, .sel-act svg { color: rgba(255,255,255,.6); }
 .sel-act.primary { background: var(--accent); color: #1a1200; }
+.sel-act.primary .lucide, .sel-act.primary svg { color: #1a1200; }
 .sel-act.primary:hover { background: var(--accent-strong); }
 
 /* columns customization menu */
