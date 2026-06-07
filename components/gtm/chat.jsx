@@ -348,11 +348,32 @@ export function ChatScreen({ seedAttached, resume, onBack, onOpenRecord, onToast
   const busy = turnBusy;
   useEffect(() => {
     if (!turnBusy) return;
+    if (status === "error") { setTurnBusy(false); return; } // failed turn: unblock the composer
     const last = messages[messages.length - 1];
-    if (!last || last.role !== "assistant") return; // still awaiting first assistant token
+    if (!last || last.role !== "assistant") return; // still awaiting the first assistant token
+    // A tool call has a silent gap (no chunks) while it runs, which looks like
+    // the turn finished. Don't settle until every tool part on the last message
+    // has resolved (same "done" signal TraceRow uses).
+    const toolPending = (last.parts || []).some(
+      (p) => typeof p.type === "string" && p.type.startsWith("tool-") &&
+        p.state !== "output-available" && p.state !== "output-error",
+    );
+    if (toolPending) return;
     const t = setTimeout(() => setTurnBusy(false), 1100);
     return () => clearTimeout(t);
-  }, [messages, turnBusy]);
+  }, [messages, turnBusy, status]);
+  // Re-engage if the agent fires another tool after appearing to settle (a
+  // multi-step turn that narrates between tool calls): an actively-running tool
+  // on the last message always means the turn isn't done.
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== "assistant") return;
+    const toolRunning = (last.parts || []).some(
+      (p) => typeof p.type === "string" && p.type.startsWith("tool-") &&
+        p.state !== "output-available" && p.state !== "output-error",
+    );
+    if (toolRunning) setTurnBusy(true);
+  }, [messages]);
   const scrollRef = useRef(null);
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages]);
 
