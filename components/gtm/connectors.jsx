@@ -56,13 +56,13 @@ function ConnectorCard({ c, onConnect, onContact, onManage }) {
 function ConnectModal({ connector, amp, mode = "connect", onClose, onToast }) {
   return (
     <div className="sheet-backdrop" style={{ alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div className="card" style={{ width: "min(520px, 92vw)", maxHeight: "86vh", overflow: "auto", padding: 0 }} onClick={(e) => e.stopPropagation()}>
+      <div className="card" style={{ width: mode === "manage" ? "min(880px, 94vw)" : "min(560px, 92vw)", maxHeight: "90vh", display: "flex", flexDirection: "column", padding: 0 }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
           <ConnLogo logo={connector.logo} size={32} />
           <div style={{ flex: 1, fontWeight: 600, color: "var(--fg-primary)" }}>{mode === "manage" ? "Manage" : "Connect"} {connector.name}</div>
           <button className="icon-btn" onClick={onClose}><Icons.X size={18} /></button>
         </div>
-        <div style={{ padding: 16 }}>
+        <div style={{ padding: 16, flex: 1, overflow: "auto" }}>
           <Suspense fallback={<div style={{ padding: 24, textAlign: "center", color: "var(--fg-muted)" }}>Loading…</div>}>
             <AmpersandConnect
               integration={connector.ampersandName || connector.provider || connector.id}
