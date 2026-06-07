@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Geist } from "next/font/google";
-import { cn } from "@/lib/utils";
-import { TooltipProvider } from "@/components/ui/tooltip";
-
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "GTM Agentic Chat",
+  title: "AmpUp · GTM Agent",
   description: "Chat over your CRM, meetings, and knowledge base.",
 };
+
+// Set theme/accent/density before paint to avoid a flash.
+const themeScript = `(function(){try{
+  var pref = localStorage.getItem('ampup-theme') || 'dark';
+  var sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  document.documentElement.dataset.theme = pref === 'system' ? sys : pref;
+  document.documentElement.dataset.accent = localStorage.getItem('ampup-accent') || 'gold';
+  document.documentElement.dataset.density = localStorage.getItem('ampup-density') || 'comfortable';
+}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -17,10 +21,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={cn("dark font-sans", geist.variable)}>
-      <body>
-        <TooltipProvider>{children}</TooltipProvider>
-      </body>
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        />
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }

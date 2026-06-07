@@ -1,0 +1,250 @@
+/* ============================================================================
+   AmpUp Design System — Colors, Typography & Base Styles
+   v1.1 — April 2026
+   N-scale neutrals · G-scale Signal Gold · Electric Teal · Mint
+   ============================================================================ */
+
+/* ---------- DESIGN TOKENS ---------- */
+:root {
+  /* ---- Font families (v1.1) ---- */
+  --font-hero:    "PT Serif", Georgia, serif;
+  --font-sans:    "DM Sans", "NeuMontreal", system-ui, -apple-system, sans-serif;
+  --font-display: "PT Serif", Georgia, serif;
+  --font-mono:    "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ============================================================
+     FOUNDATION — Neutral N-scale (warm undertone, no cool blue)
+     ============================================================ */
+  --n-000: #FFFFFF;  /* White — light card surface */
+  --n-050: #FDFCF7;  /* Warm White — light page bg */
+  --n-100: #E4E3DE;  /* Ash — headings on dark / subtle dividers light */
+  --n-150: #C9C8C4;  /* Stone — input borders / strong borders light */
+  --n-200: #B1B0AD;  /* Slate — body text on dark */
+  --n-400: #7F7E7C;  /* Flint — muted/secondary text (both modes) */
+  --n-600: #4C4C4A;  /* Iron — strong borders dark */
+  --n-700: #333231;  /* Basalt — subtle dividers / secondary text light */
+  --n-800: #232323;  /* Obsidian — card surface dark */
+  --n-900: #191919;  /* Void — page background dark */
+
+  /* ============================================================
+     PRIMARY — Signal Gold G-scale (~5% of screen, intentional)
+     ============================================================ */
+  --g-100: #FFF4D6;  /* Highlight — badge bg, subtle gold tints */
+  --g-300: #FFD166;  /* Soft Gold — dark mode stroke / rail active text */
+  --g-500: #FFB712;  /* BRAND GOLD — primary CTA, star, "Up" in logo */
+  --g-700: #CC8A00;  /* Dark Gold — light mode stroke, pressed states */
+  --g-900: #7A5200;  /* Deep Amber — label text on gold backgrounds */
+  --g-glow: rgba(255, 183, 18, 0.12);
+
+  /* ============================================================
+     SECONDARY — Electric Teal
+     ============================================================ */
+  --teal-bright:   #6EE5F0;
+  --teal-vibrant:  #4DD9E8;
+  --teal-base:     #2BB8C9;
+  --teal-muted:    #1E8A98;
+  --teal-deep:     #145A65;
+  --teal-deepest:  #0A2D33;
+  --teal-glow:        rgba(77, 217, 232, 0.40);
+  --teal-glow-subtle: rgba(77, 217, 232, 0.15);
+
+  /* ============================================================
+     TERTIARY — Mint (positive signals, win rates, success)
+     ============================================================ */
+  --mint-bright:   #7FF5CA;
+  --mint-vibrant:  #5EEDB8;
+  --mint-base:     #3DD9A0;
+  --mint-muted:    #28B07E;
+  --mint-deep:     #1A7A58;
+  --mint-deepest:  #0D3D2C;
+  --mint-glow:        rgba(94, 237, 184, 0.40);
+  --mint-glow-subtle: rgba(94, 237, 184, 0.15);
+
+  /* ============================================================
+     SEMANTIC — Light Mode (Warm Cream) — DEFAULT
+     ============================================================ */
+  --bg-page:        var(--n-050);  /* Warm White page background */
+  --bg-surface:     var(--n-000);  /* card / surface */
+  --bg-card:        var(--n-000);
+  --bg-elevated:    var(--n-000);  /* dialogs, popovers */
+  --bg-muted:       var(--n-050);
+  --bg-inverse:     var(--n-900);
+
+  --fg-primary:     var(--n-900);  /* headings + body */
+  --fg-body:        var(--n-700);  /* body */
+  --fg-secondary:   var(--n-700);
+  --fg-muted:       var(--n-400);  /* muted text */
+  --fg-subtle:      var(--n-400);
+  --fg-inverse:     var(--n-100);
+  --fg-emphasis:    var(--g-700);  /* gold emphasis on light */
+  --fg-success:     var(--mint-deep);
+  --fg-info:        var(--teal-deep);
+  --fg-danger:      #BE123C;       /* destructive — preserved */
+
+  --border-default: var(--n-150);  /* Stone — input/strong border light */
+  --border-subtle:  var(--n-100);  /* Ash — subtle divider light */
+  --border-strong:  var(--n-700);
+  --border-focus:   var(--g-500);
+
+  /* ============================================================
+     LEFT NAV RAIL — always dark regardless of mode
+     ============================================================ */
+  --rail-bg:           var(--n-900);
+  --rail-elevated:     var(--n-800);
+  --rail-border:       var(--n-700);
+  --rail-text:         var(--n-100);
+  --rail-text-muted:   rgba(177, 176, 173, 0.70);
+  --rail-text-dim:     rgba(177, 176, 173, 0.35);
+  --rail-active-border:#FFB712;       /* G-500 */
+  --rail-active-label: #FFD166;       /* G-300 */
+  --rail-active-glow:  rgba(255, 183, 18, 0.12);
+
+  /* ---- Radii ---- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-4xl: 24px;
+  --radius-full: 9999px;
+
+  /* ---- Shadows ---- */
+  --shadow-xs: 0 1px 2px rgba(10,13,18,0.05);
+  --shadow-sm: 0 1px 3px rgba(10,13,18,0.08), 0 1px 2px rgba(10,13,18,0.04);
+  --shadow-md: 0 4px 8px -2px rgba(10,13,18,0.08), 0 2px 4px -2px rgba(10,13,18,0.04);
+  --shadow-lg: 0 12px 16px -4px rgba(10,13,18,0.08), 0 4px 6px -2px rgba(10,13,18,0.03);
+  --shadow-xl: 0 20px 24px -4px rgba(10,13,18,0.08), 0 8px 8px -4px rgba(10,13,18,0.03), 0 3px 3px -1.5px rgba(10,13,18,0.04);
+
+  /* ---- Spacing ---- */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px; --space-20: 80px;
+
+  /* ---- Type scale ---- */
+  --text-xs: 12px; --text-sm: 14px; --text-base: 16px; --text-lg: 18px;
+  --text-xl: 20px; --text-2xl: 24px; --text-3xl: 30px; --text-4xl: 36px;
+  --text-5xl: 48px; --text-6xl: 60px; --text-7xl: 72px;
+
+  --leading-tight:   1.1;
+  --leading-snug:    1.2;
+  --leading-normal:  1.4;
+  --leading-relaxed: 1.6;
+
+  --tracking-tight:  -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.04em;
+
+  /* ---- Motion ---- */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1); /* @kind other */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --dur-fast: 120ms; /* @kind other */
+  --dur-med: 200ms; /* @kind other */
+  --dur-slow: 300ms; /* @kind other */
+}
+
+/* ============================================================
+   DARK MODE — Warm Charcoal (primary/default experience)
+   ============================================================ */
+.dark, [data-theme="dark"] {
+  --bg-page:     var(--n-900);  /* Void */
+  --bg-surface:  var(--n-800);  /* Obsidian */
+  --bg-card:     var(--n-800);
+  --bg-elevated: var(--n-800);
+  --bg-muted:    var(--n-800);
+
+  --fg-primary:   var(--n-100);  /* Ash — headings + body */
+  --fg-body:      var(--n-200);  /* Slate */
+  --fg-secondary: var(--n-200);
+  --fg-muted:     var(--n-400);  /* Flint */
+  --fg-subtle:    var(--n-400);
+  --fg-inverse:   var(--n-900);
+  --fg-emphasis:  var(--g-300);  /* Soft Gold on dark */
+
+  --border-default: var(--n-600);  /* Iron */
+  --border-subtle:  var(--n-700);  /* Basalt */
+  --border-strong:  var(--n-100);
+}
+
+/* ---------- BASE TYPOGRAPHY ---------- */
+html, body {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--fg-body);
+  background: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* H1 / H2 — PT Serif */
+h1, .h1 {
+  font-family: var(--font-hero);
+  font-size: var(--text-6xl);   /* 60px (range 48-72) */
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  color: var(--fg-primary);
+  margin: 0;
+}
+h2, .h2 {
+  font-family: var(--font-hero);
+  font-size: var(--text-4xl);   /* 36px (range 32-40) */
+  font-weight: 700;
+  line-height: var(--leading-snug);
+  color: var(--fg-primary);
+  margin: 0;
+}
+
+/* H3 and below — Neue Montreal / DM Sans */
+h3, .h3 {
+  font-family: var(--font-sans);
+  font-size: var(--text-2xl);   /* 24px (range 24-28) */
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--fg-primary);
+  margin: 0;
+}
+h4, .h4 {
+  font-family: var(--font-sans);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--fg-primary);
+  margin: 0;
+}
+h5, .h5 {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  color: var(--fg-primary);
+  margin: 0;
+}
+h6, .h6 {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--fg-primary);
+  margin: 0;
+}
+
+p, .body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--fg-body);
+}
+.body-sm { font-size: var(--text-sm); line-height: var(--leading-normal); }
+.caption { font-family: var(--font-sans); font-size: 13px; color: var(--fg-muted); line-height: var(--leading-normal); }
+.overline { font-family: var(--font-sans); font-size: 11px; font-weight: 600; letter-spacing: var(--tracking-wide); text-transform: uppercase; color: var(--fg-muted); }
+.mono { font-family: var(--font-mono); font-size: var(--text-sm); }
+
+::placeholder { color: var(--fg-muted); }
+
+a {
+  color: var(--fg-emphasis);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+a:hover { text-decoration: underline; }
