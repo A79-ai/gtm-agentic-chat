@@ -122,6 +122,42 @@ export function addUpload(file) {
   return list;
 }
 
+// ---- Chat history (session-scoped; the durable run holds the server-side
+// transcript, but listing/reopening past chats is a per-browser concern, so we
+// persist the full client message array locally and rehydrate on reopen). ----
+const CONVOS_KEY = "ampup-conversations";
+const CONVOS_MAX = 50;
+const partsText = (m) => (m.parts || []).filter((p) => p.type === "text").map((p) => p.text).join("").trim();
+
+export function listConversations() {
+  try {
+    const v = JSON.parse(localStorage.getItem(CONVOS_KEY) || "[]");
+    return Array.isArray(v) ? v.slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)) : [];
+  } catch { return []; }
+}
+export function getConversation(id) {
+  return listConversations().find((c) => c.id === id) || null;
+}
+export function saveConversation({ id, runId, messages }) {
+  if (!id || !Array.isArray(messages) || messages.length === 0) return;
+  const firstUser = messages.find((m) => m.role === "user");
+  const last = messages[messages.length - 1];
+  const title = (firstUser ? partsText(firstUser) : "New chat").slice(0, 80) || "New chat";
+  const preview = (last ? partsText(last) : "").slice(0, 120);
+  let list;
+  try { list = listConversations().filter((c) => c.id !== id); } catch { list = []; }
+  list.unshift({ id, runId, title, preview, messageCount: messages.length, updatedAt: Date.now(), messages });
+  try { localStorage.setItem(CONVOS_KEY, JSON.stringify(list.slice(0, CONVOS_MAX))); }
+  catch {
+    // Likely quota: drop the heavy message bodies from older entries and retry once.
+    const trimmed = list.slice(0, CONVOS_MAX).map((c, i) => (i === 0 ? c : { ...c, messages: [] }));
+    try { localStorage.setItem(CONVOS_KEY, JSON.stringify(trimmed)); } catch {}
+  }
+}
+export function deleteConversation(id) {
+  try { localStorage.setItem(CONVOS_KEY, JSON.stringify(listConversations().filter((c) => c.id !== id))); } catch {}
+}
+
 export const recordsOf = (type) => STORE[type] || [];
 export const byId = (id) => ALL.find((r) => r.id === id);
 export const titleOf = (r) => r.name;

@@ -170,6 +170,29 @@ body {
 }
 .ctx-scroll { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
 
+/* public read-only shared conversation */
+.share-page { height: 100vh; display: flex; flex-direction: column; background: var(--bg-page); }
+.share-bar { display: flex; align-items: center; gap: 12px; padding: 12px var(--pad); border-bottom: 1px solid var(--border-subtle); background: var(--bg-surface); min-height: 60px; }
+.share-brand { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.share-logo { width: 34px; height: 34px; border-radius: 9px; background: var(--bg-muted); border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center; color: var(--fg-primary); flex-shrink: 0; }
+.share-title { font-weight: 600; font-size: 15px; color: var(--fg-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.share-sub { font-size: 12px; color: var(--fg-muted); display: flex; align-items: center; gap: 5px; }
+.share-scroll { flex: 1; padding: 24px var(--pad) 32px; }
+.share-empty { text-align: center; color: var(--fg-muted); padding: 64px 16px; font-size: 14px; }
+.share-foot { text-align: center; font-size: 11.5px; color: var(--fg-muted); margin-top: 18px; }
+
+/* chat history slide-over (left) */
+.hist-drawer { width: min(360px, 90vw); height: 100%; background: var(--bg-surface); border-right: 1px solid var(--border-subtle); display: flex; flex-direction: column; box-shadow: var(--shadow-xl); animation: slideInLeft var(--dur-med) var(--ease-out); }
+@keyframes slideInLeft { from { transform: translateX(-100%); } to { transform: none; } }
+.hist-item { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: var(--radius-md); cursor: pointer; }
+.hist-item:hover { background: var(--bg-muted); }
+.hist-item.active { background: var(--accent-soft); }
+.hist-title { font-size: 13.5px; font-weight: 600; color: var(--fg-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hist-preview { font-size: 12px; color: var(--fg-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.hist-meta { font-size: 11px; color: var(--fg-muted); margin-top: 4px; }
+.hist-del { width: 26px; height: 26px; opacity: 0; flex-shrink: 0; }
+.hist-item:hover .hist-del { opacity: 1; }
+
 /* message bubbles */
 .msg-row { display: flex; margin-bottom: 16px; }
 .msg-user { justify-content: flex-end; }
@@ -216,6 +239,15 @@ body {
 /* mobile context sheet toggle */
 .ctx-toggle { display: none; }
 .ctx-close { display: none; }
+
+/* desktop: collapse/expand the context panel to give the chat full width */
+.ctx-collapse-btn { display: inline-flex; }
+@media (min-width: 901px) {
+  .ctx-panel.collapsed { display: none; }
+}
+@media (max-width: 900px) {
+  .ctx-collapse-btn { display: none; }
+}
 
 /* ============================================================
    Tweaks panel

@@ -96,6 +96,8 @@ export function App() {
   const themeResolved = t.themePref === "system" ? systemTheme() : t.themePref;
   const [route, setRoute] = useState({ name: "home" });
   const [chatSeed, setChatSeed] = useState([]);
+  const [chatResume, setChatResume] = useState(null);
+  const [chatKey, setChatKey] = useState(0);
   const [connectors, setConnectors] = useState([]);
   useEffect(() => { setConnectors(getConnectors()); }, [ready]);
   const [tweaksOpen, setTweaksOpen] = useState(false);
@@ -113,7 +115,8 @@ export function App() {
   const go = (name) => setRoute({ name });
   const openList = (type) => setRoute({ name: "list", type });
   const openRecord = (record) => setRoute({ name: "detail", record });
-  const openChat = (seed) => { setChatSeed((seed || []).filter(Boolean)); setRoute({ name: "chat" }); };
+  const openChat = (seed) => { setChatSeed((seed || []).filter(Boolean)); setChatResume(null); setChatKey((k) => k + 1); setRoute({ name: "chat" }); };
+  const openConversation = (conv) => { setChatSeed([]); setChatResume(conv); setChatKey((k) => k + 1); setRoute({ name: "chat" }); };
 
   const restartDemo = () => {
     ["onboarded", "profile"].forEach((k) => { try { localStorage.removeItem("ampup-" + k); } catch {} });
@@ -147,7 +150,7 @@ export function App() {
         {route.name === "files" && <FilesScreen onNewChat={openChat} />}
         {route.name === "list" && <EntityList key={route.type} type={route.type} onOpen={openRecord} onChat={(recs) => openChat(recs || [])} onToast={showToast} onRefresh={refresh} />}
         {route.name === "detail" && <EntityDetail key={route.record.id} record={route.record} onOpen={openRecord} onChat={(r) => openChat([r])} onBack={() => openList(route.record.type)} />}
-        {route.name === "chat" && <ChatScreen key={chatSeed.map((r) => r.id).join(",")} seedAttached={chatSeed} onBack={() => go("home")} onOpenRecord={openRecord} onToast={showToast} />}
+        {route.name === "chat" && <ChatScreen key={chatKey} seedAttached={chatSeed} resume={chatResume} onBack={() => go("home")} onOpenRecord={openRecord} onToast={showToast} onOpenConversation={openConversation} onNewChat={() => openChat([])} />}
       </main>
       <BottomNav route={route} go={go} openChat={openChat} onRecords={() => setSheet(true)} onProfile={() => setTweaksOpen((v) => !v)} />
       {sheet && <RecordsSheet openList={openList} onClose={() => setSheet(false)} />}

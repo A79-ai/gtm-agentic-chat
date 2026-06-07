@@ -4,7 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Icons, LogoMark } from "./icons";
 import { EntityIcon, RefChip } from "./ui";
-import { ENTITIES, FIELDS, SUGGESTIONS, byId, related, subtitleOf, addUpload } from "@/lib/gtm/data";
+import { ENTITIES, FIELDS, SUGGESTIONS, byId, related, subtitleOf, addUpload, listConversations, saveConversation, deleteConversation } from "@/lib/gtm/data";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { LoadingIndicator } from "./LoadingIndicator";
 
@@ -23,11 +23,11 @@ function TraceRow({ part }) {
   );
 }
 
-function AgentMessage({ msg, status, isLast, onToast, onRegenerate }) {
+function AgentMessage({ msg, turnBusy, isLast, onToast, onRegenerate }) {
   const tools = (msg.parts || []).filter((p) => typeof p.type === "string" && p.type.startsWith("tool-"));
   const text = textOf(msg);
-  const writing = isLast && status === "streaming";
-  const settled = !isLast || status === "ready";
+  const writing = isLast && turnBusy;
+  const settled = !isLast || !turnBusy;
   return (
     <div className="msg-row msg-agent">
       <div className="msg-avatar" style={{ color: "var(--fg-primary)" }}><LogoMark size={17} /></div>
@@ -39,15 +39,13 @@ function AgentMessage({ msg, status, isLast, onToast, onRegenerate }) {
             {writing && <span className="caret" />}
           </div>
         )}
-        {!text && isLast && status !== "ready" && (
+        {!text && isLast && turnBusy && (
           <div style={{ marginTop: tools.length ? 8 : 0 }}><LoadingIndicator /></div>
         )}
         {settled && text && (
           <div style={{ display: "flex", gap: 6, marginTop: 14, flexWrap: "wrap" }}>
             <button className="icon-btn" title="Copy" onClick={() => { navigator.clipboard?.writeText(text); onToast("Copied to clipboard", "success"); }}><Icons.Copy size={15} /></button>
             <button className="icon-btn" title="Regenerate" onClick={onRegenerate}><Icons.Refresh size={15} /></button>
-            <button className="btn btn-sm btn-ghost" onClick={() => onToast("Saved to activity & CRM", "success")}><Icons.Save size={14} /> Save to CRM</button>
-            <button className="btn btn-sm btn-ghost" onClick={() => onToast("Drafting an agent from this chat…", "success")}><Icons.Spark size={14} /> Turn into agent</button>
           </div>
         )}
       </div>
@@ -214,11 +212,11 @@ function ContextCard({ rec, onOpenRecord, onRemove }) {
   );
 }
 
-function ContextPanel({ attached, onOpenRecord, onAttach, onRemove, open, onClose }) {
+function ContextPanel({ attached, onOpenRecord, onAttach, onRemove, open, onClose, collapsed }) {
   return (
     <>
       <div className={"ctx-backdrop" + (open ? " open" : "")} onClick={onClose} />
-      <aside className={"ctx-panel" + (open ? " open" : "")}>
+      <aside className={"ctx-panel" + (open ? " open" : "") + (collapsed ? " collapsed" : "")}>
         <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", gap: 10 }}>
           <Icons.Layers size={17} style={{ color: "var(--fg-muted)" }} />
           <div style={{ flex: 1 }}>
@@ -256,14 +254,63 @@ function contextPreamble(records, files = []) {
   return blocks.join("\n\n");
 }
 
-export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
-  const conversationId = useMemo(() => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `c-${Date.now()}`), []);
-  const runIdRef = useRef(undefined);
+function timeAgo(ts) {
+  if (!ts) return "";
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return "just now";
+  const m = Math.floor(s / 60); if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24); return d === 1 ? "yesterday" : `${d}d ago`;
+}
+
+// Left slide-over listing past conversations; reopening rehydrates the full
+// transcript from localStorage (see saveConversation in lib/gtm/data).
+function HistoryDrawer({ open, onClose, onSelect, activeId }) {
+  const [items, setItems] = useState([]);
+  useEffect(() => { if (open) setItems(listConversations()); }, [open]);
+  if (!open) return null;
+  const remove = (e, id) => { e.stopPropagation(); deleteConversation(id); setItems(listConversations()); };
+  return (
+    <div className="sheet-backdrop" style={{ justifyContent: "flex-start", zIndex: 96 }} onClick={onClose}>
+      <aside className="hist-drawer" onClick={(e) => e.stopPropagation()}>
+        <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", gap: 10 }}>
+          <Icons.History size={17} style={{ color: "var(--fg-muted)" }} />
+          <div style={{ flex: 1, fontWeight: 600, fontSize: 15, color: "var(--fg-primary)" }}>Chat history</div>
+          <button className="icon-btn" onClick={onClose}><Icons.X size={18} /></button>
+        </div>
+        <div className="scroll" style={{ flex: 1, padding: 8 }}>
+          {items.length === 0 ? (
+            <div style={{ textAlign: "center", color: "var(--fg-muted)", padding: "40px 16px" }}>
+              <Icons.Chat size={26} style={{ marginBottom: 10 }} />
+              <div style={{ fontSize: 13.5 }}>No past chats yet. Your conversations will appear here.</div>
+            </div>
+          ) : items.map((c) => (
+            <div key={c.id} className={"hist-item" + (c.id === activeId ? " active" : "")} onClick={() => onSelect(c)}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div className="hist-title">{c.title}</div>
+                {c.preview && <div className="hist-preview">{c.preview}</div>}
+                <div className="hist-meta">{timeAgo(c.updatedAt)} · {c.messageCount} message{c.messageCount === 1 ? "" : "s"}</div>
+              </div>
+              <button className="icon-btn hist-del" title="Delete" onClick={(e) => remove(e, c.id)}><Icons.X size={15} /></button>
+            </div>
+          ))}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+export function ChatScreen({ seedAttached, resume, onBack, onOpenRecord, onToast, onOpenConversation, onNewChat }) {
+  const conversationId = useMemo(() => resume?.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `c-${Date.now()}`), []);
+  const runIdRef = useRef(resume?.runId);
+  const [histOpen, setHistOpen] = useState(false);
   const [attached, setAttached] = useState(() => (seedAttached || []).filter(Boolean));
   const [files, setFiles] = useState([]); // { datasourceId, fileName, status }
   const [uploading, setUploading] = useState(false);
   const [ctxOpen, setCtxOpen] = useState(false);
+  const [ctxCollapsed, setCtxCollapsed] = useState(() => { try { return localStorage.getItem("ampup-ctx-collapsed") === "1"; } catch { return false; } });
   const [pickerOpen, setPickerOpen] = useState(false);
+  const toggleCollapse = () => setCtxCollapsed((v) => { const n = !v; try { localStorage.setItem("ampup-ctx-collapsed", n ? "1" : "0"); } catch {} return n; });
   const attachedRef = useRef(attached);
   attachedRef.current = attached;
   const filesRef = useRef(files);
@@ -292,15 +339,41 @@ export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
   );
 
   const { messages, sendMessage, status, setMessages, regenerate } = useChat({ transport });
-  const busy = status === "submitted" || status === "streaming";
+  // The durable run keeps its stream open across turns (preventClose), so the
+  // transport `status` never settles back to "ready" — it stays "streaming"
+  // forever, which would leave the composer disabled and block every follow-up.
+  // Derive turn-completion from message stability instead: a turn is busy from
+  // send until the assistant's deltas stop arriving.
+  const [turnBusy, setTurnBusy] = useState(false);
+  const busy = turnBusy;
+  useEffect(() => {
+    if (!turnBusy) return;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== "assistant") return; // still awaiting first assistant token
+    const t = setTimeout(() => setTurnBusy(false), 1100);
+    return () => clearTimeout(t);
+  }, [messages, turnBusy]);
   const scrollRef = useRef(null);
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages]);
+
+  // Rehydrate a reopened conversation's transcript once on mount.
+  useEffect(() => { if (resume?.messages?.length) setMessages(resume.messages); }, []);
+  // Persist the transcript locally so it shows in History. The durable run keeps
+  // its stream open across turns (preventClose), so `status` never settles to
+  // "ready" — instead debounce on message stability: once deltas stop arriving,
+  // save the final transcript.
+  useEffect(() => {
+    if (!messages.some((m) => m.role === "user")) return;
+    const t = setTimeout(() => saveConversation({ id: conversationId, runId: runIdRef.current, messages }), 900);
+    return () => clearTimeout(t);
+  }, [messages, conversationId]);
 
   const addRec = (r) => setAttached((a) => (a.some((x) => x.id === r.id) ? a : [...a, r]));
   const removeRec = (r) => setAttached((a) => a.filter((x) => x.id !== r.id));
   const removeFile = (f) => setFiles((fs) => fs.filter((x) => x.datasourceId !== f.datasourceId));
-  const clear = () => { runIdRef.current = undefined; setMessages([]); };
-  const send = (t) => sendMessage({ text: t });
+  const clear = () => { runIdRef.current = undefined; setMessages([]); setTurnBusy(false); };
+  const send = (t) => { setTurnBusy(true); sendMessage({ text: t }); };
+  const doRegenerate = () => { setTurnBusy(true); regenerate(); };
 
   // Read a file as base64 and upload it; link to an attached deal/account.
   const uploadFile = async (file) => {
@@ -334,6 +407,31 @@ export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
     setUploading(false);
   };
 
+  // Build a redacted projection (user + final assistant text, no tool trace) and
+  // persist it server-side; the returned id is a public, read-only share link.
+  const shareChat = async () => {
+    const projection = messages
+      .map((m) => ({ role: m.role, text: textOf(m).trim() }))
+      .filter((m) => (m.role === "user" || m.role === "assistant") && m.text);
+    if (projection.length === 0) { onToast("Nothing to share yet — send a message first", "info"); return; }
+    try {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript: { title, messages: projection } }),
+      }).then((r) => r.json());
+      if (res.id) {
+        const url = `${window.location.origin}/?share=${res.id}`;
+        try { await navigator.clipboard?.writeText(url); } catch {}
+        onToast("Public read-only link copied to clipboard", "success");
+      } else {
+        onToast(res.error ? `Share failed: ${res.error}` : "Could not create share link", "error");
+      }
+    } catch {
+      onToast("Could not create share link", "error");
+    }
+  };
+
   const subjectType = attached[0] ? attached[0].type : "none";
   const suggestions = SUGGESTIONS[subjectType] || SUGGESTIONS.none;
   const title = attached.length === 1 ? attached[0].name : attached.length > 1 ? `${attached.length} records` : "your pipeline";
@@ -350,10 +448,11 @@ export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
             <div style={{ fontWeight: 600, fontSize: 15, color: "var(--fg-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Chat with {title}</div>
             <div style={{ fontSize: 12, color: "var(--fg-muted)" }}>{attached.length ? `${attached.length} attached` : "No records attached"} · grounded in your CRM</div>
           </div>
-          <button className="btn btn-sm btn-ghost hide-mobile" onClick={() => onToast("Chat history", "info")}><Icons.History size={14} /> History</button>
-          <button className="btn btn-sm btn-ghost hide-mobile" onClick={clear}><Icons.Chat size={14} /> New chat</button>
+          <button className="btn btn-sm btn-ghost hide-mobile" onClick={() => setHistOpen(true)}><Icons.History size={14} /> History</button>
+          <button className="btn btn-sm btn-ghost hide-mobile" onClick={() => (onNewChat ? onNewChat() : clear())}><Icons.Chat size={14} /> New chat</button>
           <button className="btn btn-sm btn-outline ctx-toggle" onClick={() => setCtxOpen(true)}><Icons.Panel size={14} /> Context</button>
-          <button className="btn btn-sm btn-outline hide-mobile" onClick={() => onToast("Share this chat", "info")}><Icons.Share size={14} /> Share</button>
+          <button className="btn btn-sm btn-outline ctx-collapse-btn" title={ctxCollapsed ? "Show context panel" : "Hide context panel"} onClick={toggleCollapse}><Icons.Panel size={14} /> {ctxCollapsed ? "Show panel" : "Hide panel"}</button>
+          <button className="btn btn-sm btn-outline hide-mobile" onClick={shareChat}><Icons.Share size={14} /> Share</button>
         </div>
 
         <div ref={scrollRef} className="scroll chat-scroll">
@@ -371,7 +470,7 @@ export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
             ) : messages.map((m) =>
               m.role === "user"
                 ? <div key={m.id} className="msg-row msg-user"><div className="bubble">{textOf(m)}</div></div>
-                : <AgentMessage key={m.id} msg={m} status={status} isLast={m.id === lastId} onToast={onToast} onRegenerate={() => regenerate()} />,
+                : <AgentMessage key={m.id} msg={m} turnBusy={busy} isLast={m.id === lastId} onToast={onToast} onRegenerate={doRegenerate} />,
             )}
             {busy && messages.length > 0 && messages[messages.length - 1].role === "user" && (
               <div className="msg-row msg-agent">
@@ -385,9 +484,12 @@ export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
         <Composer onSend={send} attached={attached} onRemove={removeRec} files={files} onUploadFile={uploadFile} onRemoveFile={removeFile} uploading={uploading} onOpenPicker={() => setPickerOpen(true)} busy={busy} />
       </div>
 
-      <ContextPanel attached={attached} onOpenRecord={onOpenRecord} onAttach={() => setPickerOpen(true)} onRemove={removeRec} open={ctxOpen} onClose={() => setCtxOpen(false)} />
+      <ContextPanel attached={attached} onOpenRecord={onOpenRecord} onAttach={() => setPickerOpen(true)} onRemove={removeRec} open={ctxOpen} onClose={() => setCtxOpen(false)} collapsed={ctxCollapsed} />
 
       {pickerOpen && <AttachPicker attached={attached} onPick={(r) => { addRec(r); setPickerOpen(false); }} onClose={() => setPickerOpen(false)} />}
+
+      <HistoryDrawer open={histOpen} activeId={conversationId} onClose={() => setHistOpen(false)}
+        onSelect={(c) => { setHistOpen(false); if (c.id !== conversationId && onOpenConversation) onOpenConversation(c); }} />
     </div>
   );
 }
