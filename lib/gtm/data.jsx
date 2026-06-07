@@ -87,6 +87,16 @@ export function setRecords(data) {
   reindex();
 }
 
+// ---- Live connectors (real integration catalog + connected state) ----
+let CONNECTOR_STORE = [];
+let AMPERSAND = { configured: false, projectId: "", apiKey: "" };
+export function setConnectors(payload) {
+  CONNECTOR_STORE = Array.isArray(payload?.connectors) ? payload.connectors : [];
+  AMPERSAND = payload?.ampersand || AMPERSAND;
+}
+export const getConnectors = () => (CONNECTOR_STORE.length ? CONNECTOR_STORE : CONNECTORS);
+export const getAmpersand = () => AMPERSAND;
+
 export const recordsOf = (type) => STORE[type] || [];
 export const byId = (id) => ALL.find((r) => r.id === id);
 export const titleOf = (r) => r.name;
@@ -150,10 +160,14 @@ export function DataProvider({ children }) {
   const [state, setState] = useState({ ready: false, error: null });
   useEffect(() => {
     let alive = true;
-    fetch("/api/records")
+    const records = fetch("/api/records")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`records ${r.status}`))))
-      .then((data) => { if (!alive) return; setRecords(data); setState({ ready: true, error: null }); })
-      .catch((err) => { if (!alive) return; setState({ ready: true, error: String(err.message || err) }); });
+      .then((data) => { if (alive) setRecords(data); });
+    const connectors = fetch("/api/connectors")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (alive && data) setConnectors(data); })
+      .catch(() => {});
+    Promise.allSettled([records, connectors]).then(() => { if (alive) setState({ ready: true, error: null }); });
     return () => { alive = false; };
   }, []);
   return <DataCtx.Provider value={state}>{children}</DataCtx.Provider>;

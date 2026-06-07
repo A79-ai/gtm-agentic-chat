@@ -4,7 +4,7 @@ import { Icons } from "./icons";
 import { ConnLogo } from "./ui";
 import { CAT_TABS } from "@/lib/gtm/data";
 
-function ConnectorCard({ c, onToggle }) {
+function ConnectorCard({ c, onConnect }) {
   const connected = c.connected;
   return (
     <div className={"card conn-card" + (connected ? " connected" : "")}>
@@ -18,11 +18,11 @@ function ConnectorCard({ c, onToggle }) {
       <div style={{ fontSize: 13.5, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1 }}>{c.desc}</div>
       <div>
         {connected ? (
-          <button className="btn btn-sm" onClick={() => onToggle(c.id)} style={{ background: "var(--mint-glow-subtle)", color: "var(--fg-success)", border: "1px solid transparent" }}>
+          <span className="btn btn-sm" style={{ background: "var(--mint-glow-subtle)", color: "var(--fg-success)", border: "1px solid transparent", cursor: "default" }}>
             <Icons.CheckCircle size={15} /> Connected
-          </button>
+          </span>
         ) : (
-          <button className="btn btn-sm btn-outline" onClick={() => onToggle(c.id)}>
+          <button className="btn btn-sm btn-outline" onClick={() => onConnect(c)}>
             <Icons.Plug size={14} /> Connect
           </button>
         )}
@@ -31,15 +31,11 @@ function ConnectorCard({ c, onToggle }) {
   );
 }
 
-export function ConnectorsScreen({ connectors, onToggle, onToast }) {
+export function ConnectorsScreen({ connectors, onToast }) {
   const [tab, setTab] = useState("All");
   const list = connectors.filter((c) => tab === "All" || c.cat === tab);
   const connectedCount = connectors.filter((c) => c.connected).length;
-  const toggle = (id) => {
-    const c = connectors.find((x) => x.id === id);
-    onToggle(id);
-    onToast(c.connected ? `${c.name} disconnected` : `${c.name} connected`, c.connected ? "info" : "success");
-  };
+  const onConnect = (c) => onToast(`Connect ${c.name} via Ampersand — coming soon`, "info");
 
   return (
     <div className="scroll" style={{ flex: 1 }}>
@@ -61,7 +57,7 @@ export function ConnectorsScreen({ connectors, onToggle, onToast }) {
           </div>
         </div>
 
-        <div className="conn-grid">{list.map((c) => <ConnectorCard key={c.id} c={c} onToggle={toggle} />)}</div>
+        <div className="conn-grid">{list.map((c) => <ConnectorCard key={c.id} c={c} onConnect={onConnect} />)}</div>
       </div>
     </div>
   );

@@ -142,4 +142,16 @@ export const Logos = {
     e("path", { key: 2, fill: "#1B9CF5", d: "M14 2.5 20 4v13l-6 1.5z" }),
     e("path", { key: 3, fill: "#155A9E", d: "M4 12l10-1v9L4 17z" }),
   ]),
+  Google: () => svg("0 0 24 24", [
+    e("path", { key: 1, fill: "#4285F4", d: "M21.6 12.2c0-.7-.06-1.4-.18-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z" }),
+    e("path", { key: 2, fill: "#34A853", d: "M12 22c2.7 0 5-.9 6.6-2.5l-3.2-2.5c-.9.6-2 .95-3.4.95-2.6 0-4.8-1.75-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z" }),
+    e("path", { key: 3, fill: "#FBBC05", d: "M6.4 13.85a6 6 0 0 1 0-3.7V7.55H3.1a10 10 0 0 0 0 8.9z" }),
+    e("path", { key: 4, fill: "#EA4335", d: "M12 5.95c1.5 0 2.8.52 3.8 1.5l2.85-2.85A10 10 0 0 0 3.1 7.55l3.3 2.6C7.2 7.7 9.4 5.95 12 5.95z" }),
+  ]),
+  Microsoft: () => svg("0 0 24 24", [
+    e("rect", { key: 1, x: 3, y: 3, width: 8.5, height: 8.5, fill: "#F25022" }),
+    e("rect", { key: 2, x: 12.5, y: 3, width: 8.5, height: 8.5, fill: "#7FBA00" }),
+    e("rect", { key: 3, x: 3, y: 12.5, width: 8.5, height: 8.5, fill: "#00A4EF" }),
+    e("rect", { key: 4, x: 12.5, y: 12.5, width: 8.5, height: 8.5, fill: "#FFB900" }),
+  ]),
 };
