@@ -447,3 +447,12 @@ body {
 .cols-menu-item:disabled { cursor: default; }
 .cols-menu-label { flex: 1; font-size: 13.5px; font-weight: 500; color: var(--fg-primary); }
 .cols-menu-lock { font-size: 10.5px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .04em; }
+
+/* bulk value picker (above the selection bar) */
+.sel-bar .sel-act:disabled, .sel-bar .sel-act.primary:disabled { opacity: .6; cursor: default; }
+.sel-picker { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); z-index: 81; width: 240px; max-height: 300px; overflow-y: auto; background: var(--bg-elevated); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); padding: 5px 6px 8px; animation: popIn .16s ease both; }
+.sel-picker-head { padding: 8px 8px 6px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-muted); }
+.sel-picker-list { display: flex; flex-direction: column; gap: 1px; }
+.sel-picker-item { display: flex; align-items: center; width: 100%; padding: 8px 10px; border: none; background: transparent; border-radius: var(--radius-md); cursor: pointer; text-align: left; font-size: 13.5px; font-weight: 500; color: var(--fg-primary); font-family: var(--font-sans); }
+.sel-picker-item:hover { background: var(--bg-muted); }
+.sel-picker-empty { padding: 8px 10px; font-size: 13px; color: var(--fg-muted); }

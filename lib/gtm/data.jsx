@@ -161,7 +161,7 @@ const DataCtx = createContext({ ready: false, error: null });
 export const useDataStatus = () => useContext(DataCtx);
 
 export function DataProvider({ children }) {
-  const [state, setState] = useState({ ready: false, error: null });
+  const [state, setState] = useState({ ready: false, error: null, version: 0 });
   useEffect(() => {
     let alive = true;
     const records = fetch("/api/records")
@@ -171,8 +171,14 @@ export function DataProvider({ children }) {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (alive && data) setConnectors(data); })
       .catch(() => {});
-    Promise.allSettled([records, connectors]).then(() => { if (alive) setState({ ready: true, error: null }); });
+    Promise.allSettled([records, connectors]).then(() => { if (alive) setState((s) => ({ ...s, ready: true, error: null })); });
     return () => { alive = false; };
   }, []);
-  return <DataCtx.Provider value={state}>{children}</DataCtx.Provider>;
+  // Re-pull records after a mutation; bump version to force a re-render.
+  const refresh = () =>
+    fetch("/api/records")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data) { setRecords(data); setState((s) => ({ ...s, version: s.version + 1 })); } })
+      .catch(() => {});
+  return <DataCtx.Provider value={{ ...state, refresh }}>{children}</DataCtx.Provider>;
 }

@@ -19,17 +19,42 @@ export function useIsMobile(bp = 720) {
   return m;
 }
 
-// Per-type bulk actions. `chat` (rendered separately) is real — it opens chat
-// with the selected records; these type-specific actions surface intent via a
-// toast until the MCP write routes are wired.
+// Per-type bulk actions, wired to MCP via /api/bulk. `pick` actions open a
+// value menu first. (`chat`, rendered separately, attaches the selection to a
+// new chat.) Contacts/owners have no MCP-supported bulk mutation.
 const BULK_ACTIONS = {
-  deal: [{ id: "stage", label: "Change stage", icon: "Trend" }],
-  account: [{ id: "owner", label: "Assign owner", icon: "Users" }],
-  contact: [{ id: "owner", label: "Assign owner", icon: "Users" }],
+  deal: [{ id: "stage", label: "Change stage", icon: "Trend", pick: "stage" }],
+  account: [{ id: "owner", label: "Assign owner", icon: "Users", pick: "owner" }],
   meeting: [{ id: "sync", label: "Sync to CRM", icon: "Refresh" }],
-  task: [{ id: "complete", label: "Mark complete", icon: "CheckCircle" }, { id: "priority", label: "Set priority", icon: "Activity" }],
-  owner: [],
+  task: [
+    { id: "complete", label: "Mark complete", icon: "CheckCircle" },
+    { id: "priority", label: "Set priority", icon: "Activity", pick: "priority" },
+  ],
 };
+
+function pickOptions(kind) {
+  if (kind === "priority") return [["P0", "P0 — urgent"], ["P1", "P1 — high"], ["P2", "P2 — normal"]];
+  if (kind === "stage") {
+    const seen = [];
+    recordsOf("deal").forEach((d) => { if (d.stage && !seen.includes(d.stage)) seen.push(d.stage); });
+    return seen.map((s) => [s, s]);
+  }
+  if (kind === "owner") return recordsOf("owner").map((o) => [o.id, o.name]);
+  return [];
+}
+
+function ValuePicker({ title, options, onPick, onClose }) {
+  const ref = useDismiss(onClose);
+  return (
+    <div className="sel-picker" ref={ref}>
+      <div className="sel-picker-head">{title}</div>
+      <div className="sel-picker-list">
+        {options.length === 0 ? <div className="sel-picker-empty">No options</div> :
+          options.map(([v, l]) => <button key={v} className="sel-picker-item" onClick={() => onPick(v)}>{l}</button>)}
+      </div>
+    </div>
+  );
+}
 
 function useDismiss(onClose) {
   const ref = useRef(null);
@@ -101,15 +126,15 @@ function MobileCard({ rec, selected, selecting, onToggle, onOpen }) {
   );
 }
 
-function SelectionBar({ count, plural, actions, onAction, onChat, onClear }) {
+function SelectionBar({ count, plural, actions, pending, onAction, onChat, onClear }) {
   return (
     <div className="sel-bar">
       <button className="sel-clear" onClick={onClear} title="Clear selection"><Icons.X size={15} /></button>
-      <span className="sel-count">{count} selected</span>
+      <span className="sel-count">{pending ? "Working…" : `${count} selected`}</span>
       <div className="sel-divider" />
-      <button className="sel-act primary" onClick={onChat}><Icons.Spark size={14} /> Chat with {count} {plural.toLowerCase()}</button>
+      <button className="sel-act primary" disabled={pending} onClick={onChat}><Icons.Spark size={14} /> Chat with {count} {plural.toLowerCase()}</button>
       {actions.map((a) => (
-        <button key={a.id} className="sel-act" onClick={() => onAction(a)}>
+        <button key={a.id} className="sel-act" disabled={pending} onClick={() => onAction(a)}>
           {React.createElement(Icons[a.icon] || Icons.Activity, { size: 14 })} {a.label}
         </button>
       ))}
@@ -117,12 +142,14 @@ function SelectionBar({ count, plural, actions, onAction, onChat, onClear }) {
   );
 }
 
-export function EntityList({ type, onOpen, onChat, onToast }) {
+export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
   const meta = ENTITIES[type];
   const cols = COLUMNS[type];
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(() => new Set());
   const [colsOpen, setColsOpen] = useState(false);
+  const [picker, setPicker] = useState(null); // { action, options }
+  const [pending, setPending] = useState(false);
   const [visible, setVisible] = useState(() => {
     try { const s = JSON.parse(localStorage.getItem("ampup-cols-" + type)); if (Array.isArray(s)) return new Set([cols[0][0], ...s]); } catch {}
     return new Set(cols.map((c) => c[0]));
@@ -168,7 +195,27 @@ export function EntityList({ type, onOpen, onChat, onToast }) {
 
   const selectedRecords = rows.filter((r) => sel.has(r.id));
   const bulkChat = () => { onChat && onChat(selectedRecords); };
-  const bulkAction = (a) => { onToast && onToast(`${a.label} — ${selCount} ${meta.plural.toLowerCase()} (coming soon)`, "info"); };
+
+  const runBulk = async (action, value) => {
+    setPending(true);
+    setPicker(null);
+    const ids = [...sel];
+    try {
+      const res = await fetch("/api/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, action: action.id, ids, value }),
+      }).then((r) => r.json());
+      if (res.ok) onToast && onToast(`${action.label} — ${res.done} ${meta.plural.toLowerCase()} updated`, "success");
+      else onToast && onToast(`${action.label}: ${res.done || 0}/${res.total || ids.length} updated`, res.done ? "info" : "error");
+      onRefresh && (await onRefresh());
+      setSel(new Set());
+    } catch {
+      onToast && onToast(`${action.label} failed`, "error");
+    }
+    setPending(false);
+  };
+  const bulkAction = (a) => { if (a.pick) setPicker({ action: a, options: pickOptions(a.pick) }); else runBulk(a); };
 
   return (
     <div className="scroll" style={{ flex: 1 }}>
@@ -223,7 +270,10 @@ export function EntityList({ type, onOpen, onChat, onToast }) {
       </div>
 
       {selCount > 0 && (
-        <SelectionBar count={selCount} plural={meta.plural} actions={BULK_ACTIONS[type] || []} onAction={bulkAction} onChat={bulkChat} onClear={() => setSel(new Set())} />
+        <SelectionBar count={selCount} plural={meta.plural} actions={BULK_ACTIONS[type] || []} pending={pending} onAction={bulkAction} onChat={bulkChat} onClear={() => { setSel(new Set()); setPicker(null); }} />
+      )}
+      {picker && (
+        <ValuePicker title={picker.action.label} options={picker.options} onPick={(v) => runBulk(picker.action, v)} onClose={() => setPicker(null)} />
       )}
     </div>
   );
