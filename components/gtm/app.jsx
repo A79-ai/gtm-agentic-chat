@@ -15,7 +15,7 @@ import { Onboarding } from "./onboarding";
 import { Signup } from "./signup";
 import { AGENTS, ENTITY_ORDER, ENTITIES, countOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
 import { CONFIG } from "@/lib/gtm/config";
-import { getAccount, isSignedUp, saveAccount, startTrial, resetBilling, billingStatus } from "@/lib/gtm/billing";
+import { getAccount, isSignedUp, saveAccount, startTrial, resetBilling, billingStatus, refreshBillingStatus } from "@/lib/gtm/billing";
 
 const mq = () => window.matchMedia("(prefers-color-scheme: dark)");
 const systemTheme = () => (mq().matches ? "dark" : "light");
@@ -136,6 +136,19 @@ export function App() {
 
   const showToast = (msg, type = "info") => { setToast({ msg, type }); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 2400); };
   const toggleTheme = () => t.setThemePref(themeResolved === "dark" ? "light" : "dark");
+  const [, setBillingTick] = useState(0);
+
+  // Stripe provider: pull live entitlement (by signup email) on load and after a
+  // checkout return, then re-render so the trial banner reflects Stripe truth.
+  useEffect(() => {
+    if (CONFIG.billing.provider !== "stripe") return;
+    refreshBillingStatus().then(() => setBillingTick((n) => n + 1));
+    const params = new URLSearchParams(window.location.search);
+    const b = params.get("billing");
+    if (b === "success") showToast("Subscription active — welcome to Pro! 🎉", "success");
+    else if (b === "cancelled") showToast("Checkout cancelled — no charge made.", "info");
+    if (b) window.history.replaceState({}, "", window.location.pathname);
+  }, []);
 
   const go = (name) => setRoute({ name });
   const openList = (type) => setRoute({ name: "list", type });

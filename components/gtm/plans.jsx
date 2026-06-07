@@ -4,13 +4,16 @@
 import React, { useState } from "react";
 import { Icons } from "./icons";
 import { CONFIG, priceLabel } from "@/lib/gtm/config";
-import { billingStatus, startCheckout } from "@/lib/gtm/billing";
+import { billingStatus, startCheckout, openBillingPortal } from "@/lib/gtm/billing";
 
-function StatusStrip({ status }) {
+function StatusStrip({ status, onManage }) {
   if (status.state === "subscribed") {
     return (
       <div className="trial-strip ok">
         <Icons.CheckCircle size={16} /> You’re on the <strong>Pro</strong> plan. Thanks for the support!
+        {CONFIG.billing.provider === "stripe" && (
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: "auto" }} onClick={onManage}>Manage billing</button>
+        )}
       </div>
     );
   }
@@ -57,7 +60,7 @@ export function PlansScreen({ onToast }) {
   return (
     <div className="scroll" style={{ flex: 1 }}>
       <div className="screen-pad" style={{ maxWidth: 1100, margin: "0 auto" }}>
-        {CONFIG.billing.enabled && <StatusStrip status={status} />}
+        {CONFIG.billing.enabled && <StatusStrip status={status} onManage={openBillingPortal} />}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div className="eyebrow" style={{ marginBottom: 8 }}>Pricing</div>
           <h2 style={{ marginBottom: 8 }}>Simple, usage-ready pricing</h2>
