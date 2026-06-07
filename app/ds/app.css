@@ -358,3 +358,50 @@ body {
 .sheet-item:active { background: var(--bg-muted); }
 .sheet-item .nm { font-size: 15px; font-weight: 500; color: var(--fg-primary); flex: 1; }
 .sheet-item .ct { font-size: 13px; color: var(--fg-muted); }
+
+/* ============================================================
+   Simplified nav — New-chat CTA, profile avatar,
+   Records flyout, Profile menu (ported from prototype flows.css)
+   ============================================================ */
+@keyframes popIn { from { transform: translateY(6px); } to { transform: none; } }
+
+.rail-cta {
+  width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--accent); color: #1a1200; display: flex; align-items: center; justify-content: center;
+  margin-bottom: 8px; flex-shrink: 0; transition: background var(--dur-fast), transform var(--dur-fast);
+}
+.rail-cta:hover { background: var(--accent-strong); }
+
+.rail-avatar {
+  width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--rail-border);
+  background: var(--rail-elevated); color: var(--rail-text); font-size: 13px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: border-color var(--dur-fast);
+}
+.rail-avatar:hover { border-color: var(--rail-text-muted); }
+.rail-avatar.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+
+/* Records flyout */
+.navpop { width: 256px; background: var(--bg-elevated); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); overflow: hidden; animation: popIn .16s ease both; }
+.navpop-head { padding: 11px 14px 7px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-muted); }
+.navpop-list { padding: 4px 6px 8px; display: flex; flex-direction: column; gap: 1px; }
+.navpop-item { display: flex; align-items: center; gap: 11px; padding: 8px 8px; border: none; background: transparent; border-radius: var(--radius-md); cursor: pointer; text-align: left; }
+.navpop-item:hover { background: var(--bg-muted); }
+.navpop-item .nm { flex: 1; font-size: 13.5px; font-weight: 500; color: var(--fg-primary); }
+.navpop-item .ct { font-size: 12px; color: var(--fg-muted); }
+
+/* Profile menu */
+.profile-menu { width: 272px; background: var(--bg-elevated); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); overflow: hidden; animation: popIn .16s ease both; }
+.profile-menu-head { display: flex; align-items: center; gap: 11px; padding: 14px; border-bottom: 1px solid var(--border-subtle); }
+.avatar-lg { width: 38px; height: 38px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+.pm-name { font-size: 13.5px; font-weight: 600; color: var(--fg-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-email { font-size: 12px; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu-section { padding: 6px; display: flex; flex-direction: column; gap: 1px; }
+.menu-item { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border: none; background: transparent; border-radius: var(--radius-md); cursor: pointer; text-align: left; color: var(--fg-muted); }
+.menu-item:hover { background: var(--bg-muted); }
+.menu-label { flex: 1; font-size: 13.5px; font-weight: 500; color: var(--fg-primary); }
+.menu-sub { font-size: 11.5px; color: var(--fg-muted); }
+.menu-divider { height: 1px; background: var(--border-subtle); }
+
+/* Bottom-nav fab (mobile) */
+.botnav button.fab { background: var(--accent); color: #1a1200; width: 46px; height: 46px; border-radius: 50%; margin-top: -14px; box-shadow: var(--shadow-md); padding: 0; }

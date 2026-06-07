@@ -1,6 +1,6 @@
 // App shell — router, rail / bottom-nav + records sheet, theme, tweaks
 import React, { useState, useEffect, useRef } from "react";
-import { Icons, LogoMark } from "./icons";
+import { Icons } from "./icons";
 import { EntityIcon } from "./ui";
 import { HomeScreen } from "./home";
 import { ConnectorsScreen } from "./connectors";
@@ -8,7 +8,7 @@ import { EntityList } from "./entitylist";
 import { EntityDetail } from "./entitydetail";
 import { ChatScreen } from "./chat";
 import { NotetakerScreen } from "./notetaker";
-import { PlansScreen } from "./plans";
+import { SideNav, BottomNav } from "./nav";
 import { AGENTS, ENTITY_ORDER, ENTITIES, recordsOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
 
 const mq = () => window.matchMedia("(prefers-color-scheme: dark)");
@@ -28,47 +28,6 @@ function useTweaks() {
   useEffect(() => { document.documentElement.dataset.accent = accent; }, [accent]);
   useEffect(() => { document.documentElement.dataset.density = density; }, [density]);
   return { themePref, accent, density, setThemePref: (v) => set("theme", v, setThemePref), setAccent: (v) => set("accent", v, setAccent), setDensity: (v) => set("density", v, setDensity) };
-}
-
-function Rail({ route, go, openList, openChat, themeResolved, toggleTheme, onTweaks }) {
-  const isEntity = (t) => (route.name === "list" && route.type === t) || (route.name === "detail" && route.record.type === t);
-  const Btn = ({ active, title, onClick, icon }) => (
-    <button className={"rail-btn" + (active ? " active" : "")} title={title} onClick={onClick}>{React.createElement(icon, { size: 21 })}</button>
-  );
-  return (
-    <nav className="rail">
-      <div className="rail-logo" style={{ color: "#FDFCF7" }}><LogoMark size={26} /></div>
-      <div className="rail-scroll">
-        <Btn active={route.name === "home"} title="Home" icon={Icons.Home} onClick={() => go("home")} />
-        <Btn active={route.name === "chat"} title="Chat" icon={Icons.Chat} onClick={() => openChat([])} />
-        <div className="rail-divider" />
-        {ENTITY_ORDER.map((t) => (
-          <Btn key={t} active={isEntity(t)} title={ENTITIES[t].plural} icon={Icons[ENTITIES[t].icon]} onClick={() => openList(t)} />
-        ))}
-        <div className="rail-divider" />
-        <Btn active={route.name === "connectors"} title="Connectors" icon={Icons.Plug} onClick={() => go("connectors")} />
-        <Btn active={route.name === "notetaker"} title="Notetaker" icon={Icons.Brain} onClick={() => go("notetaker")} />
-        <Btn active={route.name === "plans"} title="Plans" icon={Icons.Zap} onClick={() => go("plans")} />
-      </div>
-      <button className="rail-btn" title="Toggle theme" onClick={toggleTheme}>{React.createElement(themeResolved === "dark" ? Icons.Sun : Icons.Moon, { size: 20 })}</button>
-      <button className="rail-btn" title="Tweaks" onClick={onTweaks}><Icons.Sliders size={20} /></button>
-      <button className="rail-btn" title="Profile"><Icons.User size={20} /></button>
-    </nav>
-  );
-}
-
-function BottomNav({ route, go, openChat, onRecords, onTweaks }) {
-  const a = (n) => (route.name === n ? "active" : "");
-  const recordsActive = route.name === "list" || route.name === "detail" ? "active" : "";
-  return (
-    <nav className="botnav">
-      <button className={a("home")} onClick={() => go("home")}><Icons.Home size={21} />Home</button>
-      <button className={recordsActive} onClick={onRecords}><Icons.Layers size={21} />Records</button>
-      <button className={a("chat")} onClick={() => openChat([])}><Icons.Chat size={21} />Chat</button>
-      <button className={a("connectors")} onClick={() => go("connectors")}><Icons.Plug size={21} />Tools</button>
-      <button onClick={onTweaks}><Icons.Sliders size={21} />Tweaks</button>
-    </nav>
-  );
 }
 
 function RecordsSheet({ openList, onClose }) {
@@ -137,6 +96,7 @@ export function App() {
   const [sheet, setSheet] = useState(false);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
+  const [profile] = useState(() => { try { return JSON.parse(localStorage.getItem("ampup-profile") || "{}"); } catch { return {}; } });
 
   const showToast = (msg, type = "info") => { setToast({ msg, type }); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 2400); };
   const toggleTheme = () => t.setThemePref(themeResolved === "dark" ? "light" : "dark");
@@ -146,19 +106,30 @@ export function App() {
   const openRecord = (record) => setRoute({ name: "detail", record });
   const openChat = (seed) => { setChatSeed((seed || []).filter(Boolean)); setRoute({ name: "chat" }); };
 
+  const restartDemo = () => {
+    ["onboarded", "profile"].forEach((k) => { try { localStorage.removeItem("ampup-" + k); } catch {} });
+    window.location.reload();
+  };
+  const onProfileAction = (action) => {
+    if (action === "notetaker") go("notetaker");
+    else if (action === "tweaks") setTweaksOpen(true);
+    else if (action === "onboarding") showToast("Onboarding coming soon", "info");
+    else if (action === "restart") restartDemo();
+    else if (action === "signout") showToast("Signed out (demo)", "info");
+  };
+
   return (
     <div className="app">
-      <Rail route={route} go={go} openList={openList} openChat={openChat} themeResolved={themeResolved} toggleTheme={toggleTheme} onTweaks={() => setTweaksOpen((v) => !v)} />
+      <SideNav route={route} go={go} openList={openList} openChat={openChat} themeResolved={themeResolved} toggleTheme={toggleTheme} profile={profile} on={onProfileAction} />
       <main className="main">
         {route.name === "home" && <HomeScreen agents={AGENTS} connectors={connectors} openChat={openChat} openList={openList} onNav={go} />}
         {route.name === "connectors" && <ConnectorsScreen connectors={connectors} onToast={showToast} />}
         {route.name === "notetaker" && <NotetakerScreen onToast={showToast} />}
-        {route.name === "plans" && <PlansScreen onToast={showToast} />}
         {route.name === "list" && <EntityList key={route.type} type={route.type} onOpen={openRecord} onChat={() => openChat([])} />}
         {route.name === "detail" && <EntityDetail key={route.record.id} record={route.record} onOpen={openRecord} onChat={(r) => openChat([r])} onBack={() => openList(route.record.type)} />}
         {route.name === "chat" && <ChatScreen key={chatSeed.map((r) => r.id).join(",")} seedAttached={chatSeed} onBack={() => go("home")} onOpenRecord={openRecord} onToast={showToast} />}
       </main>
-      <BottomNav route={route} go={go} openChat={openChat} onRecords={() => setSheet(true)} onTweaks={() => setTweaksOpen((v) => !v)} />
+      <BottomNav route={route} go={go} openChat={openChat} onRecords={() => setSheet(true)} onProfile={() => setTweaksOpen((v) => !v)} />
       {sheet && <RecordsSheet openList={openList} onClose={() => setSheet(false)} />}
       {tweaksOpen && <TweaksPanel t={t} onClose={() => setTweaksOpen(false)} />}
       <Toast toast={toast} />

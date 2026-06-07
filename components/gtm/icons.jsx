@@ -72,6 +72,7 @@ export const Icons = {
   Layers: L(["m12 2 9 5-9 5-9-5z", "m3 12 9 5 9-5", "m3 17 9 5 9-5"]),
   Inbox: L(["M22 12h-6l-2 3h-4l-2-3H2", "M5.5 5.5 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.5A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.5z"]),
   Trend: L(["M16 7h6v6", "m22 7-8.5 8.5-5-5L2 17"]),
+  LogOut: L(["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "m16 17 5-5-5-5", "M21 12H9"]),
 };
 
 // AmpUp spark "A" mark — legs use currentColor, sparkle gold
