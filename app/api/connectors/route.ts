@@ -85,6 +85,36 @@ export async function GET(req: Request) {
     connectedKeys.has(s(item.id).toLowerCase()) ||
     connectedKeys.has(s(item.ampersand_provider).toLowerCase());
 
+  // Prefer org config; fall back to deploy env (the product bakes these as
+  // VITE_AMPERSAND_* — the org API doesn't expose them).
+  const projectId =
+    configValue(configsRaw, "sales_agent", "ampersand_project_id") ||
+    process.env.AMPERSAND_PROJECT_ID ||
+    "";
+  const apiKey =
+    configValue(configsRaw, "sales_agent", "ampersand_api_key") ||
+    process.env.AMPERSAND_API_KEY ||
+    "";
+
+  // Ampersand's InstallIntegration matches by integration NAME (from the
+  // project's amp.yaml), not provider. Map provider -> name from the project.
+  const providerToName: Record<string, string> = {};
+  if (projectId && apiKey) {
+    const projInts = await fetch(`https://api.withampersand.com/v1/projects/${projectId}/integrations`, {
+      headers: { "X-Api-Key": apiKey },
+    }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    if (Array.isArray(projInts)) {
+      for (const pi of projInts as Rec[]) {
+        const prov = s(pi.provider).toLowerCase();
+        // Prefer an exact-cased canonical name; don't let variants (e.g.
+        // "Salesforce-Eightfold") overwrite the plain "Salesforce".
+        if (prov && (!providerToName[prov] || s(pi.name).length < providerToName[prov].length)) {
+          providerToName[prov] = s(pi.name);
+        }
+      }
+    }
+  }
+
   const connectors = catalog.map((item) => ({
     id: s(item.id),
     name: s(item.name),
@@ -94,10 +124,8 @@ export async function GET(req: Request) {
     scope: s(item.in_product_install_scope),
     logo: LOGO[s(item.id)] || LOGO[s(item.ampersand_provider)] || "",
     connected: isConnected(item),
+    ampersandName: providerToName[s(item.ampersand_provider).toLowerCase()] || "",
   }));
-
-  const projectId = configValue(configsRaw, "sales_agent", "ampersand_project_id");
-  const apiKey = configValue(configsRaw, "sales_agent", "ampersand_api_key");
 
   const orgId = org ? s(org.id) : "";
   return Response.json(

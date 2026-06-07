@@ -45,7 +45,7 @@ function ConnectModal({ connector, amp, onClose, onToast }) {
         <div style={{ padding: 16 }}>
           <Suspense fallback={<div style={{ padding: 24, textAlign: "center", color: "var(--fg-muted)" }}>Loading…</div>}>
             <AmpersandConnect
-              integration={connector.provider || connector.id}
+              integration={connector.ampersandName || connector.provider || connector.id}
               project={amp.projectId}
               apiKey={amp.apiKey}
               groupRef={amp.groupRef}
