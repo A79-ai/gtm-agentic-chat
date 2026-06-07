@@ -1,0 +1,114 @@
+/* AmpUp loading indicator — ported from the product (loading-indicator.css) */
+
+/* ----- Chip / pill ----- */
+.loading-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-sm);
+  color: var(--fg-secondary);
+}
+
+/* ----- Shimmer word ----- */
+.shimmer-word {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+  font-weight: 500;
+  transition:
+    opacity 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.shimmer-word.is-in { opacity: 1; transform: translateY(0); }
+.shimmer-word.is-out { opacity: 0; transform: translateY(-4px); }
+.shimmer-word .shimmer-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 0%, transparent 38%, currentColor 48%, var(--g-500, #d2a232) 52%, currentColor 56%, transparent 66%, transparent 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: shimmer-sweep 2.6s linear infinite;
+  pointer-events: none;
+}
+@keyframes shimmer-sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ----- Ellipsis dots ----- */
+.loading-ellipsis { display: inline-flex; gap: 2px; margin-left: 2px; }
+.loading-ellipsis span {
+  display: inline-block; width: 3px; height: 3px; border-radius: 50%;
+  background: currentColor; opacity: 0.5;
+  animation: dot-bounce 1.4s infinite ease-in-out both;
+}
+.loading-ellipsis span:nth-child(1) { animation-delay: -0.32s; }
+.loading-ellipsis span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-3px); opacity: 1; }
+}
+
+/* ----- A-mark rocket (launch variant) ----- */
+.amark svg { display: block; }
+.amark--launch .amark__wrap { overflow: hidden; }
+.amp-rocket-body { animation: rocket-body-loop 2.8s linear infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes rocket-body-loop {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  6% { transform: translateY(1.5px) scale(0.96); opacity: 1; }
+  12% { transform: translateY(-3px) scale(1.04); opacity: 1; }
+  25% { transform: translateY(-18px) scale(1); opacity: 1; }
+  38% { transform: translateY(-34px) scale(1); opacity: 1; }
+  46% { transform: translateY(-46px) scale(0.95); opacity: 0; }
+  47% { transform: translateY(46px) scale(0.95); opacity: 0; }
+  54% { transform: translateY(34px) scale(1); opacity: 1; }
+  67% { transform: translateY(18px) scale(1); opacity: 1; }
+  80% { transform: translateY(4px) scale(1); opacity: 1; }
+  90% { transform: translateY(0.5px) scale(1.03); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.amp-spark-rocket.is-running { animation: rocket-spark-pulse 2.8s ease-in-out infinite; }
+@keyframes rocket-spark-pulse {
+  0%, 100% { transform: scale(0.98); }
+  12% { transform: scale(1.06); }
+  50% { transform: scale(1); }
+  90% { transform: scale(1.04); }
+}
+.amp-glow-rocket { transform-origin: 21.18px 34.41px; animation: rocket-glow 2.8s ease-in-out infinite; }
+@keyframes rocket-glow {
+  0%, 100% { opacity: 0.25; transform: scale(0.9); }
+  12% { opacity: 0.9; transform: scale(1.4); }
+  25% { opacity: 0.7; transform: scale(1.25); }
+  38% { opacity: 0.5; transform: scale(1.1); }
+  46%, 54% { opacity: 0; transform: scale(0.9); }
+  67% { opacity: 0.55; transform: scale(1.15); }
+  90% { opacity: 0.35; transform: scale(1); }
+}
+.amp-flame { transform-origin: 21.18px 34.41px; animation: flame-burn 2.8s ease-in-out infinite; }
+.amp-flame-inner { transform-origin: 21.18px 34.41px; animation: flame-burn-inner 2.8s ease-in-out infinite; }
+@keyframes flame-burn {
+  0%, 6% { opacity: 0; transform: scaleY(0.3); }
+  12% { opacity: 0.85; transform: scaleY(1.4); }
+  25% { opacity: 1; transform: scaleY(1.6); }
+  38% { opacity: 0.9; transform: scaleY(1.4); }
+  46%, 54% { opacity: 0; transform: scaleY(0.3); }
+  67% { opacity: 0.7; transform: scaleY(1); }
+  90%, 100% { opacity: 0; transform: scaleY(0.3); }
+}
+@keyframes flame-burn-inner {
+  0%, 6% { opacity: 0; transform: scaleY(0.3); }
+  12% { opacity: 0.95; transform: scaleY(1.5); }
+  25% { opacity: 1; transform: scaleY(1.8); }
+  38% { opacity: 0.95; transform: scaleY(1.5); }
+  46%, 54% { opacity: 0; transform: scaleY(0.3); }
+  67% { opacity: 0.8; transform: scaleY(1.1); }
+  90%, 100% { opacity: 0; transform: scaleY(0.3); }
+}

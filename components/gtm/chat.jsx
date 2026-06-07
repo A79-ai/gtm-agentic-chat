@@ -8,6 +8,7 @@ import {
   DATA, ENTITIES, FIELDS, SUGGESTIONS, byId, related, searchAll, subtitleOf, ENTITY_ORDER,
 } from "@/lib/gtm/data";
 import { MessageResponse } from "@/components/ai-elements/message";
+import { LoadingIndicator } from "./LoadingIndicator";
 
 const textOf = (m) => (m.parts || []).filter((p) => p.type === "text").map((p) => p.text).join("");
 const toolName = (type) => type.replace(/^tool-/, "").replace(/^mcp__ampup__/, "").replace(/_/g, " ");
@@ -41,7 +42,7 @@ function AgentMessage({ msg, status, isLast, onToast, onRegenerate }) {
           </div>
         )}
         {!text && isLast && status !== "ready" && (
-          <div style={{ fontSize: 13, color: "var(--fg-muted)", fontFamily: "var(--font-mono)" }}>Planning<span className="caret" /></div>
+          <div style={{ marginTop: tools.length ? 8 : 0 }}><LoadingIndicator /></div>
         )}
         {settled && text && (
           <div style={{ display: "flex", gap: 6, marginTop: 14, flexWrap: "wrap" }}>
@@ -292,16 +293,14 @@ export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
                 ? <div key={m.id} className="msg-row msg-user"><div className="bubble">{textOf(m)}</div></div>
                 : <AgentMessage key={m.id} msg={m} status={status} isLast={m.id === lastId} onToast={onToast} onRegenerate={() => regenerate()} />,
             )}
+            {busy && messages.length > 0 && messages[messages.length - 1].role === "user" && (
+              <div className="msg-row msg-agent">
+                <div className="msg-avatar" style={{ color: "var(--fg-primary)" }}><LogoMark size={17} /></div>
+                <div className="bubble" style={{ flex: 1, minWidth: 0 }}><LoadingIndicator /></div>
+              </div>
+            )}
           </div>
         </div>
-
-        {!empty && (
-          <div className="save-banner">
-            <Icons.Sparkle size={16} style={{ color: "var(--accent-strong)", flexShrink: 0 }} />
-            <span style={{ flex: 1 }}>Save what you discussed to {attached.length === 1 ? attached[0].name : "your CRM"}? Adds it to the activity feed and your CRM.</span>
-            <button className="btn btn-sm btn-dark" onClick={() => onToast("Saved to CRM", "success")}>Save now</button>
-          </div>
-        )}
 
         <Composer onSend={send} attached={attached} attachedIds={attachedIds} onRemove={removeRec} onPick={addRec} busy={busy} />
       </div>

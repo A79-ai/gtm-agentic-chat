@@ -68,7 +68,7 @@ export async function GET(req: Request) {
   const [rawAccounts, rawDeals, rawMeetings, rawTasks] = await Promise.all([
     list("list_accounts", { limit: 200 }, key),
     list("list_opportunities", { limit: 200 }, key),
-    list("list_meetings", { limit: 200 }, key),
+    list("list_meetings", { limit: 50, only_my_meetings: false }, key),
     list("list_tasks", { limit: 200 }, key),
   ]);
 
@@ -133,15 +133,16 @@ export async function GET(req: Request) {
     return {
       id: s(m.id) || `mtg-${i}`,
       type: "meeting",
-      name: s(m.title) || s(m.subject) || s(m.name) || "Meeting",
-      date: s(m.date) || s(m.start_time) || s(m.meeting_date),
+      name: s(m.name) || s(m.title) || s(m.subject) || "Meeting",
+      date: (s(m.scheduled_at) || s(m.date) || s(m.start_time)).slice(0, 10),
       durationMin: typeof m.duration_minutes === "number" ? m.duration_minutes : typeof m.duration_min === "number" ? m.duration_min : "",
       source: s(m.source) || s(m.provider),
       accountId: s(m.account_id),
       dealId: s(m.opportunity_id) || s(m.deal_id),
+      status: s(m.status),
       attendeeContactIds: [],
       ownerId: s(m.owner_id),
-      summary: s(m.summary) || s(m.overview),
+      summary: s(m.summary) || s(m.overview) || (m.deal && typeof m.deal === "object" ? `${s((m.deal as Rec).name)} · ${s((m.deal as Rec).stage)}` : ""),
     };
   });
 
