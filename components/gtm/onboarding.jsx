@@ -20,21 +20,27 @@ function googleIntegration() {
   return c?.ampersandName || c?.provider || "Google";
 }
 
-export function Onboarding({ initial, onFinish, onCancel }) {
+export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true }) {
   const [step, setStep] = useState(0);
   const [f, setF] = useState(() => ({ name: "", email: "", company: "", role: "", size: "", goals: [], ...(initial || {}) }));
   const [cal, setCal] = useState(initial?.calendar ? "connected" : "idle"); // idle | connecting | connected
   const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
   const toggleGoal = (g) => setF((s) => ({ ...s, goals: s.goals.includes(g) ? s.goals.filter((x) => x !== g) : [...s.goals, g] }));
 
-  const steps = ["About you", "Focus", "Calendar"];
-  const canNext = step === 0 ? f.name.trim() && f.email.trim() : true;
+  // Signup already collects name/email/company, so drop the "About you" step
+  // when identity is in hand (avoid asking the same questions twice).
+  const stepKeys = collectIdentity ? ["about", "focus", "calendar"] : ["focus", "calendar"];
+  const labels = { about: "About you", focus: "Focus", calendar: "Calendar" };
+  const key = stepKeys[step];
+  const steps = stepKeys.map((k) => labels[k]);
+  const isLast = step === stepKeys.length - 1;
+  const canNext = key === "about" ? f.name.trim() && f.email.trim() : true;
   const finish = () => onFinish({ ...f, calendar: cal === "connected" });
 
   const amp = getAmpersand();
 
   let body;
-  if (step === 0) {
+  if (key === "about") {
     body = (
       <div className="ob-form">
         <div className="fld-row">
@@ -51,7 +57,7 @@ export function Onboarding({ initial, onFinish, onCancel }) {
           <div className="chip-grid">{TEAM_SIZES.map((s) => <button key={s} className={"choice-chip" + (f.size === s ? " on" : "")} onClick={() => set("size", s)}>{s}</button>)}</div></div>
       </div>
     );
-  } else if (step === 1) {
+  } else if (key === "focus") {
     body = (
       <div className="ob-form">
         <div className="fld-wrap">
@@ -139,7 +145,7 @@ export function Onboarding({ initial, onFinish, onCancel }) {
           <div className="ob-main-head">
             <div>
               <div className="ob-eyebrow">Step {step + 1} of {steps.length}</div>
-              <h1 className="ob-h1">{step === 0 ? "Tell us about you" : step === 1 ? "Set your agent’s focus" : "Connect Google Calendar"}</h1>
+              <h1 className="ob-h1">{key === "about" ? "Tell us about you" : key === "focus" ? "Set your agent’s focus" : "Connect Google Calendar"}</h1>
             </div>
             {onCancel ? <button className="icon-btn" onClick={onCancel} title="Close"><Icons.X size={18} /></button> : null}
           </div>
@@ -147,8 +153,8 @@ export function Onboarding({ initial, onFinish, onCancel }) {
           <div className="ob-foot">
             {step > 0 ? <button className="btn btn-ghost" onClick={() => setStep(step - 1)}><Icons.ArrowLeft size={16} /> Back</button> : <span />}
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              {step === 2 && cal !== "connected" ? <button className="btn btn-ghost" onClick={finish}>Skip for now</button> : null}
-              {step < 2
+              {key === "calendar" && cal !== "connected" ? <button className="btn btn-ghost" onClick={finish}>Skip for now</button> : null}
+              {!isLast
                 ? <button className="btn btn-primary btn-lg" disabled={!canNext} onClick={() => setStep(step + 1)}>Continue <Icons.ArrowRight size={16} /></button>
                 : <button className="btn btn-primary btn-lg" onClick={finish}>{cal === "connected" ? "Finish setup" : "Finish"} <Icons.ArrowRight size={16} /></button>}
             </div>

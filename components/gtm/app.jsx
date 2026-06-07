@@ -11,7 +11,10 @@ import { NotetakerScreen } from "./notetaker";
 import { FilesScreen } from "./files";
 import { SideNav, BottomNav } from "./nav";
 import { Onboarding } from "./onboarding";
+import { Signup } from "./signup";
 import { AGENTS, ENTITY_ORDER, ENTITIES, countOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
+import { CONFIG } from "@/lib/gtm/config";
+import { getAccount, isSignedUp, saveAccount, startTrial, resetBilling } from "@/lib/gtm/billing";
 
 const mq = () => window.matchMedia("(prefers-color-scheme: dark)");
 const systemTheme = () => (mq().matches ? "dark" : "light");
@@ -105,8 +108,12 @@ export function App() {
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
   const [profile, setProfile] = useState(() => { try { return JSON.parse(localStorage.getItem("ampup-profile") || "{}"); } catch { return {}; } });
+  const [account, setAccount] = useState(() => getAccount());
   const [flow, setFlow] = useState(() => {
-    try { return localStorage.getItem("ampup-onboarded") === "1" ? null : { name: "onboarding", firstRun: true }; } catch { return null; }
+    const onboarded = (() => { try { return localStorage.getItem("ampup-onboarded") === "1"; } catch { return false; } })();
+    if (CONFIG.signup.enabled && !isSignedUp()) return { name: "signup", firstRun: true };
+    if (CONFIG.onboarding.enabled && !onboarded) return { name: "onboarding", firstRun: true };
+    return null;
   });
 
   const showToast = (msg, type = "info") => { setToast({ msg, type }); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 2400); };
@@ -120,7 +127,19 @@ export function App() {
 
   const restartDemo = () => {
     ["onboarded", "profile"].forEach((k) => { try { localStorage.removeItem("ampup-" + k); } catch {} });
+    resetBilling();
     window.location.reload();
+  };
+  const signupDone = (data) => {
+    saveAccount({ name: data.name, email: data.email, company: data.company });
+    if (CONFIG.billing.enabled) startTrial();
+    setAccount(getAccount());
+    const next = { ...profile, name: data.name, email: data.email, company: data.company };
+    setProfile(next);
+    try { localStorage.setItem("ampup-profile", JSON.stringify(next)); } catch {}
+    const onboarded = (() => { try { return localStorage.getItem("ampup-onboarded") === "1"; } catch { return false; } })();
+    if (CONFIG.onboarding.enabled && !onboarded) setFlow({ name: "onboarding", firstRun: true });
+    else { setFlow(null); showToast("Welcome to AmpUp" + (data.name ? `, ${data.name.split(" ")[0]}` : "") + " 👋", "success"); }
   };
   const onboardingDone = (data) => {
     const p = { name: data.name, email: data.email, company: data.company, role: data.role, size: data.size, goals: data.goals, calendar: !!data.calendar };
@@ -155,8 +174,11 @@ export function App() {
       <BottomNav route={route} go={go} openChat={openChat} onRecords={() => setSheet(true)} onProfile={() => setTweaksOpen((v) => !v)} />
       {sheet && <RecordsSheet openList={openList} onClose={() => setSheet(false)} />}
       {tweaksOpen && <TweaksPanel t={t} onClose={() => setTweaksOpen(false)} />}
+      {flow && flow.name === "signup" && (
+        <Signup initial={{ name: profile.name, email: profile.email, company: profile.company }} onFinish={signupDone} />
+      )}
       {flow && flow.name === "onboarding" && (
-        <Onboarding initial={profile} onFinish={onboardingDone} onCancel={flow.firstRun ? null : () => setFlow(null)} />
+        <Onboarding initial={profile} onFinish={onboardingDone} onCancel={flow.firstRun ? null : () => setFlow(null)} collectIdentity={!isSignedUp()} />
       )}
       <Toast toast={toast} />
     </div>
