@@ -4,9 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Icons, LogoMark } from "./icons";
 import { EntityIcon, RefChip } from "./ui";
-import {
-  DATA, ENTITIES, FIELDS, SUGGESTIONS, byId, related, searchAll, subtitleOf, ENTITY_ORDER,
-} from "@/lib/gtm/data";
+import { ENTITIES, FIELDS, SUGGESTIONS, byId, related, subtitleOf } from "@/lib/gtm/data";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { LoadingIndicator } from "./LoadingIndicator";
 
@@ -57,48 +55,67 @@ function AgentMessage({ msg, status, isLast, onToast, onRegenerate }) {
   );
 }
 
-function AttachPicker({ attachedIds, onPick, onClose }) {
+// Cross-entity attach picker — searches the org's CRM via /api/search
+// (search_entities), so it finds records beyond the locally-loaded page.
+function AttachPicker({ attached, onPick, onClose }) {
   const [q, setQ] = useState("");
-  const ref = useRef(null);
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const reqId = useRef(0);
+  const attachedIds = new Set(attached.map((r) => r.id));
+
   useEffect(() => {
-    const h = (ev) => { if (ref.current && !ref.current.contains(ev.target)) onClose(); };
-    const id = setTimeout(() => document.addEventListener("mousedown", h), 0);
-    return () => { clearTimeout(id); document.removeEventListener("mousedown", h); };
-  }, []);
-  const results = searchAll(q).filter((r) => !attachedIds.includes(r.id));
-  const grouped = ENTITY_ORDER.map((t) => [t, results.filter((r) => r.type === t)]).filter(([, l]) => l.length);
+    const id = setTimeout(async () => {
+      const query = q.trim();
+      if (!query) { setGroups([]); setLoading(false); return; }
+      const my = ++reqId.current;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`).then((r) => r.json());
+        if (my !== reqId.current) return;
+        setGroups(res.groups || []);
+      } catch { if (my === reqId.current) setGroups([]); }
+      if (my === reqId.current) setLoading(false);
+    }, 250);
+    return () => clearTimeout(id);
+  }, [q]);
+
   return (
-    <div className="attach-pop" ref={ref}>
-      <div className="attach-search">
-        <Icons.Search size={16} style={{ color: "var(--fg-muted)" }} />
-        <input autoFocus placeholder="Attach a deal, account, meeting, contact…" value={q} onChange={(e) => setQ(e.target.value)} />
-      </div>
-      <div className="attach-list scroll">
-        {grouped.length === 0 && <div style={{ padding: 18, textAlign: "center", color: "var(--fg-muted)", fontSize: 13 }}>No records found</div>}
-        {grouped.map(([t, list]) => (
-          <div key={t}>
-            <div className="attach-group-label">{ENTITIES[t].plural}</div>
-            {list.map((r) => (
-              <div key={r.id} className="attach-item" onClick={() => onPick(r)}>
-                <EntityIcon type={r.type} size={30} />
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div className="nm">{r.name}</div>
-                  <div className="sb">{subtitleOf(r)}</div>
-                </div>
-                <Icons.Plus size={15} style={{ color: "var(--fg-muted)" }} />
+    <div className="sheet-backdrop" style={{ alignItems: "center", justifyContent: "center", zIndex: 95 }} onClick={onClose}>
+      <div className="attach-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="attach-search">
+          <Icons.Search size={16} style={{ color: "var(--fg-muted)" }} />
+          <input autoFocus placeholder="Search deals, accounts, meetings…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={onClose}><Icons.X size={16} /></button>
+        </div>
+        <div className="attach-list scroll">
+          {!q.trim() ? <div className="attach-hint">Type to search your CRM.</div>
+            : loading ? <div className="attach-hint">Searching…</div>
+            : groups.length === 0 ? <div className="attach-hint">No records found for “{q.trim()}”.</div>
+            : groups.map((g) => (
+              <div key={g.type}>
+                <div className="attach-group-label">{(ENTITIES[g.type] || {}).plural || g.type}</div>
+                {g.items.filter((r) => !attachedIds.has(r.id)).map((r) => (
+                  <div key={r.id} className="attach-item" onClick={() => onPick(r)}>
+                    <EntityIcon type={r.type} size={30} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div className="nm">{r.name}</div>
+                      <div className="sb">{r.subtitle}</div>
+                    </div>
+                    <Icons.Plus size={15} style={{ color: "var(--fg-muted)" }} />
+                  </div>
+                ))}
               </div>
             ))}
-          </div>
-        ))}
+        </div>
       </div>
     </div>
   );
 }
 
-function Composer({ onSend, attached, onRemove, onPick, attachedIds, busy }) {
+function Composer({ onSend, attached, onRemove, onOpenPicker, busy }) {
   const [text, setText] = useState("");
   const [focus, setFocus] = useState(false);
-  const [pick, setPick] = useState(false);
   const ref = useRef(null);
   const grow = (el) => { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 140) + "px"; };
   const send = () => { if (text.trim() && !busy) { onSend(text.trim()); setText(""); if (ref.current) ref.current.style.height = "auto"; } };
@@ -114,13 +131,12 @@ function Composer({ onSend, attached, onRemove, onPick, attachedIds, busy }) {
           onChange={(e) => { setText(e.target.value); grow(e.target); }}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
         <div className="composer-row">
-          <button className="icon-btn" title="Attach record" onClick={() => setPick((v) => !v)}><Icons.Paperclip size={16} /></button>
-          <button className="icon-btn" title="Mention" onClick={() => setPick((v) => !v)}><Icons.At size={16} /></button>
+          <button className="icon-btn" title="Attach record" onClick={onOpenPicker}><Icons.Paperclip size={16} /></button>
+          <button className="icon-btn" title="Mention" onClick={onOpenPicker}><Icons.At size={16} /></button>
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: 11.5, color: "var(--fg-muted)", marginRight: 6 }} className="hide-mobile">↵ send · ⇧↵ new line</span>
           <button className="btn btn-icon btn-primary" onClick={send} disabled={!text.trim() || busy} style={{ borderRadius: "50%" }}><Icons.ArrowUp size={16} /></button>
         </div>
-        {pick && <AttachPicker attachedIds={attachedIds} onPick={(r) => { onPick(r); setPick(false); }} onClose={() => setPick(false)} />}
       </div>
       <div style={{ textAlign: "center", fontSize: 11.5, color: "var(--fg-muted)", marginTop: 8 }}>
         Agents can make mistakes — verify data before sending to a customer.
@@ -216,9 +232,9 @@ function contextPreamble(records) {
 export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
   const conversationId = useMemo(() => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `c-${Date.now()}`), []);
   const runIdRef = useRef(undefined);
-  const [attachedIds, setAttachedIds] = useState(() => (seedAttached || []).map((r) => r.id));
+  const [attached, setAttached] = useState(() => (seedAttached || []).filter(Boolean));
   const [ctxOpen, setCtxOpen] = useState(false);
-  const attached = attachedIds.map(byId).filter(Boolean);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const attachedRef = useRef(attached);
   attachedRef.current = attached;
 
@@ -249,8 +265,8 @@ export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
   const scrollRef = useRef(null);
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages]);
 
-  const addRec = (r) => setAttachedIds((ids) => (ids.includes(r.id) ? ids : [...ids, r.id]));
-  const removeRec = (r) => setAttachedIds((ids) => ids.filter((x) => x !== r.id));
+  const addRec = (r) => setAttached((a) => (a.some((x) => x.id === r.id) ? a : [...a, r]));
+  const removeRec = (r) => setAttached((a) => a.filter((x) => x.id !== r.id));
   const clear = () => { runIdRef.current = undefined; setMessages([]); };
   const send = (t) => sendMessage({ text: t });
 
@@ -302,10 +318,12 @@ export function ChatScreen({ seedAttached, onBack, onOpenRecord, onToast }) {
           </div>
         </div>
 
-        <Composer onSend={send} attached={attached} attachedIds={attachedIds} onRemove={removeRec} onPick={addRec} busy={busy} />
+        <Composer onSend={send} attached={attached} onRemove={removeRec} onOpenPicker={() => setPickerOpen(true)} busy={busy} />
       </div>
 
-      <ContextPanel attached={attached} onOpenRecord={onOpenRecord} onAttach={() => setCtxOpen(true)} onRemove={removeRec} open={ctxOpen} onClose={() => setCtxOpen(false)} />
+      <ContextPanel attached={attached} onOpenRecord={onOpenRecord} onAttach={() => setPickerOpen(true)} onRemove={removeRec} open={ctxOpen} onClose={() => setCtxOpen(false)} />
+
+      {pickerOpen && <AttachPicker attached={attached} onPick={(r) => { addRec(r); setPickerOpen(false); }} onClose={() => setPickerOpen(false)} />}
     </div>
   );
 }
