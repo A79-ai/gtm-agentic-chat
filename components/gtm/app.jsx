@@ -125,7 +125,7 @@ export function App() {
         {route.name === "home" && <HomeScreen agents={AGENTS} connectors={connectors} openChat={openChat} openList={openList} onNav={go} />}
         {route.name === "connectors" && <ConnectorsScreen connectors={connectors} onToast={showToast} />}
         {route.name === "notetaker" && <NotetakerScreen onToast={showToast} />}
-        {route.name === "list" && <EntityList key={route.type} type={route.type} onOpen={openRecord} onChat={() => openChat([])} />}
+        {route.name === "list" && <EntityList key={route.type} type={route.type} onOpen={openRecord} onChat={(recs) => openChat(recs || [])} onToast={showToast} />}
         {route.name === "detail" && <EntityDetail key={route.record.id} record={route.record} onOpen={openRecord} onChat={(r) => openChat([r])} onBack={() => openList(route.record.type)} />}
         {route.name === "chat" && <ChatScreen key={chatSeed.map((r) => r.id).join(",")} seedAttached={chatSeed} onBack={() => go("home")} onOpenRecord={openRecord} onToast={showToast} />}
       </main>
