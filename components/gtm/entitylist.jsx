@@ -2,7 +2,7 @@
 // multi-select (click / shift-range / select-all), a floating bulk-action bar,
 // and customizable columns. One component drives every entity type via the
 // COLUMNS config.
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Icons } from "./icons";
 import { EntityIcon, Avatar, TBadge, RefChip } from "./ui";
 import { ENTITIES, COLUMNS, CONNECTORS, recordsOf, subtitleOf, byId } from "@/lib/gtm/data";
@@ -145,7 +145,15 @@ function SelectionBar({ count, plural, actions, pending, onAction, onChat, onCle
 export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
   const meta = ENTITIES[type];
   const cols = COLUMNS[type];
+  const isOwner = type === "owner"; // no list tool — derive from the loaded store
+  const SIZE = 50;
+
   const [q, setQ] = useState("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(null);
+  const [loading, setLoading] = useState(!isOwner);
   const [sel, setSel] = useState(() => new Set());
   const [colsOpen, setColsOpen] = useState(false);
   const [picker, setPicker] = useState(null); // { action, options }
@@ -155,18 +163,42 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
     return new Set(cols.map((c) => c[0]));
   });
   const lastIdx = useRef(null);
+  const reqId = useRef(0);
   const isMobile = useIsMobile();
-  const all = recordsOf(type);
-  const rows = all.filter((r) => !q || r.name.toLowerCase().includes(q.toLowerCase()) || subtitleOf(r).toLowerCase().includes(q.toLowerCase()));
 
-  const shownCols = cols.filter((c) => visible.has(c[0]));
-  const grid = `30px minmax(160px, 1.8fr) ${shownCols.slice(1).map(() => "1fr").join(" ")} 28px`;
+  // debounce the search box into a server query; reset to first page
+  useEffect(() => { const id = setTimeout(() => { setSearch(q.trim()); setPage(0); }, 300); return () => clearTimeout(id); }, [q]);
 
+  const fetchPage = useCallback(async () => {
+    if (isOwner) return;
+    const my = ++reqId.current;
+    setLoading(true);
+    try {
+      const url = `/api/list?type=${type}&page=${page}&size=${SIZE}` + (search ? `&search=${encodeURIComponent(search)}` : "");
+      const res = await fetch(url).then((r) => r.json());
+      if (my !== reqId.current) return; // a newer request superseded this one
+      setItems(Array.isArray(res.items) ? res.items : []);
+      setTotal(typeof res.total === "number" ? res.total : null);
+    } catch {
+      if (my === reqId.current) { setItems([]); setTotal(null); }
+    }
+    if (my === reqId.current) setLoading(false);
+  }, [type, page, search, isOwner]);
+
+  useEffect(() => { fetchPage(); }, [fetchPage]);
+  useEffect(() => { setSel(new Set()); lastIdx.current = null; }, [page, search]);
   useEffect(() => {
     const k = (e) => { if (e.key === "Escape") setSel(new Set()); };
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
   }, []);
+
+  const ownerRows = isOwner ? recordsOf("owner").filter((r) => !search || r.name.toLowerCase().includes(search.toLowerCase()) || subtitleOf(r).toLowerCase().includes(search.toLowerCase())) : [];
+  const rows = isOwner ? ownerRows : items;
+  const totalCount = isOwner ? ownerRows.length : total;
+
+  const shownCols = cols.filter((c) => visible.has(c[0]));
+  const grid = `30px minmax(160px, 1.8fr) ${shownCols.slice(1).map(() => "1fr").join(" ")} 28px`;
 
   const toggleCol = (key) => setVisible((prev) => {
     const next = new Set(prev);
@@ -209,6 +241,7 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
       if (res.ok) onToast && onToast(`${action.label} — ${res.done} ${meta.plural.toLowerCase()} updated`, "success");
       else onToast && onToast(`${action.label}: ${res.done || 0}/${res.total || ids.length} updated`, res.done ? "info" : "error");
       onRefresh && (await onRefresh());
+      await fetchPage();
       setSel(new Set());
     } catch {
       onToast && onToast(`${action.label} failed`, "error");
@@ -217,6 +250,13 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
   };
   const bulkAction = (a) => { if (a.pick) setPicker({ action: a, options: pickOptions(a.pick) }); else runBulk(a); };
 
+  // pagination math (server pages; owner is single-page client-side)
+  const from = page * SIZE;
+  const canPrev = page > 0;
+  const canNext = !isOwner && (totalCount != null ? from + SIZE < totalCount : items.length === SIZE);
+  const showPager = !isOwner && (canPrev || canNext);
+  const countLabel = totalCount != null ? `${totalCount}` : `${rows.length}+`;
+
   return (
     <div className="scroll" style={{ flex: 1 }}>
       <div className="screen-pad" style={{ maxWidth: 1100, margin: "0 auto" }}>
@@ -224,7 +264,7 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
           <EntityIcon type={type} size={46} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2 style={{ marginBottom: 4 }}>{meta.plural}</h2>
-            <p style={{ fontSize: 13.5, color: "var(--fg-muted)" }}>{all.length} {meta.plural.toLowerCase()} · synced from your connected CRM</p>
+            <p style={{ fontSize: 13.5, color: "var(--fg-muted)" }}>{countLabel} {meta.plural.toLowerCase()} · synced from your connected CRM</p>
           </div>
         </div>
 
@@ -242,10 +282,15 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
           <button className="btn btn-sm btn-outline" onClick={() => onChat && onChat([])}><Icons.Spark size={14} /> Chat with {meta.plural.toLowerCase()}</button>
         </div>
 
-        {rows.length === 0 ? (
+        {loading && rows.length === 0 ? (
+          <div className="card" style={{ padding: 40, textAlign: "center", color: "var(--fg-muted)" }}>
+            <span className="spin" style={{ display: "inline-flex", marginBottom: 10 }}><Icons.Refresh size={20} /></span>
+            <div>Loading {meta.plural.toLowerCase()}…</div>
+          </div>
+        ) : rows.length === 0 ? (
           <div className="card" style={{ padding: 40, textAlign: "center", color: "var(--fg-muted)" }}>
             <Icons.Inbox size={28} style={{ marginBottom: 10 }} />
-            <div>{all.length === 0 ? `No ${meta.plural.toLowerCase()} synced yet.` : `No ${meta.plural.toLowerCase()} match “${q}”.`}</div>
+            <div>{search ? `No ${meta.plural.toLowerCase()} match “${search}”.` : `No ${meta.plural.toLowerCase()} synced yet.`}</div>
           </div>
         ) : isMobile ? (
           <div className="ecard-list">{rows.map((r, i) => <MobileCard key={r.id} rec={r} selected={sel.has(r.id)} selecting={selCount > 0} onToggle={() => toggleRow(i, r.id, false)} onOpen={onOpen} />)}</div>
@@ -265,6 +310,16 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {showPager && (
+          <div className="list-pager">
+            <span className="list-pager-info">{rows.length ? `${from + 1}–${from + rows.length}` : "0"}{totalCount != null ? ` of ${totalCount}` : ""}</span>
+            <div className="list-pager-btns">
+              <button className="btn btn-sm btn-outline" disabled={!canPrev || loading} onClick={() => setPage((p) => Math.max(0, p - 1))}><Icons.ArrowLeft size={14} /> Prev</button>
+              <button className="btn btn-sm btn-outline" disabled={!canNext || loading} onClick={() => setPage((p) => p + 1)}>Next <Icons.ArrowRight size={14} /></button>
+            </div>
           </div>
         )}
       </div>

@@ -424,6 +424,11 @@ body {
 .erow.selected { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
 .erow.selected:hover { background: var(--accent-soft); }
 
+/* list pager */
+.list-pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+.list-pager-info { font-size: 13px; color: var(--fg-muted); }
+.list-pager-btns { display: flex; gap: 8px; }
+
 /* mobile card selection */
 .ecard { position: relative; }
 .ecard-check { border: none; background: transparent; padding: 0; cursor: pointer; display: flex; align-items: center; }
