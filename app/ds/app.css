@@ -54,7 +54,7 @@ body {
   padding: 16px 0 14px; gap: 4px; z-index: 30;
   border-right: 1px solid var(--rail-border);
 }
-.rail-logo { margin-bottom: 18px; display: flex; }
+.rail-logo { margin-bottom: 18px; display: flex; border: none; background: transparent; padding: 0; }
 .rail-btn {
   width: 44px; height: 44px; border-radius: var(--radius-lg); border: none;
   background: transparent; color: var(--rail-text-muted); cursor: pointer;

@@ -100,7 +100,7 @@ export function SideNav({ route, go, openList, openChat, themeResolved, toggleTh
   return (
     <>
       <nav className="rail">
-        <div className="rail-logo" style={{ color: "#FDFCF7" }}><LogoMark size={26} /></div>
+        <button className="rail-logo" style={{ color: "#FDFCF7", cursor: "pointer" }} title="Home" onClick={() => go("home")}><LogoMark size={26} /></button>
         <button className="rail-cta" title="New chat" onClick={() => openChat([])}><Icons.Plus size={20} /></button>
         <div className="rail-scroll" style={{ marginTop: 4 }}>
           <Btn active={route.name === "home"} title="Home" icon={Icons.Home} onClick={() => go("home")} />
