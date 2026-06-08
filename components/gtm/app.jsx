@@ -15,13 +15,44 @@ import { SideNav, BottomNav } from "./nav";
 import { Onboarding } from "./onboarding";
 import { Signup } from "./signup";
 import { AgentBuilder } from "./agentbuilder";
-import { ENTITY_ORDER, ENTITIES, countOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
+import { ENTITY_ORDER, ENTITIES, countOf, useDataStatus, getConnectors, byId } from "@/lib/gtm/data";
 import { listAgents, duplicateAgent } from "@/lib/gtm/agents";
 import { CONFIG } from "@/lib/gtm/config";
 import { getAccount, isSignedUp, saveAccount, startTrial, resetBilling, billingStatus, refreshBillingStatus } from "@/lib/gtm/billing";
 
 const mq = () => window.matchMedia("(prefers-color-scheme: dark)");
 const systemTheme = () => (mq().matches ? "dark" : "light");
+
+// Named screens that map 1:1 to /<name>. "home" maps to "/".
+const NAMED_ROUTES = ["home", "chat", "connectors", "notetaker", "files", "plans"];
+
+function pathForRoute(route) {
+  if (!route || !route.name) return "/";
+  if (route.name === "home") return "/";
+  if (route.name === "list") return `/records/${route.type}`;
+  if (route.name === "detail") {
+    const r = route.record || {};
+    return r.type && r.id ? `/records/${r.type}/${r.id}` : "/records";
+  }
+  return `/${route.name}`;
+}
+
+function routeForPath(pathname) {
+  const path = (pathname || "/").replace(/\/+$/, "") || "/";
+  if (path === "/") return { name: "home" };
+  const seg = path.split("/").filter(Boolean);
+  if (seg[0] === "records") {
+    const type = seg[1];
+    if (!type) return { name: "home" };
+    if (seg[2]) {
+      const record = byId(seg[2]);
+      return record ? { name: "detail", record } : { name: "list", type };
+    }
+    return { name: "list", type };
+  }
+  if (NAMED_ROUTES.includes(seg[0])) return { name: seg[0] };
+  return { name: "home" };
+}
 
 function useTweaks() {
   const load = (k, d) => { try { return localStorage.getItem("ampup-" + k) || d; } catch { return d; } };
@@ -118,7 +149,7 @@ export function App({ authUser } = {}) {
   const { ready, refresh } = useDataStatus(); // re-render the tree when records/connectors load
   const t = useTweaks();
   const themeResolved = t.themePref === "system" ? systemTheme() : t.themePref;
-  const [route, setRoute] = useState({ name: "home" });
+  const [route, setRoute] = useState(() => routeForPath(window.location.pathname));
   const [chatSeed, setChatSeed] = useState([]);
   const [chatResume, setChatResume] = useState(null);
   const [chatAgent, setChatAgent] = useState(null);
@@ -158,18 +189,33 @@ export function App({ authUser } = {}) {
     const b = params.get("billing");
     if (b === "success") showToast("Subscription active — welcome to Pro! 🎉", "success");
     else if (b === "cancelled") showToast("Checkout cancelled — no charge made.", "info");
-    if (b) window.history.replaceState({}, "", window.location.pathname);
+    if (b) window.history.replaceState({ route }, "", window.location.pathname);
   }, []);
 
-  const go = (name) => setRoute({ name });
-  const openList = (type) => setRoute({ name: "list", type });
-  const openRecord = (record) => setRoute({ name: "detail", record });
-  const openChat = (seed) => { setChatSeed((seed || []).filter(Boolean)); setChatResume(null); setChatAgent(null); setChatKey((k) => k + 1); setRoute({ name: "chat" }); };
-  const openConversation = (conv) => { setChatSeed([]); setChatResume(conv); setChatAgent(null); setChatKey((k) => k + 1); setRoute({ name: "chat" }); };
+  // Single entry point for forward navigation: update state + push a matching
+  // URL so the address bar and Back/Forward stay in sync. The full route object
+  // (record included) is stored in history state so popstate can restore it.
+  const navigate = (next) => { setRoute(next); window.history.pushState({ route: next }, "", pathForRoute(next)); };
+
+  const go = (name) => navigate({ name });
+  const openList = (type) => navigate({ name: "list", type });
+  const openRecord = (record) => navigate({ name: "detail", record });
+  const openChat = (seed) => { setChatSeed((seed || []).filter(Boolean)); setChatResume(null); setChatAgent(null); setChatKey((k) => k + 1); navigate({ name: "chat" }); };
+  const openConversation = (conv) => { setChatSeed([]); setChatResume(conv); setChatAgent(null); setChatKey((k) => k + 1); navigate({ name: "chat" }); };
   const openAgent = (agent, seed) => {
     if (agent?.enterprise) { showToast(`${agent.name} is an Enterprise agent — contact sales to enable it.`, "info"); return; }
-    setChatSeed((seed || []).filter(Boolean)); setChatResume(null); setChatAgent(agent); setChatKey((k) => k + 1); setRoute({ name: "chat" });
+    setChatSeed((seed || []).filter(Boolean)); setChatResume(null); setChatAgent(agent); setChatKey((k) => k + 1); navigate({ name: "chat" });
   };
+
+  // Sync the initial history entry with the starting route (so the first Back
+  // works), and restore route state on Back/Forward. The popstate handler only
+  // calls setRoute — never pushState — to avoid navigation loops.
+  useEffect(() => {
+    window.history.replaceState({ route }, "", pathForRoute(route) + window.location.search);
+    const onPop = (e) => setRoute(e.state?.route || routeForPath(window.location.pathname));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   const restartDemo = () => {
     ["onboarded", "profile"].forEach((k) => { try { localStorage.removeItem("ampup-" + k); } catch {} });
@@ -198,7 +244,7 @@ export function App({ authUser } = {}) {
       const s = params.get("signin");
       if (s === "google" && !newGoogle) showToast("Signed in with Google", "success");
       else if (s === "error") showToast("Google sign-in didn’t complete — try again", "error");
-      if (s) window.history.replaceState({}, "", window.location.pathname);
+      if (s) window.history.replaceState({ route }, "", window.location.pathname);
     }).catch(() => {});
   }, []);
   const onboardingDone = (data) => {

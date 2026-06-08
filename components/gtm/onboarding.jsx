@@ -99,17 +99,19 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
               <span className="gcal-syncing">Syncing events…</span>
             </div>
           ) : cal === "connecting" ? (
-            <Suspense fallback={<div style={{ padding: 16, textAlign: "center", color: "var(--fg-muted)" }}>Loading…</div>}>
-              <AmpersandConnect
-                integration={googleIntegration()}
-                project={amp.projectId}
-                apiKey={amp.apiKey}
-                groupRef={amp.groupRef}
-                consumerRef={amp.consumerRef}
-                onToast={() => {}}
-                onDone={() => setCal("connected")}
-              />
-            </Suspense>
+            <div className="gcal-amp">
+              <Suspense fallback={<div style={{ padding: 16, textAlign: "center", color: "var(--fg-muted)" }}>Loading…</div>}>
+                <AmpersandConnect
+                  integration={googleIntegration()}
+                  project={amp.projectId}
+                  apiKey={amp.apiKey}
+                  groupRef={amp.groupRef}
+                  consumerRef={amp.consumerRef}
+                  onToast={() => {}}
+                  onDone={() => setCal("connected")}
+                />
+              </Suspense>
+            </div>
           ) : (
             <button className="gcal-btn" onClick={() => {
               if (amp.configured && amp.apiKey) setCal("connecting");
