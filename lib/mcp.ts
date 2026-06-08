@@ -7,30 +7,44 @@ export type McpToolDef = {
   inputSchema: Record<string, unknown>;
 };
 
+// A resolved MCP server target. `slug` namespaces its tools as
+// `mcp__<slug>__<tool>` so multiple servers can coexist without collisions.
+export type McpServer = {
+  slug: string;
+  url: string;
+  token?: string;
+  // Header the token is sent in. Defaults to "Authorization" with a "Bearer "
+  // prefix; any other header sends the raw token value.
+  authHeader?: string;
+};
+
 // Imported ONLY via dynamic import inside a "use step" so the MCP SDK (Node
 // modules) never enters the workflow bundle. A fresh connection per call keeps
 // each durable step self-contained / replayable.
 
-function resolve(apiKey?: string): { url: string; key: string } {
-  const url = process.env.AMPUP_MCP_URL;
-  const key = apiKey || process.env.AMPUP_MCP_API_KEY;
-  if (!url || !key) throw new Error("AMPUP_MCP_URL / AMPUP_MCP_API_KEY not set");
-  return { url, key };
+function headersFor(server: McpServer): Record<string, string> {
+  if (!server.token) return {};
+  const header =
+    server.authHeader && server.authHeader.trim() && server.authHeader !== "Authorization"
+      ? server.authHeader.trim()
+      : "Authorization";
+  const value = header === "Authorization" ? `Bearer ${server.token}` : server.token;
+  return { [header]: value };
 }
 
-async function connect(apiKey?: string): Promise<Client> {
-  const { url, key } = resolve(apiKey);
-  const transport = new StreamableHTTPClientTransport(new URL(url), {
-    requestInit: { headers: { Authorization: `Bearer ${key}` } },
+async function connect(server: McpServer): Promise<Client> {
+  if (!server.url) throw new Error(`MCP server "${server.slug}" has no url`);
+  const transport = new StreamableHTTPClientTransport(new URL(server.url), {
+    requestInit: { headers: headersFor(server) },
   });
   const client = new Client({ name: "gtm-agentic-chat", version: "0.1.0" });
   await client.connect(transport);
   return client;
 }
 
-/** Discover the tools this org's MCP server exposes (runtime tools/list). */
-export async function listAmpupTools(apiKey?: string): Promise<McpToolDef[]> {
-  const client = await connect(apiKey);
+/** Discover the tools an MCP server exposes (runtime tools/list). */
+export async function listServerTools(server: McpServer): Promise<McpToolDef[]> {
+  const client = await connect(server);
   try {
     const { tools } = await client.listTools();
     return tools.map((t) => ({
@@ -46,13 +60,13 @@ export async function listAmpupTools(apiKey?: string): Promise<McpToolDef[]> {
   }
 }
 
-/** Call a single ampup MCP tool and return a serializable result. */
-export async function callAmpupTool(
+/** Call a single MCP tool on a server and return a serializable result. */
+export async function callServerTool(
+  server: McpServer,
   name: string,
   args: Record<string, unknown>,
-  apiKey?: string,
 ): Promise<{ ok: boolean; content: string }> {
-  const client = await connect(apiKey);
+  const client = await connect(server);
   try {
     const res = await client.callTool({ name, arguments: args ?? {} });
     const parts = (res.content ?? []) as Array<{ type: string; text?: string }>;
@@ -63,4 +77,27 @@ export async function callAmpupTool(
   } finally {
     await client.close();
   }
+}
+
+// ---- Built-in "ampup" server (env-configured; one org per deploy) ----
+
+function ampupServer(apiKey?: string): McpServer {
+  const url = process.env.AMPUP_MCP_URL;
+  const key = apiKey || process.env.AMPUP_MCP_API_KEY;
+  if (!url || !key) throw new Error("AMPUP_MCP_URL / AMPUP_MCP_API_KEY not set");
+  return { slug: "ampup", url, token: key };
+}
+
+/** Discover the built-in ampup server's tools (used by REST routes). */
+export function listAmpupTools(apiKey?: string): Promise<McpToolDef[]> {
+  return listServerTools(ampupServer(apiKey));
+}
+
+/** Call a tool on the built-in ampup server (used by REST routes). */
+export function callAmpupTool(
+  name: string,
+  args: Record<string, unknown>,
+  apiKey?: string,
+): Promise<{ ok: boolean; content: string }> {
+  return callServerTool(ampupServer(apiKey), name, args ?? {});
 }

@@ -5,11 +5,12 @@ import { DefaultChatTransport } from "ai";
 import { Icons, LogoMark } from "./icons";
 import { EntityIcon, RefChip } from "./ui";
 import { ENTITIES, FIELDS, SUGGESTIONS, byId, related, subtitleOf, addUpload, listConversations, saveConversation, deleteConversation } from "@/lib/gtm/data";
+import { enabledMcpServers } from "@/lib/gtm/mcpServers";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { LoadingIndicator } from "./LoadingIndicator";
 
 const textOf = (m) => (m.parts || []).filter((p) => p.type === "text").map((p) => p.text).join("");
-const toolName = (type) => type.replace(/^tool-/, "").replace(/^mcp__ampup__/, "").replace(/_/g, " ");
+const toolName = (type) => type.replace(/^tool-/, "").replace(/^mcp__[a-z0-9-]+__/, "").replace(/_/g, " ");
 
 function TraceRow({ part }) {
   const done = part.state === "output-available" || part.state === "output-error";
@@ -332,7 +333,7 @@ export function ChatScreen({ seedAttached, resume, onBack, onOpenRecord, onToast
           const msg = pre
             ? { ...last, parts: (last.parts || []).map((p) => (p.type === "text" ? { ...p, text: `${pre}\n\n${p.text}` } : p)) }
             : last;
-          return { body: { conversationId, message: msg, runId: runIdRef.current } };
+          return { body: { conversationId, message: msg, runId: runIdRef.current, mcpServers: enabledMcpServers() } };
         },
       }),
     [conversationId],
