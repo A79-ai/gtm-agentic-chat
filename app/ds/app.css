@@ -582,7 +582,10 @@ select.create-input { cursor: pointer; appearance: none; background-image: linea
 .goal-check { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; color: var(--accent-text); flex-shrink: 0; }
 
 .ob-cal { display: flex; flex-direction: column; gap: 14px; align-items: center; padding-top: 6px; }
-.gcal-card { width: 100%; max-width: 460px; border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--bg-surface); padding: 22px; box-shadow: var(--shadow-sm); }
+.gcal-card { width: 100%; max-width: 460px; border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--bg-surface); padding: 22px; box-shadow: var(--shadow-sm); overflow: hidden; }
+/* Contain the live Ampersand widget: it ships its own field-mapping/management
+   UI that overflows the card. Bound + scroll it so it stays inside the card. */
+.gcal-amp { width: 100%; max-height: min(60vh, 520px); overflow-y: auto; overflow-x: hidden; padding: 4px; }
 .gcal-head { display: flex; align-items: center; gap: 13px; margin-bottom: 18px; }
 .gcal-logo { width: 40px; height: 40px; display: flex; flex-shrink: 0; }
 .gcal-title { font-size: 16px; font-weight: 600; color: var(--fg-primary); }
