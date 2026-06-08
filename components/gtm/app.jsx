@@ -15,7 +15,7 @@ import { Onboarding } from "./onboarding";
 import { Signup } from "./signup";
 import { AgentBuilder } from "./agentbuilder";
 import { ENTITY_ORDER, ENTITIES, countOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
-import { listAgents } from "@/lib/gtm/agents";
+import { listAgents, duplicateAgent } from "@/lib/gtm/agents";
 import { CONFIG } from "@/lib/gtm/config";
 import { getAccount, isSignedUp, saveAccount, startTrial, resetBilling, billingStatus, refreshBillingStatus } from "@/lib/gtm/billing";
 
@@ -220,7 +220,7 @@ export function App() {
       <SideNav route={route} go={go} openList={openList} openChat={openChat} themeResolved={themeResolved} toggleTheme={toggleTheme} profile={profile} on={onProfileAction} />
       <main className="main">
         <TrialBanner route={route} onUpgrade={() => go("plans")} />
-        {route.name === "home" && <HomeScreen agents={agents} connectors={connectors} openChat={openChat} openAgent={openAgent} openList={openList} onNav={go} onCreateAgent={() => setBuilder("new")} onEditAgent={(a) => setBuilder(a)} />}
+        {route.name === "home" && <HomeScreen agents={agents} connectors={connectors} openChat={openChat} openAgent={openAgent} openList={openList} onNav={go} onCreateAgent={() => setBuilder("new")} onEditAgent={(a) => setBuilder(a)} onCopyAgent={(a) => { duplicateAgent(a); setAgentsVersion((v) => v + 1); showToast(`Duplicated ${a.name}`, "success"); }} />}
         {route.name === "connectors" && <ConnectorsScreen connectors={connectors} onToast={showToast} />}
         {route.name === "notetaker" && <NotetakerScreen onToast={showToast} />}
         {route.name === "files" && <FilesScreen onNewChat={openChat} />}
