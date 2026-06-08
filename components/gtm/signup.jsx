@@ -2,12 +2,16 @@
 // is intentionally NOT a login/password form: the template has no auth backend
 // (the per-deploy MCP key is the only credential), so a password field would be
 // theater. Real auth (Clerk/Auth0) is a deferred, separately-flagged concern.
-import React, { useState } from "react";
-import { Icons, LogoMark } from "./icons";
+import React, { useState, useEffect } from "react";
+import { Icons, LogoMark, Logos } from "./icons";
 import { CONFIG } from "@/lib/gtm/config";
 
 export function Signup({ initial, onFinish }) {
   const [f, setF] = useState(() => ({ name: initial?.name || "", email: initial?.email || "", company: initial?.company || "" }));
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+  useEffect(() => {
+    fetch("/api/auth/session").then((r) => r.json()).then((d) => setGoogleEnabled(!!d.googleEnabled)).catch(() => {});
+  }, []);
   const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
   const canSubmit = f.name.trim() && f.email.trim();
   const submit = () => { if (canSubmit) onFinish({ ...f, name: f.name.trim(), email: f.email.trim(), company: f.company.trim() }); };
@@ -48,6 +52,20 @@ export function Signup({ initial, onFinish }) {
           </div>
           <div className="ob-scroll">
             <div className="ob-form">
+              {googleEnabled && (
+                <>
+                  <button className="btn btn-lg" style={{ width: "100%", justifyContent: "center", gap: 10, background: "var(--bg-surface)", border: "1px solid var(--border-default)", color: "var(--fg-primary)" }}
+                    onClick={() => { window.location.href = "/api/auth/google/start"; }}>
+                    <span style={{ width: 18, height: 18, display: "inline-flex" }}>{Logos.Google ? React.createElement(Logos.Google) : <Icons.Mail size={16} />}</span>
+                    Continue with Google
+                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "4px 0" }}>
+                    <div style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
+                    <span style={{ fontSize: 12, color: "var(--fg-muted)" }}>or</span>
+                    <div style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
+                  </div>
+                </>
+              )}
               <label className="fld-wrap"><span className="fld-label">Full name</span>
                 <input className="fld" autoFocus value={f.name} placeholder="Jane Rivera"
                   onChange={(e) => set("name", e.target.value)}

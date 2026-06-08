@@ -182,6 +182,20 @@ export function App() {
     if (CONFIG.onboarding.enabled && !onboarded) setFlow({ name: "onboarding", firstRun: true });
     else { setFlow(null); showToast("Welcome to AmpUp" + (data.name ? `, ${data.name.split(" ")[0]}` : "") + " 👋", "success"); }
   };
+
+  // Google sign-in: if a session cookie is present, treat it as a completed
+  // signup (verified email drives the trial/billing). Also toasts on return.
+  useEffect(() => {
+    fetch("/api/auth/session").then((r) => r.json()).then((d) => {
+      const newGoogle = d && d.user && d.user.email && !isSignedUp();
+      if (newGoogle) signupDone({ name: d.user.name || "", email: d.user.email, company: "" });
+      const params = new URLSearchParams(window.location.search);
+      const s = params.get("signin");
+      if (s === "google" && !newGoogle) showToast("Signed in with Google", "success");
+      else if (s === "error") showToast("Google sign-in didn’t complete — try again", "error");
+      if (s) window.history.replaceState({}, "", window.location.pathname);
+    }).catch(() => {});
+  }, []);
   const onboardingDone = (data) => {
     const p = { name: data.name, email: data.email, company: data.company, role: data.role, size: data.size, goals: data.goals, calendar: !!data.calendar };
     setProfile(p);
