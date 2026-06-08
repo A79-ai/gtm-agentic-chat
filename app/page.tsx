@@ -45,7 +45,7 @@ function Gated() {
             Continue to your GTM workspace.
           </p>
           <button className="btn btn-primary btn-lg" onClick={() => loginWithRedirect()}>
-            Continue with Google
+            Log in
           </button>
         </div>
       </div>
