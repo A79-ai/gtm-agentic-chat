@@ -7,6 +7,7 @@ import { McpServerModal } from "./McpServerModal";
 import { saveAgent, deleteAgent, isSystemAgent } from "@/lib/gtm/agents";
 import { listMcpServers, saveMcpServer } from "@/lib/gtm/mcpServers";
 import { getUploads, addUpload } from "@/lib/gtm/data";
+import { apiFetch } from "@/lib/gtm/auth";
 
 const ICONS = ["Spark", "Target", "Phone", "Mail", "Building", "Activity", "Brain", "Zap"];
 const TONE_KEYS = ["gold", "teal", "mint"];
@@ -51,7 +52,7 @@ export function AgentBuilder({ agent, onSave, onClose, onDeleted, onOpenConnecto
         fr.onerror = rej;
         fr.readAsDataURL(file);
       });
-      const res = await fetch("/api/upload", {
+      const res = await apiFetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ file_name: file.name, file_content_base64: b64 }),

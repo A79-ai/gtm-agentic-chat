@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Icons } from "./icons";
 import { EntityIcon, TBadge, RefChip } from "./ui";
 import { ENTITIES, FIELDS, CONNECTORS, byId, subtitleOf, related } from "@/lib/gtm/data";
+import { apiFetch } from "@/lib/gtm/auth";
 
 function FieldVal({ rec, spec, onOpen }) {
   const [, key, kind] = spec;
@@ -29,8 +30,8 @@ function MeetingBriefs({ meetingId }) {
   const [post, setPost] = useState(undefined);
   useEffect(() => {
     let alive = true;
-    fetch(`/api/meeting-brief?type=pre&id=${encodeURIComponent(meetingId)}`).then((r) => r.json()).then((d) => alive && setPre(d)).catch(() => alive && setPre({ empty: true }));
-    fetch(`/api/meeting-brief?type=post&id=${encodeURIComponent(meetingId)}`).then((r) => r.json()).then((d) => alive && setPost(d)).catch(() => alive && setPost({ empty: true }));
+    apiFetch(`/api/meeting-brief?type=pre&id=${encodeURIComponent(meetingId)}`).then((r) => r.json()).then((d) => alive && setPre(d)).catch(() => alive && setPre({ empty: true }));
+    apiFetch(`/api/meeting-brief?type=post&id=${encodeURIComponent(meetingId)}`).then((r) => r.json()).then((d) => alive && setPost(d)).catch(() => alive && setPost({ empty: true }));
     return () => { alive = false; };
   }, [meetingId]);
 

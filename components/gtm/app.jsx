@@ -1,6 +1,7 @@
 // App shell — router, rail / bottom-nav + records sheet, theme, tweaks
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Icons } from "./icons";
+import { AUTH0_ENABLED } from "@/lib/gtm/auth";
 import { EntityIcon } from "./ui";
 import { HomeScreen } from "./home";
 import { ConnectorsScreen } from "./connectors";
@@ -113,7 +114,7 @@ function Toast({ toast }) {
   );
 }
 
-export function App() {
+export function App({ authUser } = {}) {
   const { ready, refresh } = useDataStatus(); // re-render the tree when records/connectors load
   const t = useTweaks();
   const themeResolved = t.themePref === "system" ? systemTheme() : t.themePref;
@@ -133,9 +134,13 @@ export function App() {
   const toastTimer = useRef(null);
   const [profile, setProfile] = useState(() => { try { return JSON.parse(localStorage.getItem("ampup-profile") || "{}"); } catch { return {}; } });
   const [account, setAccount] = useState(() => getAccount());
+  // When Auth0 owns identity, show the real signed-in user in the profile menu.
+  const navProfile = authUser
+    ? { ...profile, name: profile.name || authUser.name || authUser.email, email: authUser.email || profile.email, picture: authUser.picture }
+    : profile;
   const [flow, setFlow] = useState(() => {
     const onboarded = (() => { try { return localStorage.getItem("ampup-onboarded") === "1"; } catch { return false; } })();
-    if (CONFIG.signup.enabled && !isSignedUp()) return { name: "signup", firstRun: true };
+    if (CONFIG.signup.enabled && !AUTH0_ENABLED && !isSignedUp()) return { name: "signup", firstRun: true };
     if (CONFIG.onboarding.enabled && !onboarded) return { name: "onboarding", firstRun: true };
     return null;
   });
@@ -221,7 +226,7 @@ export function App() {
 
   return (
     <div className="app">
-      <SideNav route={route} go={go} openList={openList} openChat={openChat} themeResolved={themeResolved} toggleTheme={toggleTheme} profile={profile} on={onProfileAction} />
+      <SideNav route={route} go={go} openList={openList} openChat={openChat} themeResolved={themeResolved} toggleTheme={toggleTheme} profile={navProfile} on={onProfileAction} />
       <main className="main">
         <TrialBanner route={route} onUpgrade={() => go("plans")} />
         {route.name === "home" && <HomeScreen agents={agents} connectors={connectors} openChat={openChat} openAgent={openAgent} openList={openList} onNav={go} onCreateAgent={() => setBuilder("new")} onEditAgent={(a) => setBuilder(a)} onCopyAgent={(a) => { duplicateAgent(a); setAgentsVersion((v) => v + 1); showToast(`Duplicated ${a.name}`, "success"); }} />}

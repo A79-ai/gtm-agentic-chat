@@ -20,7 +20,7 @@ function useDismiss(onClose) {
   return ref;
 }
 
-function RecordsFlyout({ anchor, onPick, onClose }) {
+function RecordsFlyout({ anchor, onPick, onClose, onFiles }) {
   const ref = useDismiss(onClose);
   const style = anchor ? { position: "fixed", left: anchor.left, top: Math.min(anchor.top, window.innerHeight - 380), zIndex: 90 } : {};
   return (
@@ -35,6 +35,12 @@ function RecordsFlyout({ anchor, onPick, onClose }) {
             <Icons.ChevronRight size={16} style={{ color: "var(--fg-muted)" }} />
           </button>
         ))}
+        <button key="files" className="navpop-item" onClick={() => { onFiles(); onClose(); }}>
+          <span style={{ width: 30, height: 30, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--fg-muted)" }}><Icons.Paperclip size={18} /></span>
+          <span className="nm">Files</span>
+          <span className="ct" />
+          <Icons.ChevronRight size={16} style={{ color: "var(--fg-muted)" }} />
+        </button>
       </div>
     </div>
   );
@@ -61,7 +67,6 @@ function ProfileMenu({ anchor, profile, on, onClose }) {
       </div>
       <div className="menu-section">
         <Item icon={Icons.Brain} label="Notetaker" onClick={() => on("notetaker")} />
-        <Item icon={Icons.Paperclip} label="Files" onClick={() => on("files")} />
         {CONFIG.billing.enabled ? <Item icon={Icons.Spark} label="Plans & billing" onClick={() => on("plans")} /> : null}
         <Item icon={Icons.Sliders} label="Tweaks" onClick={() => on("tweaks")} />
       </div>
@@ -114,7 +119,7 @@ export function SideNav({ route, go, openList, openChat, themeResolved, toggleTh
           {initials(profile.name || "You")}
         </button>
       </nav>
-      {flyout === "records" && <RecordsFlyout anchor={anchor} onPick={openList} onClose={() => setFlyout(null)} />}
+      {flyout === "records" && <RecordsFlyout anchor={anchor} onPick={openList} onFiles={() => on("files")} onClose={() => setFlyout(null)} />}
       {flyout === "profile" && <ProfileMenu anchor={anchor} profile={profile} on={on} onClose={() => setFlyout(null)} />}
     </>
   );

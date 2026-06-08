@@ -20,12 +20,13 @@ function apiBase(): string {
   return (process.env.AMPUP_MCP_URL || "").replace(/\/mcp\/?$/, "");
 }
 function keyOf(req: Request): string {
-  return (
+  const headerKey =
     req.headers.get("x-ampup-mcp-key") ??
-    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
-    process.env.AMPUP_MCP_API_KEY ??
-    ""
-  );
+    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  // Multi-tenant: never fall back to the shared env key. Without a per-request
+  // key the route 401s instead of serving one org's data to everyone.
+  if (process.env.MULTI_TENANT === "true") return headerKey ?? "";
+  return headerKey ?? process.env.AMPUP_MCP_API_KEY ?? "";
 }
 
 export async function GET(req: Request) {

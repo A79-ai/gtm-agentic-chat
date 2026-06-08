@@ -6,6 +6,7 @@ import { CAT_TABS, getAmpersand, setConnectors, getConnectors } from "@/lib/gtm/
 import { listMcpServers, saveMcpServer, deleteMcpServer, setMcpServerEnabled } from "@/lib/gtm/mcpServers";
 import { McpServerModal } from "./McpServerModal";
 import { MCP_CATALOG, AUTH_LABEL } from "@/lib/gtm/mcpCatalog";
+import { apiFetch } from "@/lib/gtm/auth";
 
 const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
 
@@ -212,7 +213,7 @@ export function ConnectorsScreen({ connectors, onToast }) {
 
   // Re-pull the live catalog + connection state (after a connect/disconnect).
   const refetch = () =>
-    fetch("/api/connectors")
+    apiFetch("/api/connectors")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data) { setConnectors(data); setConns(getConnectors()); } })
       .catch(() => {});
