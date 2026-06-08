@@ -4,13 +4,16 @@
 import React, { useState } from "react";
 import { Icons } from "./icons";
 import { CONFIG, priceLabel } from "@/lib/gtm/config";
-import { billingStatus, startCheckout, openBillingPortal } from "@/lib/gtm/billing";
+import { billingStatus, startCheckout, openBillingPortal, getAccount } from "@/lib/gtm/billing";
 
 function StatusStrip({ status, onManage }) {
   if (status.state === "subscribed") {
     return (
       <div className="trial-strip ok">
-        <Icons.CheckCircle size={16} /> You’re on the <strong>Pro</strong> plan. Thanks for the support!
+        <Icons.CheckCircle size={16} />
+        {status.trialing
+          ? <span>You’re on <strong>Pro</strong> — <strong>{status.daysLeft} day{status.daysLeft === 1 ? "" : "s"}</strong> left in your trial.</span>
+          : <span>You’re on the <strong>Pro</strong> plan. Thanks for the support!</span>}
         {CONFIG.billing.provider === "stripe" && (
           <button className="btn btn-sm btn-outline" style={{ marginLeft: "auto" }} onClick={onManage}>Manage billing</button>
         )}
@@ -43,7 +46,14 @@ export function PlansScreen({ onToast }) {
   const subscribed = status.state === "subscribed";
 
   const onPick = async (p) => {
-    if (p.id === "enterprise") { onToast("Opening sales contact…", "info"); return; }
+    if (p.id === "enterprise") {
+      const acct = getAccount();
+      const signoff = [acct?.name, acct?.company].filter(Boolean).join(", ");
+      const body = ["Hi AmpUp team,", "", "I'd like to talk about the Enterprise plan.", ...(signoff ? ["", `— ${signoff}`] : [])].join("\n");
+      window.location.href = `mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent("AmpUp Enterprise inquiry")}&body=${encodeURIComponent(body)}`;
+      onToast("Opening your email to contact sales…", "info");
+      return;
+    }
     if (p.id === "trial") {
       onToast(status.state === "trialing" ? "Your free trial is already active 🎉" : `Your ${CONFIG.billing.trialDays}-day free trial is active 🎉`, "success");
       return;

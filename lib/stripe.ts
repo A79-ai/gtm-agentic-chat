@@ -29,11 +29,13 @@ export async function findOrCreateCustomer(stripe: Stripe, email: string, name?:
 }
 
 type Status =
-  | { state: "subscribed"; plan: string }
-  | { state: "trialing"; daysLeft: number }
+  | { state: "subscribed"; plan: string; trialing?: boolean; daysLeft?: number }
   | { state: "none" };
 
 // Read the live entitlement for an email straight from Stripe (source of truth).
+// A trialing subscription still means the customer is ON the plan (they completed
+// checkout) — it's "subscribed", just inside its trial window. Only the absence
+// of a subscription is "none".
 export async function customerStatus(stripe: Stripe, email: string): Promise<Status> {
   const customers = await stripe.customers.list({ email, limit: 1 });
   const customer = customers.data[0];
@@ -43,7 +45,7 @@ export async function customerStatus(stripe: Stripe, email: string): Promise<Sta
   if (!sub) return { state: "none" };
   if (sub.status === "trialing") {
     const endMs = (sub.trial_end || 0) * 1000;
-    return { state: "trialing", daysLeft: Math.max(0, Math.ceil((endMs - Date.now()) / 86_400_000)) };
+    return { state: "subscribed", plan: "pro", trialing: true, daysLeft: Math.max(0, Math.ceil((endMs - Date.now()) / 86_400_000)) };
   }
   return { state: "subscribed", plan: "pro" };
 }
