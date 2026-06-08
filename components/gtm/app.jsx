@@ -228,6 +228,7 @@ export function App() {
         <AgentBuilder
           agent={builder === "new" ? null : builder}
           onClose={() => setBuilder(null)}
+          onOpenConnectors={() => { setBuilder(null); go("connectors"); }}
           onSave={() => { setBuilder(null); setAgentsVersion((v) => v + 1); showToast("Agent saved", "success"); }}
           onDeleted={() => { setBuilder(null); setAgentsVersion((v) => v + 1); showToast("Agent deleted", "info"); }}
         />

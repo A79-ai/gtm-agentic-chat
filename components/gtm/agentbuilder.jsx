@@ -1,16 +1,17 @@
 // Agent builder — define a chat persona: a system prompt, a scoped set of MCP
 // servers, and (optional) attached files. Saved to the local agent registry.
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Icons } from "./icons";
 import { TONES } from "./ui";
+import { McpServerModal } from "./McpServerModal";
 import { saveAgent, deleteAgent } from "@/lib/gtm/agents";
-import { listMcpServers } from "@/lib/gtm/mcpServers";
-import { getUploads } from "@/lib/gtm/data";
+import { listMcpServers, saveMcpServer } from "@/lib/gtm/mcpServers";
+import { getUploads, addUpload } from "@/lib/gtm/data";
 
 const ICONS = ["Spark", "Target", "Phone", "Mail", "Building", "Activity", "Brain", "Zap"];
 const TONE_KEYS = ["gold", "teal", "mint"];
 
-export function AgentBuilder({ agent, onSave, onClose, onDeleted }) {
+export function AgentBuilder({ agent, onSave, onClose, onDeleted, onOpenConnectors }) {
   const editing = agent && agent.id;
   const [name, setName] = useState(agent?.name || "");
   const [desc, setDesc] = useState(agent?.desc || "");
@@ -22,9 +23,51 @@ export function AgentBuilder({ agent, onSave, onClose, onDeleted }) {
   const [serverIds, setServerIds] = useState(() => new Set(agent?.mcpServerIds || []));
   const [fileIds, setFileIds] = useState(() => new Set(agent?.fileIds || []));
 
-  const servers = listMcpServers();
-  const uploads = getUploads();
+  const [servers, setServers] = useState(() => listMcpServers());
+  const [uploads, setUploads] = useState(() => getUploads());
+  const [mcpModal, setMcpModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState("");
+  const fileRef = useRef(null);
   const canSave = name.trim() && prompt.trim();
+
+  // Inline-add an MCP server, then select it for this agent.
+  const addServer = (s) => {
+    const rec = saveMcpServer(s);
+    setServers(listMcpServers());
+    setServerIds((prev) => new Set(prev).add(rec.slug));
+    setMcpModal(false);
+  };
+
+  // Inline-upload a file (same path as the chat composer), then attach it.
+  const uploadFile = async (file) => {
+    if (!file || uploading) return;
+    setUploading(true);
+    setUploadErr("");
+    try {
+      const b64 = await new Promise((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(String(fr.result).split(",")[1] || "");
+        fr.onerror = rej;
+        fr.readAsDataURL(file);
+      });
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ file_name: file.name, file_content_base64: b64 }),
+      }).then((r) => r.json());
+      if (res.ok) {
+        addUpload({ datasourceId: res.datasourceId, fileName: res.fileName, status: res.status, ts: Date.now() });
+        setUploads(getUploads());
+        setFileIds((prev) => new Set(prev).add(res.datasourceId));
+      } else {
+        setUploadErr(res.error || "Upload failed");
+      }
+    } catch {
+      setUploadErr("Upload failed");
+    }
+    setUploading(false);
+  };
 
   const toggle = (set, setFn, key) => {
     const next = new Set(set);
@@ -46,6 +89,7 @@ export function AgentBuilder({ agent, onSave, onClose, onDeleted }) {
   const label = { display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-secondary)", marginBottom: 6 };
 
   return (
+    <>
     <div className="sheet-backdrop" style={{ alignItems: "center", justifyContent: "center", zIndex: 95 }} onClick={onClose}>
       <div className="card" style={{ width: "min(620px, 95vw)", maxHeight: "92vh", display: "flex", flexDirection: "column", padding: 0 }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
@@ -113,14 +157,26 @@ export function AgentBuilder({ agent, onSave, onClose, onDeleted }) {
                 ))}
               </div>
             )}
-            {servers.length === 0 && (
-              <div style={{ marginTop: 8, fontSize: 12, color: "var(--fg-muted)" }}>Add custom MCP servers in Connectors to scope an agent to them.</div>
-            )}
+            <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <button className="btn btn-sm btn-outline" onClick={() => setMcpModal(true)}><Icons.Plus size={14} /> Add MCP server</button>
+              {onOpenConnectors && (
+                <button className="btn btn-sm btn-ghost" onClick={onOpenConnectors} style={{ fontSize: 12.5, color: "var(--fg-muted)" }}>Manage in Connectors <Icons.ChevronRight size={13} /></button>
+              )}
+            </div>
           </div>
 
-          {uploads.length > 0 && (
-            <div>
-              <label style={label}>Attached files <span style={{ fontWeight: 400, color: "var(--fg-muted)" }}>(injected as context)</span></label>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <label style={{ ...label, marginBottom: 0, flex: 1 }}>Attached files <span style={{ fontWeight: 400, color: "var(--fg-muted)" }}>(injected as context)</span></label>
+              <input ref={fileRef} type="file" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ""; }} />
+              <button className="btn btn-sm btn-outline" disabled={uploading} onClick={() => fileRef.current?.click()}>
+                {uploading ? <Icons.Refresh size={14} className="spin" /> : <Icons.Paperclip size={14} />} {uploading ? "Uploading…" : "Upload file"}
+              </button>
+            </div>
+            {uploadErr && <div style={{ fontSize: 12, color: "var(--fg-primary)", background: "var(--accent-soft)", padding: "7px 10px", borderRadius: 8, marginBottom: 6 }}>{uploadErr}</div>}
+            {uploads.length === 0 ? (
+              <div style={{ fontSize: 12, color: "var(--fg-muted)" }}>No files yet — upload one to ground this agent in your own documents.</div>
+            ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 140, overflow: "auto" }}>
                 {uploads.map((f) => (
                   <label key={f.datasourceId} style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 11px", borderRadius: 9, border: "1px solid var(--border-subtle)", background: "var(--bg-surface)", cursor: "pointer", fontSize: 13.5 }}>
@@ -130,8 +186,8 @@ export function AgentBuilder({ agent, onSave, onClose, onDeleted }) {
                   </label>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div style={{ display: "flex", gap: 10, padding: "14px 16px", borderTop: "1px solid var(--border-subtle)" }}>
@@ -144,5 +200,7 @@ export function AgentBuilder({ agent, onSave, onClose, onDeleted }) {
         </div>
       </div>
     </div>
+    {mcpModal && <McpServerModal server={null} onSave={addServer} onClose={() => setMcpModal(false)} />}
+    </>
   );
 }
