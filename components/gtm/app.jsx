@@ -145,7 +145,7 @@ function Toast({ toast }) {
   );
 }
 
-export function App({ authUser } = {}) {
+export function App({ authUser, onAuth0Logout } = {}) {
   const { ready, refresh } = useDataStatus(); // re-render the tree when records/connectors load
   const t = useTweaks();
   const themeResolved = t.themePref === "system" ? systemTheme() : t.themePref;
@@ -264,9 +264,18 @@ export function App({ authUser } = {}) {
     else if (action === "onboarding") setFlow({ name: "onboarding", firstRun: false });
     else if (action === "restart") restartDemo();
     else if (action === "signout") {
-      // Clear the Google session cookie (if any), then reset local
-      // account/onboarding and reload — lands back on the signup screen.
-      fetch("/api/auth/session", { method: "POST" }).catch(() => {}).finally(() => restartDemo());
+      // Clear local app state, then end the auth session. Under Auth0 we must
+      // call logout() — the session lives in localStorage and would otherwise
+      // silently re-authenticate on reload. Auth0 logout redirects to origin,
+      // landing on the sign-in screen (so no manual reload here).
+      ["onboarded", "profile"].forEach((k) => { try { localStorage.removeItem("ampup-" + k); } catch {} });
+      resetBilling();
+      if (AUTH0_ENABLED && onAuth0Logout) {
+        onAuth0Logout();
+      } else {
+        // Legacy single-org path: clear the Google session cookie, then reload.
+        fetch("/api/auth/session", { method: "POST" }).catch(() => {}).finally(() => restartDemo());
+      }
     }
   };
 

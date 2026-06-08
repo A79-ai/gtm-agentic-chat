@@ -63,12 +63,18 @@ function Gated() {
 // fires without it (which would 401 under MULTI_TENANT).
 function AuthedApp() {
   const { key } = useMcpKeyContext();
-  const { user } = useAuth0();
+  const { user, logout } = useAuth0();
   if (!key) return null;
   return (
     <DataProvider>
-      {/* App is a JS component; authUser is consumed at runtime. */}
-      <App {...({ authUser: user } as unknown as Record<string, never>)} />
+      {/* App is a JS component; authUser/onAuth0Logout are consumed at runtime. */}
+      <App
+        {...({
+          authUser: user,
+          onAuth0Logout: () =>
+            logout({ logoutParams: { returnTo: window.location.origin } }),
+        } as unknown as Record<string, never>)}
+      />
     </DataProvider>
   );
 }
