@@ -1,5 +1,5 @@
 // App shell — router, rail / bottom-nav + records sheet, theme, tweaks
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Icons } from "./icons";
 import { EntityIcon } from "./ui";
 import { HomeScreen } from "./home";
@@ -13,7 +13,9 @@ import { PlansScreen } from "./plans";
 import { SideNav, BottomNav } from "./nav";
 import { Onboarding } from "./onboarding";
 import { Signup } from "./signup";
-import { AGENTS, ENTITY_ORDER, ENTITIES, countOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
+import { AgentBuilder } from "./agentbuilder";
+import { ENTITY_ORDER, ENTITIES, countOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
+import { listAgents } from "@/lib/gtm/agents";
 import { CONFIG } from "@/lib/gtm/config";
 import { getAccount, isSignedUp, saveAccount, startTrial, resetBilling, billingStatus, refreshBillingStatus } from "@/lib/gtm/billing";
 
@@ -118,7 +120,11 @@ export function App() {
   const [route, setRoute] = useState({ name: "home" });
   const [chatSeed, setChatSeed] = useState([]);
   const [chatResume, setChatResume] = useState(null);
+  const [chatAgent, setChatAgent] = useState(null);
   const [chatKey, setChatKey] = useState(0);
+  const [builder, setBuilder] = useState(null); // null | "new" | agent
+  const [agentsVersion, setAgentsVersion] = useState(0);
+  const agents = useMemo(() => listAgents(), [agentsVersion, ready]);
   const [connectors, setConnectors] = useState([]);
   useEffect(() => { setConnectors(getConnectors()); }, [ready]);
   const [tweaksOpen, setTweaksOpen] = useState(false);
@@ -153,8 +159,12 @@ export function App() {
   const go = (name) => setRoute({ name });
   const openList = (type) => setRoute({ name: "list", type });
   const openRecord = (record) => setRoute({ name: "detail", record });
-  const openChat = (seed) => { setChatSeed((seed || []).filter(Boolean)); setChatResume(null); setChatKey((k) => k + 1); setRoute({ name: "chat" }); };
-  const openConversation = (conv) => { setChatSeed([]); setChatResume(conv); setChatKey((k) => k + 1); setRoute({ name: "chat" }); };
+  const openChat = (seed) => { setChatSeed((seed || []).filter(Boolean)); setChatResume(null); setChatAgent(null); setChatKey((k) => k + 1); setRoute({ name: "chat" }); };
+  const openConversation = (conv) => { setChatSeed([]); setChatResume(conv); setChatAgent(null); setChatKey((k) => k + 1); setRoute({ name: "chat" }); };
+  const openAgent = (agent, seed) => {
+    if (agent?.enterprise) { showToast(`${agent.name} is an Enterprise agent — contact sales to enable it.`, "info"); return; }
+    setChatSeed((seed || []).filter(Boolean)); setChatResume(null); setChatAgent(agent); setChatKey((k) => k + 1); setRoute({ name: "chat" });
+  };
 
   const restartDemo = () => {
     ["onboarded", "profile"].forEach((k) => { try { localStorage.removeItem("ampup-" + k); } catch {} });
@@ -196,14 +206,14 @@ export function App() {
       <SideNav route={route} go={go} openList={openList} openChat={openChat} themeResolved={themeResolved} toggleTheme={toggleTheme} profile={profile} on={onProfileAction} />
       <main className="main">
         <TrialBanner route={route} onUpgrade={() => go("plans")} />
-        {route.name === "home" && <HomeScreen agents={AGENTS} connectors={connectors} openChat={openChat} openList={openList} onNav={go} />}
+        {route.name === "home" && <HomeScreen agents={agents} connectors={connectors} openChat={openChat} openAgent={openAgent} openList={openList} onNav={go} onCreateAgent={() => setBuilder("new")} onEditAgent={(a) => setBuilder(a)} />}
         {route.name === "connectors" && <ConnectorsScreen connectors={connectors} onToast={showToast} />}
         {route.name === "notetaker" && <NotetakerScreen onToast={showToast} />}
         {route.name === "files" && <FilesScreen onNewChat={openChat} />}
         {route.name === "plans" && <PlansScreen onToast={showToast} />}
         {route.name === "list" && <EntityList key={route.type} type={route.type} onOpen={openRecord} onChat={(recs) => openChat(recs || [])} onToast={showToast} onRefresh={refresh} />}
         {route.name === "detail" && <EntityDetail key={route.record.id} record={route.record} onOpen={openRecord} onChat={(r) => openChat([r])} onBack={() => openList(route.record.type)} />}
-        {route.name === "chat" && <ChatScreen key={chatKey} seedAttached={chatSeed} resume={chatResume} onBack={() => go("home")} onOpenRecord={openRecord} onToast={showToast} onOpenConversation={openConversation} onNewChat={() => openChat([])} />}
+        {route.name === "chat" && <ChatScreen key={chatKey} seedAttached={chatSeed} resume={chatResume} agent={chatAgent} onBack={() => go("home")} onOpenRecord={openRecord} onToast={showToast} onOpenConversation={openConversation} onNewChat={() => openChat([])} />}
       </main>
       <BottomNav route={route} go={go} openChat={openChat} onRecords={() => setSheet(true)} onProfile={() => setTweaksOpen((v) => !v)} />
       {sheet && <RecordsSheet openList={openList} onClose={() => setSheet(false)} />}
@@ -213,6 +223,14 @@ export function App() {
       )}
       {flow && flow.name === "onboarding" && (
         <Onboarding initial={profile} onFinish={onboardingDone} onCancel={flow.firstRun ? null : () => setFlow(null)} collectIdentity={!isSignedUp()} />
+      )}
+      {builder && (
+        <AgentBuilder
+          agent={builder === "new" ? null : builder}
+          onClose={() => setBuilder(null)}
+          onSave={() => { setBuilder(null); setAgentsVersion((v) => v + 1); showToast("Agent saved", "success"); }}
+          onDeleted={() => { setBuilder(null); setAgentsVersion((v) => v + 1); showToast("Agent deleted", "info"); }}
+        />
       )}
       <Toast toast={toast} />
     </div>

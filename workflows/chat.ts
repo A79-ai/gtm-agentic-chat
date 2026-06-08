@@ -109,6 +109,7 @@ export async function conversationWorkflow(
   first: UIMessage,
   customServers: ServerCfg[] = [],
   systemPrompt?: string,
+  includeAmpup: boolean = true,
 ) {
   "use workflow";
 
@@ -121,8 +122,9 @@ export async function conversationWorkflow(
   // Server set is fixed at conversation start. Discover each server's tools once
   // and reuse across turns. The ampup server's token is re-minted per turn, so
   // its cfg token is rebuilt below; custom servers keep their start-time token.
+  // An agent can drop the built-in CRM (includeAmpup=false) to run pure-custom.
   const startServers: ServerCfg[] = [
-    { slug: AMPUP_SLUG, token: mcpToken },
+    ...(includeAmpup ? [{ slug: AMPUP_SLUG, token: mcpToken }] : []),
     ...(customServers || []).filter((s) => s && s.slug && s.slug !== AMPUP_SLUG),
   ];
   const discovered: Discovered[] = [];

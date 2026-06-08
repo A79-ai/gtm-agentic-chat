@@ -76,12 +76,14 @@ export async function POST(req: Request) {
     runId,
     mcpServers,
     systemPrompt,
+    includeAmpup,
   }: {
     conversationId: string;
     message: UIMessage;
     runId?: string;
     mcpServers?: IncomingServer[];
     systemPrompt?: string;
+    includeAmpup?: boolean;
   } = await req.json();
 
   const mcpToken =
@@ -117,6 +119,7 @@ export async function POST(req: Request) {
     message,
     normalizeServers(mcpServers),
     typeof systemPrompt === "string" ? systemPrompt : undefined,
+    includeAmpup !== false,
   ]);
   return createUIMessageStreamResponse({
     stream: run.readable,
