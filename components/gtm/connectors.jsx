@@ -3,8 +3,95 @@ import React, { useState, useEffect, Suspense } from "react";
 import { Icons } from "./icons";
 import { ConnLogo } from "./ui";
 import { CAT_TABS, getAmpersand, setConnectors, getConnectors } from "@/lib/gtm/data";
+import { listMcpServers, saveMcpServer, deleteMcpServer, setMcpServerEnabled } from "@/lib/gtm/mcpServers";
+import { McpServerModal } from "./McpServerModal";
+import { MCP_CATALOG, AUTH_LABEL } from "@/lib/gtm/mcpCatalog";
 
 const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
+
+// Brand logo via Google's favicon service (same approach as the agentapp),
+// falling back to a generic plug icon if the domain has no favicon / fails.
+function McpLogo({ domain, size = 38 }) {
+  const [err, setErr] = useState(false);
+  const inner = Math.round(size * 0.55);
+  return (
+    <div style={{ width: size, height: size, borderRadius: 10, background: "var(--bg-muted)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-primary)", flexShrink: 0, overflow: "hidden" }}>
+      {domain && !err ? (
+        <img src={`https://www.google.com/s2/favicons?sz=64&domain=${domain}`} alt="" width={inner} height={inner} style={{ borderRadius: 4 }} onError={() => setErr(true)} />
+      ) : (
+        <Icons.Plug size={inner} />
+      )}
+    </div>
+  );
+}
+
+function domainOf(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; }
+}
+
+// A user's saved custom MCP server, rendered in the unified grid.
+function McpServerCard({ s, onToggle, onEdit, onRemove }) {
+  const on = s.enabled !== false;
+  return (
+    <div className={"card conn-card" + (on ? " connected" : "")}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <McpLogo domain={domainOf(s.url)} />
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontWeight: 600, fontSize: 16, color: "var(--fg-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
+          <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>MCP</span>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11, fontFamily: "var(--font-mono)" }}>{s.slug}</span>
+          </div>
+        </div>
+      </div>
+      <div style={{ fontSize: 12.5, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1, wordBreak: "break-all" }}>{s.url}</div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button className="btn btn-sm btn-outline" onClick={() => onToggle(s)} title={on ? "Disable" : "Enable"}>
+          {on ? <><Icons.CheckCircle size={14} /> Enabled</> : <>Disabled</>}
+        </button>
+        <button className="icon-btn" title="Edit" onClick={() => onEdit(s)}><Icons.Sliders size={15} /></button>
+        <button className="icon-btn" title="Remove" onClick={() => onRemove(s)}><Icons.X size={15} /></button>
+      </div>
+    </div>
+  );
+}
+
+// A recommended GTM MCP server from the catalog. API-key servers prefill the
+// Add modal; OAuth servers with a hosted endpoint that supports dynamic client
+// registration can connect via the OAuth popup; the rest (no endpoint, or no
+// DCR like HubSpot) stay "OAuth — soon" + Docs.
+function McpCatalogCard({ i, onAdd, onConnect }) {
+  const oauth = i.auth === "oauth";
+  const oauthConnectable = oauth && !!i.url && !i.noDcr;
+  return (
+    <div className="card conn-card">
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <McpLogo domain={i.domain} />
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontWeight: 600, fontSize: 16, color: "var(--fg-primary)" }}>{i.name}</div>
+          <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>MCP</span>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>{i.category}</span>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>{AUTH_LABEL[i.auth] || i.auth}</span>
+          </div>
+        </div>
+      </div>
+      <div style={{ fontSize: 13, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1 }}>{i.desc}</div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {oauthConnectable ? (
+          <button className="btn btn-sm btn-outline" onClick={() => onConnect(i)}><Icons.Plug size={14} /> Connect</button>
+        ) : oauth ? (
+          <span className="btn btn-sm" title="This server needs a pre-registered OAuth app — use Docs to set it up" style={{ background: "var(--bg-muted)", color: "var(--fg-muted)", border: "1px solid var(--border-subtle)", cursor: "default" }}>
+            <Icons.Spark size={13} /> OAuth — soon
+          </span>
+        ) : (
+          <button className="btn btn-sm btn-outline" onClick={() => onAdd(i)}><Icons.Plus size={14} /> Add</button>
+        )}
+        {i.docsUrl && <a className="btn btn-sm btn-ghost" href={i.docsUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "var(--fg-muted)" }}>Docs</a>}
+      </div>
+    </div>
+  );
+}
 
 // CRM connectors are Enterprise-only (self-serve connect is gated behind sales).
 const isEnterprise = (c) => c.cat === "CRM";
@@ -82,12 +169,46 @@ function ConnectModal({ connector, amp, mode = "connect", onClose, onToast }) {
 
 export function ConnectorsScreen({ connectors, onToast }) {
   const [tab, setTab] = useState("All");
+  const [query, setQuery] = useState("");
   const [connecting, setConnecting] = useState(null); // { connector, mode }
   const [conns, setConns] = useState(connectors);
+  const [servers, setServers] = useState([]);
+  const [mcpEditing, setMcpEditing] = useState(null); // null | "new" | server(edit) | {name,url}(prefill)
   useEffect(() => { setConns(connectors); }, [connectors]);
+  useEffect(() => { setServers(listMcpServers()); }, []);
   const amp = getAmpersand();
-  const list = conns.filter((c) => tab === "All" || c.cat === tab);
-  const connectedCount = conns.filter((c) => c.connected).length;
+
+  const refreshServers = () => setServers(listMcpServers());
+  const onMcpSave = (s) => { saveMcpServer(s); setMcpEditing(null); refreshServers(); };
+  const onMcpRemove = (s) => { deleteMcpServer(s.id); refreshServers(); };
+  const onMcpToggle = (s) => { setMcpServerEnabled(s.id, !(s.enabled !== false)); refreshServers(); };
+
+  // OAuth connect: open the provider consent in a popup; the callback posts the
+  // resulting server config back, which we save to the registry.
+  const onOauthConnect = (item) => {
+    const w = 520, h = 720;
+    const left = window.screenX + Math.max(0, (window.outerWidth - w) / 2);
+    const top = window.screenY + Math.max(0, (window.outerHeight - h) / 2);
+    const popup = window.open(
+      `/api/mcp/oauth/start?url=${encodeURIComponent(item.url)}&name=${encodeURIComponent(item.name)}`,
+      "mcp-oauth",
+      `width=${w},height=${h},left=${left},top=${top}`,
+    );
+    const onMessage = (ev) => {
+      if (ev.origin !== window.location.origin || !ev.data || typeof ev.data !== "object") return;
+      if (ev.data.type === "mcp-oauth-success" && ev.data.server) {
+        saveMcpServer(ev.data.server);
+        refreshServers();
+        onToast(`Connected ${item.name}`, "success");
+        cleanup();
+      } else if (ev.data.type === "mcp-oauth-error") {
+        onToast(`Couldn't connect ${item.name}: ${ev.data.error || "OAuth failed"}`, "error");
+        cleanup();
+      }
+    };
+    const cleanup = () => { window.removeEventListener("message", onMessage); try { popup && popup.close(); } catch {} };
+    window.addEventListener("message", onMessage);
+  };
 
   // Re-pull the live catalog + connection state (after a connect/disconnect).
   const refetch = () =>
@@ -106,18 +227,44 @@ export function ConnectorsScreen({ connectors, onToast }) {
   };
   const onContact = (c) => onToast(`${c.name} is an Enterprise connector — contact sales to enable it.`, "info");
 
+  // One unified, searchable list: Ampersand integrations, your custom MCP
+  // servers, then recommended MCP servers. Custom + recommended are tab-category
+  // "MCP"; search matches name/description across all three.
+  const q = query.trim().toLowerCase();
+  const matches = (...fields) => !q || fields.some((f) => (f || "").toLowerCase().includes(q));
+  const showMcp = tab === "All" || tab === "MCP";
+
+  const ampList = conns.filter((c) => (tab === "All" || c.cat === tab) && matches(c.name, c.desc));
+  const customList = showMcp ? servers.filter((s) => matches(s.name, s.url, s.slug)) : [];
+  const addedUrls = new Set(servers.map((s) => (s.url || "").replace(/\/+$/, "")));
+  const catalogList = showMcp
+    ? MCP_CATALOG.filter((i) => (!i.url || !addedUrls.has(i.url.replace(/\/+$/, ""))) && matches(i.name, i.desc, i.category))
+    : [];
+
+  const connectedCount = conns.filter((c) => c.connected).length;
+  const totalShown = ampList.length + customList.length + catalogList.length;
+
   return (
     <div className="scroll" style={{ flex: 1 }}>
       <div className="screen-pad" style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 18 }}>
           <div style={{ flex: 1, minWidth: 220 }}>
             <div className="eyebrow" style={{ marginBottom: 6 }}>Org tools</div>
             <h2 style={{ marginBottom: 6 }}>Connect your stack</h2>
-            <p style={{ fontSize: 14, color: "var(--fg-muted)", maxWidth: 520 }}>Wire up CRM, call recordings and notes. Every agent reasons over exactly what you connect here.</p>
+            <p style={{ fontSize: 14, color: "var(--fg-muted)", maxWidth: 520 }}>Wire up CRM, call recordings, notes and any MCP server. Every agent reasons over exactly what you connect here.</p>
           </div>
           <div className="badge badge-success" style={{ height: "fit-content", padding: "6px 12px" }}>
             <Icons.Check size={14} /> {connectedCount} of {connectors.length} connected
           </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+          <div className="attach-search" style={{ flex: 1, minWidth: 220, margin: 0 }}>
+            <Icons.Search size={16} style={{ color: "var(--fg-muted)" }} />
+            <input placeholder="Search connectors…" value={query} onChange={(e) => setQuery(e.target.value)} />
+            {query && <button className="icon-btn" style={{ width: 26, height: 26 }} onClick={() => setQuery("")}><Icons.X size={15} /></button>}
+          </div>
+          <button className="btn btn-sm btn-primary" onClick={() => setMcpEditing("new")}><Icons.Plus size={15} /> Add MCP server</button>
         </div>
 
         <div className="scroll hide-scrollbar" style={{ overflowX: "auto", marginBottom: 20, paddingBottom: 2 }}>
@@ -126,7 +273,18 @@ export function ConnectorsScreen({ connectors, onToast }) {
           </div>
         </div>
 
-        <div className="conn-grid">{list.map((c) => <ConnectorCard key={c.id} c={c} onConnect={onConnect} onContact={onContact} onManage={onManage} />)}</div>
+        <div className="conn-grid">
+          {ampList.map((c) => <ConnectorCard key={c.id} c={c} onConnect={onConnect} onContact={onContact} onManage={onManage} />)}
+          {customList.map((s) => <McpServerCard key={s.id} s={s} onToggle={onMcpToggle} onEdit={setMcpEditing} onRemove={onMcpRemove} />)}
+          {catalogList.map((i) => <McpCatalogCard key={i.slug} i={i} onAdd={(item) => setMcpEditing({ name: item.name, url: item.url })} onConnect={onOauthConnect} />)}
+        </div>
+
+        {totalShown === 0 && (
+          <div style={{ textAlign: "center", color: "var(--fg-muted)", padding: "48px 16px" }}>
+            <Icons.Search size={24} style={{ marginBottom: 10 }} />
+            <div style={{ fontSize: 14 }}>No connectors match “{query}”{tab !== "All" ? ` in ${tab}` : ""}.</div>
+          </div>
+        )}
       </div>
       {connecting && (
         <ConnectModal
@@ -136,6 +294,9 @@ export function ConnectorsScreen({ connectors, onToast }) {
           onClose={() => { setConnecting(null); refetch(); }}
           onToast={onToast}
         />
+      )}
+      {mcpEditing && (
+        <McpServerModal server={mcpEditing === "new" ? null : mcpEditing} onSave={onMcpSave} onClose={() => setMcpEditing(null)} />
       )}
     </div>
   );

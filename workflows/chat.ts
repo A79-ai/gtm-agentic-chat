@@ -21,49 +21,84 @@ import type { McpToolDef } from "@/lib/mcp";
  * `turnHook.resume("conv:<id>")` and append to the SAME durable stream, so the
  * run's stream IS the transcript — replaying it rehydrates the chat on reopen.
  *
- * Tools are discovered at runtime from the org's MCP server (tools/list), so the
- * agent automatically exposes whatever that org has enabled. The MCP SDK is
- * dynamic-imported inside "use step" so it never enters the workflow bundle.
+ * Tools are discovered at runtime from one or more MCP servers (tools/list). The
+ * built-in "ampup" server comes from env (one org per deploy); the user can add
+ * extra MCP servers in Connectors, threaded in at conversation start. Each
+ * server's tools are namespaced `mcp__<slug>__<tool>` so they never collide. The
+ * MCP SDK is dynamic-imported inside "use step" so it never enters the bundle.
+ *
+ * The SERVER SET and SYSTEM PROMPT are fixed at conversation start (tools are
+ * discovered once). Only the ampup token is re-minted per turn (custom-server
+ * tokens are static user-entered values captured once).
  */
 
-// The model calls tools as mcp__ampup__<name>; we register under that prefix and
-// strip it before hitting the MCP server.
-const TOOL_PREFIX = "mcp__ampup__";
+// A server config threaded through the workflow. `url`/`token` are omitted for
+// the built-in ampup server (resolved from env inside the step).
+type ServerCfg = {
+  slug: string;
+  url?: string;
+  token?: string;
+  authHeader?: string;
+};
+
+const AMPUP_SLUG = "ampup";
 
 export const turnHook = defineHook<{ message: UIMessage; mcpToken?: string }>();
 
-async function discoverToolsStep(mcpToken?: string): Promise<McpToolDef[]> {
+function resolveCfg(server: ServerCfg): {
+  slug: string;
+  url: string;
+  token?: string;
+  authHeader?: string;
+} {
+  const url = server.url ?? process.env.AMPUP_MCP_URL ?? "";
+  const token = server.token ?? process.env.AMPUP_MCP_API_KEY;
+  return { slug: server.slug, url, token, authHeader: server.authHeader };
+}
+
+async function discoverToolsStep(server: ServerCfg): Promise<McpToolDef[]> {
   "use step";
-  const { listAmpupTools } = await import("../lib/mcp");
-  return listAmpupTools(mcpToken);
+  const { listServerTools } = await import("../lib/mcp");
+  try {
+    return await listServerTools(resolveCfg(server));
+  } catch (err) {
+    // A user-added MCP server may be unreachable / misconfigured; degrade to no
+    // tools for that server rather than failing the whole conversation.
+    console.error(`MCP discovery failed for "${server.slug}":`, err);
+    return [];
+  }
 }
 
 async function callMcpStep(
+  server: ServerCfg,
   bareName: string,
   args: Record<string, unknown>,
-  mcpToken?: string,
 ) {
   "use step";
-  const { callAmpupTool } = await import("../lib/mcp");
-  return callAmpupTool(bareName, args ?? {}, mcpToken);
+  const { callServerTool } = await import("../lib/mcp");
+  return callServerTool(resolveCfg(server), bareName, args ?? {});
 }
 
-function buildAmpupTools(defs: McpToolDef[], mcpToken?: string): ToolSet {
+type Discovered = { slug: string; defs: McpToolDef[]; cfg: ServerCfg };
+
+function buildMcpTools(discovered: Discovered[]): ToolSet {
   const tools: ToolSet = {};
-  for (const t of defs) {
-    tools[TOOL_PREFIX + t.name] = tool({
-      description: t.description,
-      // DurableAgent calls schema.validate?.() and throws if missing, so pass
-      // through (the MCP server validates args server-side).
-      inputSchema: jsonSchema<Record<string, unknown>>(t.inputSchema, {
-        validate: (value) => ({
-          success: true,
-          value: (value ?? {}) as Record<string, unknown>,
+  for (const { slug, defs, cfg } of discovered) {
+    for (const t of defs) {
+      tools[`mcp__${slug}__${t.name}`] = tool({
+        description: t.description,
+        // DurableAgent calls schema.validate?.() and throws if missing, so pass
+        // through (the MCP server validates args server-side).
+        inputSchema: jsonSchema<Record<string, unknown>>(t.inputSchema, {
+          validate: (value) => ({
+            success: true,
+            value: (value ?? {}) as Record<string, unknown>,
+          }),
         }),
-      }),
-      execute: async (args: Record<string, unknown>) =>
-        callMcpStep(t.name, args, mcpToken),
-    });
+        execute: async (args: Record<string, unknown>) =>
+          callMcpStep(cfg, t.name, args),
+      });
+    }
   }
   return tools;
 }
@@ -72,28 +107,49 @@ export async function conversationWorkflow(
   conversationId: string,
   mcpToken: string | undefined,
   first: UIMessage,
+  customServers: ServerCfg[] = [],
+  systemPrompt?: string,
+  includeAmpup: boolean = true,
 ) {
   "use workflow";
 
   const { model, provider } = resolveModel();
   const writable = getWritable<UIMessageChunk>();
   const history: ModelMessage[] = [];
+  const instructions =
+    systemPrompt && systemPrompt.trim() ? systemPrompt : SYSTEM_PROMPT;
 
-  // Discover the org's tools once per conversation; reuse across turns.
-  const toolDefs = await discoverToolsStep(mcpToken);
+  // Server set is fixed at conversation start. Discover each server's tools once
+  // and reuse across turns. The ampup server's token is re-minted per turn, so
+  // its cfg token is rebuilt below; custom servers keep their start-time token.
+  // An agent can drop the built-in CRM (includeAmpup=false) to run pure-custom.
+  const startServers: ServerCfg[] = [
+    ...(includeAmpup ? [{ slug: AMPUP_SLUG, token: mcpToken }] : []),
+    ...(customServers || []).filter((s) => s && s.slug && s.slug !== AMPUP_SLUG),
+  ];
+  const discovered: Discovered[] = [];
+  for (const s of startServers) {
+    const defs = await discoverToolsStep(s);
+    discovered.push({ slug: s.slug, defs, cfg: s });
+  }
 
-  // Rebuild the agent each turn so its tool closures capture THIS turn's
-  // (freshly re-minted) mcpToken.
+  // Rebuild the agent each turn so the ampup tool closures capture THIS turn's
+  // (freshly re-minted) mcpToken. Custom-server cfgs are stable.
   const processTurn = async (
     message: UIMessage,
     turnToken: string | undefined,
   ) => {
     history.push(...(await convertToModelMessages([message])));
+    const turnDiscovered = discovered.map((d) =>
+      d.slug === AMPUP_SLUG
+        ? { ...d, cfg: { slug: AMPUP_SLUG, token: turnToken ?? mcpToken } }
+        : d,
+    );
     const agent = new DurableAgent({
       model,
-      instructions: SYSTEM_PROMPT,
+      instructions,
       tools: {
-        ...buildAmpupTools(toolDefs, turnToken ?? mcpToken),
+        ...buildMcpTools(turnDiscovered),
         ...buildServerTools(provider, WEB_SEARCH),
       },
     });

@@ -28,15 +28,62 @@ export function OPTIONS() {
  * A per-request x-ampup-mcp-key header overrides it if you front this with your
  * own multi-tenant auth.
  */
+type IncomingServer = {
+  slug?: string;
+  name?: string;
+  url?: string;
+  token?: string;
+  authHeader?: string;
+};
+type CustomServer = {
+  slug: string;
+  url: string;
+  token?: string;
+  authHeader?: string;
+};
+
+// Sanitize the client-supplied custom MCP servers: a clean slug, an http(s)
+// url, and nothing else (slug "ampup" is reserved for the built-in server).
+function normalizeServers(servers: IncomingServer[] | undefined): CustomServer[] {
+  if (!Array.isArray(servers)) return [];
+  const seen = new Set<string>(["ampup"]);
+  const out: CustomServer[] = [];
+  for (const s of servers) {
+    const url = (s?.url || "").trim();
+    if (!/^https?:\/\//i.test(url)) continue;
+    let slug = (s?.slug || s?.name || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40);
+    if (!slug) slug = `srv-${out.length + 1}`;
+    while (seen.has(slug)) slug = `${slug}-2`;
+    seen.add(slug);
+    out.push({
+      slug,
+      url,
+      token: s?.token ? String(s.token) : undefined,
+      authHeader: s?.authHeader ? String(s.authHeader) : undefined,
+    });
+  }
+  return out;
+}
+
 export async function POST(req: Request) {
   const {
     conversationId,
     message,
     runId,
+    mcpServers,
+    systemPrompt,
+    includeAmpup,
   }: {
     conversationId: string;
     message: UIMessage;
     runId?: string;
+    mcpServers?: IncomingServer[];
+    systemPrompt?: string;
+    includeAmpup?: boolean;
   } = await req.json();
 
   const mcpToken =
@@ -70,6 +117,9 @@ export async function POST(req: Request) {
     conversationId,
     mcpToken,
     message,
+    normalizeServers(mcpServers),
+    typeof systemPrompt === "string" ? systemPrompt : undefined,
+    includeAmpup !== false,
   ]);
   return createUIMessageStreamResponse({
     stream: run.readable,

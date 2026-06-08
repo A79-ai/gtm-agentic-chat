@@ -5,11 +5,13 @@ import { DefaultChatTransport } from "ai";
 import { Icons, LogoMark } from "./icons";
 import { EntityIcon, RefChip } from "./ui";
 import { ENTITIES, FIELDS, SUGGESTIONS, byId, related, subtitleOf, addUpload, listConversations, saveConversation, deleteConversation } from "@/lib/gtm/data";
+import { enabledMcpServers, refreshOauthServers } from "@/lib/gtm/mcpServers";
+import { agentFiles } from "@/lib/gtm/agents";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { LoadingIndicator } from "./LoadingIndicator";
 
 const textOf = (m) => (m.parts || []).filter((p) => p.type === "text").map((p) => p.text).join("");
-const toolName = (type) => type.replace(/^tool-/, "").replace(/^mcp__ampup__/, "").replace(/_/g, " ");
+const toolName = (type) => type.replace(/^tool-/, "").replace(/^mcp__[a-z0-9-]+__/, "").replace(/_/g, " ");
 
 function TraceRow({ part }) {
   const done = part.state === "output-available" || part.state === "output-error";
@@ -300,12 +302,14 @@ function HistoryDrawer({ open, onClose, onSelect, activeId }) {
   );
 }
 
-export function ChatScreen({ seedAttached, resume, onBack, onOpenRecord, onToast, onOpenConversation, onNewChat }) {
+export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, onToast, onOpenConversation, onNewChat }) {
   const conversationId = useMemo(() => resume?.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `c-${Date.now()}`), []);
   const runIdRef = useRef(resume?.runId);
+  const agentRef = useRef(agent);
+  agentRef.current = agent;
   const [histOpen, setHistOpen] = useState(false);
   const [attached, setAttached] = useState(() => (seedAttached || []).filter(Boolean));
-  const [files, setFiles] = useState([]); // { datasourceId, fileName, status }
+  const [files, setFiles] = useState(() => (agent ? agentFiles(agent) : [])); // { datasourceId, fileName, status }
   const [uploading, setUploading] = useState(false);
   const [ctxOpen, setCtxOpen] = useState(false);
   const [ctxCollapsed, setCtxCollapsed] = useState(() => { try { return localStorage.getItem("ampup-ctx-collapsed") === "1"; } catch { return false; } });
@@ -332,7 +336,24 @@ export function ChatScreen({ seedAttached, resume, onBack, onOpenRecord, onToast
           const msg = pre
             ? { ...last, parts: (last.parts || []).map((p) => (p.type === "text" ? { ...p, text: `${pre}\n\n${p.text}` } : p)) }
             : last;
-          return { body: { conversationId, message: msg, runId: runIdRef.current } };
+          const ag = agentRef.current;
+          const all = enabledMcpServers();
+          // An agent scopes the chat to its server subset (by slug or id); a plain
+          // chat exposes every enabled server. The built-in ampup CRM is added
+          // server-side unless the agent opts out (includeAmpup=false).
+          const servers = ag && Array.isArray(ag.mcpServerIds)
+            ? all.filter((s) => ag.mcpServerIds.includes(s.slug) || ag.mcpServerIds.includes(s.id))
+            : all;
+          return {
+            body: {
+              conversationId,
+              message: msg,
+              runId: runIdRef.current,
+              mcpServers: servers,
+              systemPrompt: ag?.systemPrompt || undefined,
+              includeAmpup: ag ? ag.includeAmpup !== false : true,
+            },
+          };
         },
       }),
     [conversationId],
@@ -377,6 +398,9 @@ export function ChatScreen({ seedAttached, resume, onBack, onOpenRecord, onToast
   const scrollRef = useRef(null);
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages]);
 
+  // Refresh any OAuth MCP tokens nearing expiry so this conversation starts with
+  // a fresh token (long single sessions past expiry should be reopened).
+  useEffect(() => { refreshOauthServers(); }, []);
   // Rehydrate a reopened conversation's transcript once on mount.
   useEffect(() => { if (resume?.messages?.length) setMessages(resume.messages); }, []);
   // Persist the transcript locally so it shows in History. The durable run keeps
@@ -466,8 +490,8 @@ export function ChatScreen({ seedAttached, resume, onBack, onOpenRecord, onToast
           <button className="icon-btn" onClick={onBack} title="Back"><Icons.ArrowLeft size={18} /></button>
           <div style={{ width: 34, height: 34, borderRadius: 9, background: "var(--bg-muted)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-primary)", flexShrink: 0 }}><LogoMark size={18} /></div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 600, fontSize: 15, color: "var(--fg-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Chat with {title}</div>
-            <div style={{ fontSize: 12, color: "var(--fg-muted)" }}>{attached.length ? `${attached.length} attached` : "No records attached"} · grounded in your CRM</div>
+            <div style={{ fontWeight: 600, fontSize: 15, color: "var(--fg-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{agent ? agent.name : `Chat with ${title}`}</div>
+            <div style={{ fontSize: 12, color: "var(--fg-muted)" }}>{agent ? `${agent.tag || "Agent"} · ${attached.length ? `${attached.length} attached · ` : ""}grounded in your data` : `${attached.length ? `${attached.length} attached` : "No records attached"} · grounded in your CRM`}</div>
           </div>
           <button className="btn btn-sm btn-ghost hide-mobile" onClick={() => setHistOpen(true)}><Icons.History size={14} /> History</button>
           <button className="btn btn-sm btn-ghost hide-mobile" onClick={() => (onNewChat ? onNewChat() : clear())}><Icons.Chat size={14} /> New chat</button>

@@ -12,7 +12,7 @@ export const CONNECTORS = [
   { id: "fireflies", name: "Fireflies", logo: "Fireflies", cat: "Call Recording", connected: true, desc: "Pull meeting transcripts, summaries and analytics." },
   { id: "fathom", name: "Fathom", logo: "Fathom", cat: "Call Recording", connected: false, desc: "Pull meeting recordings, transcripts and highlights." },
   { id: "clari", name: "Clari Copilot", logo: "Clari", cat: "Call Recording", connected: false, desc: "Pull conversation intelligence from Clari Copilot." },
-  { id: "granola", name: "Granola", logo: "Granola", cat: "Calendar", connected: true, desc: "Pull meeting notes and transcripts from your calendar." },
+  { id: "granola", name: "Granola", logo: "Granola", cat: "Call Recording", connected: true, desc: "Pull meeting notes and transcripts from your meetings." },
   { id: "slack", name: "Slack", logo: "Slack", cat: "Notification", connected: false, desc: "Send deal summaries and agent notifications to channels." },
   { id: "devrev", name: "DevRev", logo: "DevRev", cat: "MCP", connected: false, desc: "Pull conversations, tickets, accounts and product signals." },
 ];
