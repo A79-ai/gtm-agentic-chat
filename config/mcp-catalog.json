@@ -15,7 +15,7 @@
     "category": "Prospecting",
     "domain": "apollo.io",
     "desc": "B2B contact & company database for building lead lists.",
-    "url": "",
+    "url": "https://mcp.apollo.io/mcp",
     "auth": "oauth",
     "docsUrl": "https://docs.apollo.io/docs/apollo-mcp"
   },
@@ -55,7 +55,7 @@
     "category": "Call recording",
     "domain": "granola.ai",
     "desc": "Pull meeting notes, transcripts and folders from your notetaker.",
-    "url": "",
+    "url": "https://mcp.granola.ai/mcp",
     "auth": "oauth",
     "docsUrl": "https://www.granola.ai/blog/granola-mcp"
   },
