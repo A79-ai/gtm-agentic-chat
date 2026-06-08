@@ -228,7 +228,7 @@ export function ConnectorsScreen({ connectors, onToast }) {
 
         <div className="conn-grid">{list.map((c) => <ConnectorCard key={c.id} c={c} onConnect={onConnect} onContact={onContact} onManage={onManage} />)}</div>
 
-        <CustomMcpSection />
+        {(tab === "All" || tab === "MCP") && <CustomMcpSection />}
       </div>
       {connecting && (
         <ConnectModal
