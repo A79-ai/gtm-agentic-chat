@@ -19,14 +19,26 @@ export { useAuth0 };
 let CURRENT_KEY;
 export const getMcpKey = () => CURRENT_KEY;
 
-const KeyCtx = createContext({ key: undefined, loading: false, error: null });
+const KeyCtx = createContext({ key: undefined, userId: undefined, orgId: undefined, loading: false, error: null });
 export const useMcpKeyContext = () => useContext(KeyCtx);
+
+// Build the per-user Ampersand groupRef. Free-trial orgs share one org_id, so
+// user-scoped installs key off `org_id:user_id` (mirrors the product's
+// getAmpersandGroupRef). Falls back to the org id when not user-scoped or the
+// ids aren't known yet.
+export function ampersandGroupRef(orgId, userId, scope) {
+  const base = orgId || "";
+  if (scope === "user" && base && userId) return `${base}:${userId}`;
+  return base;
+}
 
 // Mint + refresh the per-user MCP key. Single instance per app (provider-owned);
 // React consumers read it via useMcpKeyContext, others via getMcpKey().
 export function useMcpKey() {
   const { isAuthenticated, getAccessTokenSilently } = useAuth0();
   const [key, setKey] = useState(undefined);
+  const [userId, setUserId] = useState(undefined);
+  const [orgId, setOrgId] = useState(undefined);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const expiryRef = useRef(0);
@@ -53,6 +65,8 @@ export function useMcpKey() {
           CURRENT_KEY = data.token;
           expiryRef.current = data.expires_at ? Date.parse(data.expires_at) : 0;
           setKey(data.token);
+          if (data.user_id) setUserId(data.user_id);
+          if (data.org_id) setOrgId(data.org_id);
         } catch (e) {
           if (alive) setError(e);
         } finally {
@@ -75,8 +89,8 @@ export function useMcpKey() {
     };
   }, [isAuthenticated, getAccessTokenSilently]);
 
-  if (!AUTH0_ENABLED) return { key: undefined, loading: false, error: null };
-  return { key, loading, error };
+  if (!AUTH0_ENABLED) return { key: undefined, userId: undefined, orgId: undefined, loading: false, error: null };
+  return { key, userId, orgId, loading, error };
 }
 
 // Provider that owns the single key mint and publishes it to the subtree.

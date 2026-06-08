@@ -3,6 +3,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { Icons } from "./icons";
 import { ConnLogo } from "./ui";
 import { CAT_TABS, getAmpersand, setConnectors, getConnectors } from "@/lib/gtm/data";
+import { useMcpKeyContext, ampersandGroupRef } from "@/lib/gtm/auth";
 import { listMcpServers, saveMcpServer, deleteMcpServer, setMcpServerEnabled } from "@/lib/gtm/mcpServers";
 import { McpServerModal } from "./McpServerModal";
 import { MCP_CATALOG, AUTH_LABEL } from "@/lib/gtm/mcpCatalog";
@@ -142,6 +143,12 @@ function ConnectorCard({ c, onConnect, onContact, onManage }) {
 }
 
 function ConnectModal({ connector, amp, mode = "connect", onClose, onToast }) {
+  // User-scoped installs (e.g. Google in a free-trial org) connect at
+  // `org_id:user_id` so each user connects their own account; org-scoped tools
+  // (Slack, enterprise CRM) keep the org ref.
+  const { userId, orgId } = useMcpKeyContext();
+  const gref = ampersandGroupRef(orgId || amp.groupRef, userId, connector.scope) || amp.groupRef;
+  const cref = connector.scope === "user" && userId ? userId : amp.consumerRef;
   return (
     <div className="sheet-backdrop" style={{ alignItems: "center", justifyContent: "center" }} onClick={onClose}>
       <div className="card" style={{ width: mode === "manage" ? "min(880px, 94vw)" : "min(560px, 92vw)", maxHeight: "90vh", display: "flex", flexDirection: "column", padding: 0 }} onClick={(e) => e.stopPropagation()}>
@@ -156,8 +163,8 @@ function ConnectModal({ connector, amp, mode = "connect", onClose, onToast }) {
               integration={connector.ampersandName || connector.provider || connector.id}
               project={amp.projectId}
               apiKey={amp.apiKey}
-              groupRef={amp.groupRef}
-              consumerRef={amp.consumerRef}
+              groupRef={gref}
+              consumerRef={cref}
               onToast={onToast}
               onDone={onClose}
             />
