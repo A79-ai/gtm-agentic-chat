@@ -131,7 +131,18 @@ function Composer({ onSend, attached, onRemove, files, onUploadFile, onRemoveFil
   const fileRef = useRef(null);
   const grow = (el) => { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 140) + "px"; };
   const send = () => { if (text.trim() && !busy) { onSend(text.trim()); setText(""); if (ref.current) ref.current.style.height = "auto"; } };
-  const pickFile = (e) => { const f = e.target.files?.[0]; if (f) onUploadFile(f); e.target.value = ""; };
+  // Create the file input on demand and click it within the user gesture — the
+  // most reliable cross-browser way to open the OS file picker (no hidden input,
+  // no label/SVG quirks, works in Safari).
+  const openFilePicker = () => {
+    if (uploading) return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.style.cssText = "position:fixed;left:-9999px;top:0;";
+    input.addEventListener("change", () => { const f = input.files && input.files[0]; if (f) onUploadFile(f); try { document.body.removeChild(input); } catch {} });
+    document.body.appendChild(input);
+    input.click();
+  };
   return (
     <div className="composer-wrap" style={{ position: "relative" }}>
       <div className={"composer" + (focus ? " focus" : "")}>
@@ -147,16 +158,9 @@ function Composer({ onSend, attached, onRemove, files, onUploadFile, onRemoveFil
           onChange={(e) => { setText(e.target.value); grow(e.target); }}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
         <div className="composer-row">
-          {/* Native <label> opens the file dialog in every browser (a JS .click()
-              on a display:none input is blocked by Safari). */}
-          {uploading ? (
-            <span className="icon-btn" title="Uploading…" style={{ opacity: 0.6, cursor: "default" }}><Icons.Refresh size={16} className="spin" /></span>
-          ) : (
-            <label className="icon-btn" title="Upload a file" style={{ cursor: "pointer" }}>
-              <Icons.Paperclip size={16} style={{ pointerEvents: "none" }} />
-              <input ref={fileRef} type="file" onChange={pickFile} style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }} />
-            </label>
-          )}
+          <button type="button" className="icon-btn" title="Upload a file" disabled={uploading} onClick={openFilePicker}>
+            {uploading ? <Icons.Refresh size={16} className="spin" /> : <Icons.Paperclip size={16} />}
+          </button>
           <button className="icon-btn" title="Attach a record" onClick={onOpenPicker}><Icons.At size={16} /></button>
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: 11.5, color: "var(--fg-muted)", marginRight: 6 }} className="hide-mobile">↵ send · ⇧↵ new line</span>

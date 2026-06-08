@@ -168,14 +168,17 @@ export function AgentBuilder({ agent, onSave, onClose, onDeleted, onOpenConnecto
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
               <label style={{ ...label, marginBottom: 0, flex: 1 }}>Attached files <span style={{ fontWeight: 400, color: "var(--fg-muted)" }}>(injected as context)</span></label>
-              {uploading ? (
-                <span className="btn btn-sm btn-outline" style={{ opacity: 0.6, cursor: "default" }}><Icons.Refresh size={14} className="spin" /> Uploading…</span>
-              ) : (
-                <label className="btn btn-sm btn-outline" style={{ cursor: "pointer", pointerEvents: "auto" }}>
-                  <span style={{ pointerEvents: "none", display: "inline-flex", alignItems: "center", gap: 6 }}><Icons.Paperclip size={14} /> Upload file</span>
-                  <input ref={fileRef} type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ""; }} style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }} />
-                </label>
-              )}
+              <button type="button" className="btn btn-sm btn-outline" disabled={uploading} onClick={() => {
+                if (uploading) return;
+                const input = document.createElement("input");
+                input.type = "file";
+                input.style.cssText = "position:fixed;left:-9999px;top:0;";
+                input.addEventListener("change", () => { const f = input.files && input.files[0]; if (f) uploadFile(f); try { document.body.removeChild(input); } catch {} });
+                document.body.appendChild(input);
+                input.click();
+              }}>
+                {uploading ? <Icons.Refresh size={14} className="spin" /> : <Icons.Paperclip size={14} />} {uploading ? "Uploading…" : "Upload file"}
+              </button>
             </div>
             {uploadErr && <div style={{ fontSize: 12, color: "var(--fg-primary)", background: "var(--accent-soft)", padding: "7px 10px", borderRadius: 8, marginBottom: 6 }}>{uploadErr}</div>}
             {uploads.length === 0 ? (
