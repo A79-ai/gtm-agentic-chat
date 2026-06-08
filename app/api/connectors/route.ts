@@ -52,13 +52,15 @@ function configValue(configs: unknown, namespace: string, name: string): string 
 }
 
 export async function GET(req: Request) {
-  const key =
+  const headerKey =
     req.headers.get("x-ampup-mcp-key") ??
-    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
-    process.env.AMPUP_MCP_API_KEY ??
-    "";
+    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const multiTenant = process.env.MULTI_TENANT === "true";
+  // Multi-tenant: require a per-request key (no shared env fallback) so an
+  // unauthenticated call 401s instead of serving one org's data.
+  const key = headerKey ?? (multiTenant ? "" : process.env.AMPUP_MCP_API_KEY ?? "");
   if (!key) {
-    return Response.json({ error: "AMPUP_MCP_API_KEY not configured" }, { status: 401, headers: CORS });
+    return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS });
   }
 
   const orgP = callAmpupTool("get_org", {}, key)

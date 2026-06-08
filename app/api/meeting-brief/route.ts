@@ -23,11 +23,12 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const id = url.searchParams.get("id") || "";
   const type = url.searchParams.get("type") || "pre";
-  const key =
+  const headerKey =
     req.headers.get("x-ampup-mcp-key") ??
-    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
-    process.env.AMPUP_MCP_API_KEY ??
-    "";
+    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const multiTenant = process.env.MULTI_TENANT === "true";
+  // Multi-tenant: require a per-request key (no shared env fallback).
+  const key = headerKey ?? (multiTenant ? "" : process.env.AMPUP_MCP_API_KEY ?? "");
   if (!key || !id) return Response.json({ error: "id + key required" }, { status: 400, headers: CORS });
 
   const tool = type === "post" ? "get_post_meeting_brief" : "get_pre_meeting_brief";

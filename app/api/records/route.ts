@@ -58,11 +58,18 @@ function money(n: unknown): string {
 const s = (v: unknown): string => (v == null ? "" : String(v));
 
 export async function GET(req: Request) {
-  const key =
+  const headerKey =
     req.headers.get("x-ampup-mcp-key") ??
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
     undefined;
-  if (!key && !process.env.AMPUP_MCP_API_KEY) {
+  const multiTenant = process.env.MULTI_TENANT === "true";
+  // Multi-tenant: require a per-request key (no shared env fallback) so an
+  // unauthenticated call 401s instead of serving one org's data.
+  if (multiTenant && !headerKey) {
+    return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS });
+  }
+  const key = headerKey ?? (multiTenant ? undefined : process.env.AMPUP_MCP_API_KEY);
+  if (!key) {
     return Response.json({ error: "AMPUP_MCP_API_KEY not configured" }, { status: 401, headers: CORS });
   }
 

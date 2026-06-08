@@ -9,6 +9,7 @@ import { enabledMcpServers, refreshOauthServers } from "@/lib/gtm/mcpServers";
 import { agentFiles } from "@/lib/gtm/agents";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { LoadingIndicator } from "./LoadingIndicator";
+import { apiFetch, getMcpKey } from "@/lib/gtm/auth";
 
 const textOf = (m) => (m.parts || []).filter((p) => p.type === "text").map((p) => p.text).join("");
 const toolName = (type) => type.replace(/^tool-/, "").replace(/^mcp__[a-z0-9-]+__/, "").replace(/_/g, " ");
@@ -71,7 +72,7 @@ function AttachPicker({ attached, onPick, onClose }) {
       const my = ++reqId.current;
       setLoading(true);
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`).then((r) => r.json());
+        const res = await apiFetch(`/api/search?q=${encodeURIComponent(query)}`).then((r) => r.json());
         if (my !== reqId.current) return;
         setGroups(res.groups || []);
       } catch { if (my === reqId.current) setGroups([]); }
@@ -335,7 +336,13 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
       new DefaultChatTransport({
         api: "/api/chat",
         fetch: async (url, options) => {
-          const res = await fetch(url, options);
+          // Thread the per-user MCP key so the chat backend uses the caller's key,
+          // not the shared env fallback (multi-tenant). No-op in single-org dev.
+          const k = getMcpKey();
+          const opts = k
+            ? { ...options, headers: { ...(options?.headers || {}), "x-ampup-mcp-key": k } }
+            : options;
+          const res = await fetch(url, opts);
           const id = res.headers.get("x-workflow-run-id");
           if (id) runIdRef.current = id;
           return res;
@@ -443,7 +450,7 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
       });
       const deal = attachedRef.current.find((r) => r.type === "deal");
       const acct = attachedRef.current.find((r) => r.type === "account");
-      const res = await fetch("/api/upload", {
+      const res = await apiFetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ file_name: file.name, file_content_base64: b64, opportunity_id: deal?.id, account_id: acct?.id }),

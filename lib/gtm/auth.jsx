@@ -1,0 +1,118 @@
+// Per-user auth backbone. When Auth0 is configured the app logs each visitor in
+// against the free-trial org and mints a short-lived per-user sk-a79 MCP key, so
+// no single shared key leaks one org's data to everyone. When unconfigured the
+// app falls back to the env-key single-org path (local dev) unchanged.
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
+
+const AUTH0_DOMAIN = process.env.NEXT_PUBLIC_AUTH0_DOMAIN;
+const AUTH0_CLIENT_ID = process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID;
+const AUTH0_ORG = process.env.NEXT_PUBLIC_AUTH0_ORG;
+const AUTH0_AUDIENCE = process.env.NEXT_PUBLIC_AUTH0_AUDIENCE;
+
+export const AUTH0_ENABLED = Boolean(AUTH0_DOMAIN && AUTH0_CLIENT_ID);
+
+export { useAuth0 };
+
+// Module-level holder so non-React callsites (e.g. the chat transport's custom
+// fetch) can read the current per-user key without re-minting.
+let CURRENT_KEY;
+export const getMcpKey = () => CURRENT_KEY;
+
+const KeyCtx = createContext({ key: undefined, loading: false, error: null });
+export const useMcpKeyContext = () => useContext(KeyCtx);
+
+// Mint + refresh the per-user MCP key. Single instance per app (provider-owned);
+// React consumers read it via useMcpKeyContext, others via getMcpKey().
+export function useMcpKey() {
+  const { isAuthenticated, getAccessTokenSilently } = useAuth0();
+  const [key, setKey] = useState(undefined);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const expiryRef = useRef(0);
+  const inflightRef = useRef(null);
+
+  useEffect(() => {
+    if (!AUTH0_ENABLED || !isAuthenticated) return;
+    let alive = true;
+
+    const mint = async () => {
+      if (inflightRef.current) return inflightRef.current;
+      const run = (async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const accessToken = await getAccessTokenSilently();
+          const res = await fetch("/api/auth/wdk-session", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          if (!res.ok) throw new Error(`wdk-session ${res.status}`);
+          const data = await res.json();
+          if (!alive) return;
+          CURRENT_KEY = data.token;
+          expiryRef.current = data.expires_at ? Date.parse(data.expires_at) : 0;
+          setKey(data.token);
+        } catch (e) {
+          if (alive) setError(e);
+        } finally {
+          if (alive) setLoading(false);
+          inflightRef.current = null;
+        }
+      })();
+      inflightRef.current = run;
+      return run;
+    };
+
+    mint();
+    // Re-mint when within 60s of expiry.
+    const timer = setInterval(() => {
+      if (expiryRef.current && Date.now() > expiryRef.current - 60_000) mint();
+    }, 30_000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [isAuthenticated, getAccessTokenSilently]);
+
+  if (!AUTH0_ENABLED) return { key: undefined, loading: false, error: null };
+  return { key, loading, error };
+}
+
+// Provider that owns the single key mint and publishes it to the subtree.
+export function McpKeyProvider({ children }) {
+  const value = useMcpKey();
+  return <KeyCtx.Provider value={value}>{children}</KeyCtx.Provider>;
+}
+
+// Wrap the app in the Auth0 provider when configured; otherwise render children
+// directly (single-org / local fallback unchanged).
+export function AuthGate({ children }) {
+  if (!AUTH0_ENABLED) return <>{children}</>;
+  return (
+    <Auth0Provider
+      domain={AUTH0_DOMAIN}
+      clientId={AUTH0_CLIENT_ID}
+      authorizationParams={{
+        redirect_uri: typeof window !== "undefined" ? window.location.origin : undefined,
+        organization: AUTH0_ORG,
+        audience: AUTH0_AUDIENCE,
+      }}
+      cacheLocation="localstorage"
+      useRefreshTokens
+    >
+      {children}
+    </Auth0Provider>
+  );
+}
+
+// Inject the per-user key header into a fetch. Used by every client data call so
+// no /api/* request relies on the server env fallback when Auth0 is enabled.
+export function apiFetch(path, opts = {}) {
+  const k = getMcpKey();
+  if (!k) return fetch(path, opts);
+  return fetch(path, {
+    ...opts,
+    headers: { ...(opts.headers || {}), "x-ampup-mcp-key": k },
+  });
+}

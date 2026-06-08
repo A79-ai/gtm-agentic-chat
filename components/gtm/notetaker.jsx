@@ -1,6 +1,7 @@
 // AmpUp Notetaker settings
 import React, { useEffect, useState } from "react";
 import { Icons } from "./icons";
+import { apiFetch } from "@/lib/gtm/auth";
 
 const MODES = [
   { id: "disabled", label: "Off", desc: "The notetaker won't join any meetings." },
@@ -17,7 +18,7 @@ export function NotetakerScreen({ onToast }) {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/notetaker")
+    apiFetch("/api/notetaker")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (alive && d) { setMode(d.mode); setName(d.name); } })
       .finally(() => { if (alive) setLoading(false); });
@@ -26,7 +27,7 @@ export function NotetakerScreen({ onToast }) {
 
   const save = async () => {
     setSaving(true);
-    const r = await fetch("/api/notetaker", {
+    const r = await apiFetch("/api/notetaker", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode, name }),

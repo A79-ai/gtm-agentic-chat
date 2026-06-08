@@ -90,6 +90,12 @@ export async function POST(req: Request) {
     req.headers.get("x-ampup-mcp-key") ??
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
     undefined;
+  const multiTenant = process.env.MULTI_TENANT === "true";
+  // Multi-tenant: require a per-request key; the workflow must not fall back to
+  // the shared env key (which would leak one org's data to every visitor).
+  if (multiTenant && !mcpToken) {
+    return Response.json({ error: "unauthorized" }, { status: 401, headers: { ...CORS } });
+  }
   if (!mcpToken && !process.env.AMPUP_MCP_API_KEY) {
     return Response.json(
       { error: "AMPUP_MCP_API_KEY is not configured" },

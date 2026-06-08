@@ -2,6 +2,7 @@
 // Components read the synchronous DATA singleton; <DataProvider> populates the
 // store on mount and forces a re-render so reads pick up real records.
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { AUTH0_ENABLED, apiFetch, useMcpKeyContext } from "@/lib/gtm/auth";
 
 // ---- Connectors catalog (connection state is presentational) ----
 export const CONNECTORS = [
@@ -219,27 +220,31 @@ export const useDataStatus = () => useContext(DataCtx);
 
 export function DataProvider({ children }) {
   const [state, setState] = useState({ ready: false, error: null, version: 0 });
+  const { key } = useMcpKeyContext();
   useEffect(() => {
+    // In multi-tenant mode wait for the per-user key before fetching; single-org
+    // dev fetches immediately and falls back to the server env key.
+    if (AUTH0_ENABLED && !key) return;
     let alive = true;
-    const records = fetch("/api/records")
+    const records = apiFetch("/api/records")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`records ${r.status}`))))
       .then((data) => { if (alive) setRecords(data); });
-    const connectors = fetch("/api/connectors")
+    const connectors = apiFetch("/api/connectors")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (alive && data) setConnectors(data); })
       .catch(() => {});
-    const counts = fetch("/api/counts")
+    const counts = apiFetch("/api/counts")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (alive && data) setCounts(data.counts); })
       .catch(() => {});
     Promise.allSettled([records, connectors, counts]).then(() => { if (alive) setState((s) => ({ ...s, ready: true, error: null })); });
     return () => { alive = false; };
-  }, []);
+  }, [key]);
   // Re-pull records + counts after a mutation; bump version to force a re-render.
   const refresh = () =>
     Promise.allSettled([
-      fetch("/api/records").then((r) => (r.ok ? r.json() : null)).then((data) => { if (data) setRecords(data); }),
-      fetch("/api/counts").then((r) => (r.ok ? r.json() : null)).then((data) => { if (data) setCounts(data.counts); }),
+      apiFetch("/api/records").then((r) => (r.ok ? r.json() : null)).then((data) => { if (data) setRecords(data); }),
+      apiFetch("/api/counts").then((r) => (r.ok ? r.json() : null)).then((data) => { if (data) setCounts(data.counts); }),
     ]).then(() => setState((s) => ({ ...s, version: s.version + 1 }))).catch(() => {});
   return <DataCtx.Provider value={{ ...state, refresh }}>{children}</DataCtx.Provider>;
 }

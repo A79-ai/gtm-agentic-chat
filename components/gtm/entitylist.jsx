@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Icons } from "./icons";
 import { EntityIcon, Avatar, TBadge, RefChip } from "./ui";
 import { ENTITIES, COLUMNS, CONNECTORS, recordsOf, subtitleOf, byId } from "@/lib/gtm/data";
+import { apiFetch } from "@/lib/gtm/auth";
 
 export function useIsMobile(bp = 720) {
   const [m, setM] = useState(false);
@@ -116,7 +117,7 @@ function EntityPicker({ searchType, valueLabel, onPick }) {
       const my = ++reqId.current;
       setLoading(true);
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`).then((r) => r.json());
+        const res = await apiFetch(`/api/search?q=${encodeURIComponent(query)}`).then((r) => r.json());
         if (my !== reqId.current) return;
         const g = (res.groups || []).find((x) => x.type === searchType);
         setItems(g ? g.items : []);
@@ -174,7 +175,7 @@ function CreateModal({ type, onClose, onCreated, onToast }) {
     if (missing || busy) return;
     setBusy(true);
     try {
-      const res = await fetch("/api/create", {
+      const res = await apiFetch("/api/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type, fields: vals }),
@@ -404,7 +405,7 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
     setPicker(null);
     const ids = [...sel];
     try {
-      const res = await fetch("/api/bulk", {
+      const res = await apiFetch("/api/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type, action: action.id, ids, value }),
