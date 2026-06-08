@@ -21,6 +21,9 @@ function StatusStrip({ status, onManage }) {
     return (
       <div className="trial-strip">
         <Icons.Spark size={16} /> <strong>{status.daysLeft} day{status.daysLeft === 1 ? "" : "s"}</strong> left in your free trial.
+        {CONFIG.billing.provider === "stripe" && (
+          <button className="btn btn-sm btn-outline" style={{ marginLeft: "auto" }} onClick={onManage}>Manage billing</button>
+        )}
       </div>
     );
   }
