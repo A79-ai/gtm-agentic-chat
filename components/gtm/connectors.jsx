@@ -9,13 +9,33 @@ import { MCP_CATALOG, AUTH_LABEL } from "@/lib/gtm/mcpCatalog";
 
 const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
 
+// Brand logo via Google's favicon service (same approach as the agentapp),
+// falling back to a generic plug icon if the domain has no favicon / fails.
+function McpLogo({ domain, size = 38 }) {
+  const [err, setErr] = useState(false);
+  const inner = Math.round(size * 0.55);
+  return (
+    <div style={{ width: size, height: size, borderRadius: 10, background: "var(--bg-muted)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-primary)", flexShrink: 0, overflow: "hidden" }}>
+      {domain && !err ? (
+        <img src={`https://www.google.com/s2/favicons?sz=64&domain=${domain}`} alt="" width={inner} height={inner} style={{ borderRadius: 4 }} onError={() => setErr(true)} />
+      ) : (
+        <Icons.Plug size={inner} />
+      )}
+    </div>
+  );
+}
+
+function domainOf(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; }
+}
+
 // A user's saved custom MCP server, rendered in the unified grid.
 function McpServerCard({ s, onToggle, onEdit, onRemove }) {
   const on = s.enabled !== false;
   return (
     <div className={"card conn-card" + (on ? " connected" : "")}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--bg-muted)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-primary)", flexShrink: 0 }}><Icons.Plug size={18} /></div>
+        <McpLogo domain={domainOf(s.url)} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontWeight: 600, fontSize: 16, color: "var(--fg-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
           <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
@@ -44,7 +64,7 @@ function McpCatalogCard({ i, onAdd }) {
   return (
     <div className="card conn-card">
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--bg-muted)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-primary)", flexShrink: 0 }}><Icons.Plug size={18} /></div>
+        <McpLogo domain={i.domain} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontWeight: 600, fontSize: 16, color: "var(--fg-primary)" }}>{i.name}</div>
           <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
