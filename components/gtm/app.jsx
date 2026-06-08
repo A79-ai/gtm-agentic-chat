@@ -212,7 +212,11 @@ export function App() {
     else if (action === "tweaks") setTweaksOpen(true);
     else if (action === "onboarding") setFlow({ name: "onboarding", firstRun: false });
     else if (action === "restart") restartDemo();
-    else if (action === "signout") showToast("Signed out (demo)", "info");
+    else if (action === "signout") {
+      // Clear the Google session cookie (if any), then reset local
+      // account/onboarding and reload — lands back on the signup screen.
+      fetch("/api/auth/session", { method: "POST" }).catch(() => {}).finally(() => restartDemo());
+    }
   };
 
   return (
