@@ -147,10 +147,16 @@ function Composer({ onSend, attached, onRemove, files, onUploadFile, onRemoveFil
           onChange={(e) => { setText(e.target.value); grow(e.target); }}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
         <div className="composer-row">
-          <input ref={fileRef} type="file" hidden onChange={pickFile} />
-          <button className="icon-btn" title="Upload a file" disabled={uploading} onClick={() => fileRef.current?.click()}>
-            {uploading ? <Icons.Refresh size={16} className="spin" /> : <Icons.Paperclip size={16} />}
-          </button>
+          {/* Native <label> opens the file dialog in every browser (a JS .click()
+              on a display:none input is blocked by Safari). */}
+          {uploading ? (
+            <span className="icon-btn" title="Uploading…" style={{ opacity: 0.6, cursor: "default" }}><Icons.Refresh size={16} className="spin" /></span>
+          ) : (
+            <label className="icon-btn" title="Upload a file" style={{ cursor: "pointer" }}>
+              <Icons.Paperclip size={16} />
+              <input ref={fileRef} type="file" onChange={pickFile} style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }} />
+            </label>
+          )}
           <button className="icon-btn" title="Attach a record" onClick={onOpenPicker}><Icons.At size={16} /></button>
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: 11.5, color: "var(--fg-muted)", marginRight: 6 }} className="hide-mobile">↵ send · ⇧↵ new line</span>

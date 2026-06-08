@@ -168,10 +168,14 @@ export function AgentBuilder({ agent, onSave, onClose, onDeleted, onOpenConnecto
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
               <label style={{ ...label, marginBottom: 0, flex: 1 }}>Attached files <span style={{ fontWeight: 400, color: "var(--fg-muted)" }}>(injected as context)</span></label>
-              <input ref={fileRef} type="file" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ""; }} />
-              <button className="btn btn-sm btn-outline" disabled={uploading} onClick={() => fileRef.current?.click()}>
-                {uploading ? <Icons.Refresh size={14} className="spin" /> : <Icons.Paperclip size={14} />} {uploading ? "Uploading…" : "Upload file"}
-              </button>
+              {uploading ? (
+                <span className="btn btn-sm btn-outline" style={{ opacity: 0.6, cursor: "default" }}><Icons.Refresh size={14} className="spin" /> Uploading…</span>
+              ) : (
+                <label className="btn btn-sm btn-outline" style={{ cursor: "pointer" }}>
+                  <Icons.Paperclip size={14} /> Upload file
+                  <input ref={fileRef} type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ""; }} style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }} />
+                </label>
+              )}
             </div>
             {uploadErr && <div style={{ fontSize: 12, color: "var(--fg-primary)", background: "var(--accent-soft)", padding: "7px 10px", borderRadius: 8, marginBottom: 6 }}>{uploadErr}</div>}
             {uploads.length === 0 ? (
