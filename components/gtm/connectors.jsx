@@ -5,6 +5,7 @@ import { ConnLogo } from "./ui";
 import { CAT_TABS, getAmpersand, setConnectors, getConnectors } from "@/lib/gtm/data";
 import { listMcpServers, saveMcpServer, deleteMcpServer, setMcpServerEnabled } from "@/lib/gtm/mcpServers";
 import { McpServerModal } from "./McpServerModal";
+import { MCP_CATALOG, AUTH_LABEL } from "@/lib/gtm/mcpCatalog";
 
 const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
 
@@ -61,9 +62,46 @@ function CustomMcpSection() {
           })}
         </div>
       )}
+      <CatalogSection servers={servers} onAdd={(item) => setEditing({ name: item.name, url: item.url })} />
+
       {editing && (
         <McpServerModal server={editing === "new" ? null : editing} onSave={onSave} onClose={() => setEditing(null)} />
       )}
+    </div>
+  );
+}
+
+// Curated GTM MCP suggestions. "Add" prefills the modal with name + URL; already
+// connected servers (matched by URL) drop off the list.
+function CatalogSection({ servers, onAdd }) {
+  const addedUrls = new Set(servers.map((s) => (s.url || "").replace(/\/+$/, "")));
+  const items = MCP_CATALOG.filter((i) => !i.url || !addedUrls.has(i.url.replace(/\/+$/, "")));
+  if (items.length === 0) return null;
+  return (
+    <div style={{ marginTop: 28 }}>
+      <div className="eyebrow" style={{ marginBottom: 6 }}>Recommended for GTM</div>
+      <p style={{ fontSize: 13, color: "var(--fg-muted)", maxWidth: 560, marginBottom: 14 }}>Popular MCP servers for prospecting, research and revenue ops. Click Add to prefill the connection, then drop in your key.</p>
+      <div className="conn-grid">
+        {items.map((i) => (
+          <div key={i.slug} className="card conn-card">
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--bg-muted)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-primary)", flexShrink: 0 }}><Icons.Plug size={18} /></div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 16, color: "var(--fg-primary)" }}>{i.name}</div>
+                <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+                  <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>{i.category}</span>
+                  <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>{AUTH_LABEL[i.auth] || i.auth}</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ fontSize: 13, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1 }}>{i.desc}</div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <button className="btn btn-sm btn-outline" onClick={() => onAdd(i)}><Icons.Plus size={14} /> Add</button>
+              {i.docsUrl && <a className="btn btn-sm btn-ghost" href={i.docsUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "var(--fg-muted)" }}>Docs</a>}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

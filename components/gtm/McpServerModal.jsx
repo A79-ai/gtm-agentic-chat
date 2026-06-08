@@ -34,7 +34,7 @@ export function McpServerModal({ server, onSave, onClose }) {
       <div className="card" style={{ width: "min(520px, 94vw)", maxHeight: "90vh", display: "flex", flexDirection: "column", padding: 0 }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
           <Icons.Plug size={18} style={{ color: "var(--fg-muted)" }} />
-          <div style={{ flex: 1, fontWeight: 600, color: "var(--fg-primary)" }}>{server ? "Edit" : "Add"} MCP server</div>
+          <div style={{ flex: 1, fontWeight: 600, color: "var(--fg-primary)" }}>{server?.id ? "Edit" : "Add"} MCP server</div>
           <button className="icon-btn" onClick={onClose}><Icons.X size={18} /></button>
         </div>
         <div style={{ padding: 16, flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 14 }}>
