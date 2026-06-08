@@ -171,8 +171,8 @@ export function AgentBuilder({ agent, onSave, onClose, onDeleted, onOpenConnecto
               {uploading ? (
                 <span className="btn btn-sm btn-outline" style={{ opacity: 0.6, cursor: "default" }}><Icons.Refresh size={14} className="spin" /> Uploading…</span>
               ) : (
-                <label className="btn btn-sm btn-outline" style={{ cursor: "pointer" }}>
-                  <Icons.Paperclip size={14} /> Upload file
+                <label className="btn btn-sm btn-outline" style={{ cursor: "pointer", pointerEvents: "auto" }}>
+                  <span style={{ pointerEvents: "none", display: "inline-flex", alignItems: "center", gap: 6 }}><Icons.Paperclip size={14} /> Upload file</span>
                   <input ref={fileRef} type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ""; }} style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }} />
                 </label>
               )}

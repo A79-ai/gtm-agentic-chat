@@ -153,7 +153,7 @@ function Composer({ onSend, attached, onRemove, files, onUploadFile, onRemoveFil
             <span className="icon-btn" title="Uploading…" style={{ opacity: 0.6, cursor: "default" }}><Icons.Refresh size={16} className="spin" /></span>
           ) : (
             <label className="icon-btn" title="Upload a file" style={{ cursor: "pointer" }}>
-              <Icons.Paperclip size={16} />
+              <Icons.Paperclip size={16} style={{ pointerEvents: "none" }} />
               <input ref={fileRef} type="file" onChange={pickFile} style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }} />
             </label>
           )}
