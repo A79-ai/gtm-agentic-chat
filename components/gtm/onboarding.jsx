@@ -4,6 +4,7 @@
 import React, { useState, Suspense } from "react";
 import { Icons, LogoMark, Logos } from "./icons";
 import { getAmpersand, getConnectors } from "@/lib/gtm/data";
+import { useMcpKeyContext, ampersandGroupRef } from "@/lib/gtm/auth";
 
 const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
 
@@ -38,6 +39,12 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
   const finish = () => onFinish({ ...f, calendar: cal === "connected" });
 
   const amp = getAmpersand();
+  // Google Calendar is a user-scoped install in the (shared) free-trial org, so
+  // connect at `org_id:user_id` — a fresh user gets a clean OAuth connect rather
+  // than the org's shared installation. Falls back to the org ref otherwise.
+  const { userId, orgId } = useMcpKeyContext();
+  const calGroupRef = userId && orgId ? ampersandGroupRef(orgId, userId, "user") : amp.groupRef;
+  const calConsumerRef = userId || amp.consumerRef;
 
   let body;
   if (key === "about") {
@@ -105,8 +112,8 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
                   integration={googleIntegration()}
                   project={amp.projectId}
                   apiKey={amp.apiKey}
-                  groupRef={amp.groupRef}
-                  consumerRef={amp.consumerRef}
+                  groupRef={calGroupRef}
+                  consumerRef={calConsumerRef}
                   onToast={() => {}}
                   onDone={() => setCal("connected")}
                 />
