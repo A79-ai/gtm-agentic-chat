@@ -4,21 +4,30 @@ import { Icons, LogoMark, Logos } from "./icons";
 import { EntityIcon, TBadge, TONES } from "./ui";
 import { ENTITY_ORDER, ENTITIES, recordsOf, countOf } from "@/lib/gtm/data";
 
-function AgentTile({ agent, connectors, onOpen, onEdit }) {
+function AgentTile({ agent, connectors, onOpen, onEdit, onCopy }) {
   const Icon = Icons[agent.icon] || Icons.Spark;
   const tone = TONES[agent.tone] || TONES.gold;
   const [hover, setHover] = useState(false);
   const tools = (agent.tools || []).map((id) => connectors.find((c) => c.id === id)).filter(Boolean);
   const serverCount = (agent.mcpServerIds || []).length + (agent.includeAmpup !== false ? 1 : 0);
+  const ctrl = { width: 28, height: 28, background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" };
   return (
     <div className={"card" + (hover ? " card-hover" : "")} onClick={onOpen}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{ display: "flex", flexDirection: "column", cursor: "pointer", overflow: "hidden", position: "relative" }}>
-      {!agent.builtin && hover && onEdit && (
-        <button className="icon-btn" title="Edit agent" onClick={(e) => { e.stopPropagation(); onEdit(agent); }}
-          style={{ position: "absolute", top: 10, right: 10, width: 28, height: 28, background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", zIndex: 2 }}>
-          <Icons.Sliders size={14} />
-        </button>
+      {hover && (
+        <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 6, zIndex: 2 }}>
+          {onCopy && (
+            <button className="icon-btn" title="Duplicate agent" style={ctrl} onClick={(e) => { e.stopPropagation(); onCopy(agent); }}>
+              <Icons.Copy size={14} />
+            </button>
+          )}
+          {onEdit && (
+            <button className="icon-btn" title="Edit agent" style={ctrl} onClick={(e) => { e.stopPropagation(); onEdit(agent); }}>
+              <Icons.Sliders size={14} />
+            </button>
+          )}
+        </div>
       )}
       <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
@@ -54,7 +63,7 @@ function AgentTile({ agent, connectors, onOpen, onEdit }) {
   );
 }
 
-export function HomeScreen({ agents, connectors, openChat, openAgent, openList, onNav, onCreateAgent, onEditAgent }) {
+export function HomeScreen({ agents, connectors, openChat, openAgent, openList, onNav, onCreateAgent, onEditAgent, onCopyAgent }) {
   const [tab, setTab] = useState("All");
   const tabs = ["All", "Pipeline", "Calls", "Prospecting", "Research"];
   const list = agents.filter((a) => tab === "All" || a.tag === tab);
@@ -109,7 +118,7 @@ export function HomeScreen({ agents, connectors, openChat, openAgent, openList, 
           </div>
         </div>
         <div className="agent-grid">
-          {list.map((a) => <AgentTile key={a.id} agent={a} connectors={connectors} onEdit={onEditAgent} onOpen={() => { const seed = !a.builtin ? [] : a.id === "call-digest" || a.id === "meeting-prep" ? firstOf("meeting") : a.id === "account-research" || a.id === "pipeline-risk" ? firstOf("account") : firstOf("deal"); openAgent ? openAgent(a, seed) : openChat(seed); }} />)}
+          {list.map((a) => <AgentTile key={a.id} agent={a} connectors={connectors} onEdit={onEditAgent} onCopy={onCopyAgent} onOpen={() => { const seed = !a.builtin ? [] : a.id === "call-digest" || a.id === "meeting-prep" ? firstOf("meeting") : a.id === "account-research" || a.id === "pipeline-risk" ? firstOf("account") : firstOf("deal"); openAgent ? openAgent(a, seed) : openChat(seed); }} />)}
           <button className="card" onClick={() => (onCreateAgent ? onCreateAgent() : onNav("connectors"))} style={{ border: "1.5px dashed var(--border-default)", background: "transparent", minHeight: 180, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer", color: "var(--fg-muted)" }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--bg-muted)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icons.Plus size={22} /></div>
             <div style={{ fontWeight: 500, fontSize: 14, color: "var(--fg-secondary)" }}>Create from scratch</div>

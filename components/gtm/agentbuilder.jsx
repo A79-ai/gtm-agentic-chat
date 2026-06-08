@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react";
 import { Icons } from "./icons";
 import { TONES } from "./ui";
 import { McpServerModal } from "./McpServerModal";
-import { saveAgent, deleteAgent } from "@/lib/gtm/agents";
+import { saveAgent, deleteAgent, isSystemAgent } from "@/lib/gtm/agents";
 import { listMcpServers, saveMcpServer } from "@/lib/gtm/mcpServers";
 import { getUploads, addUpload } from "@/lib/gtm/data";
 
@@ -75,8 +75,10 @@ export function AgentBuilder({ agent, onSave, onClose, onDeleted, onOpenConnecto
     setFn(next);
   };
 
+  const editingSystem = editing && isSystemAgent(agent.id);
   const save = () => {
     const rec = saveAgent({
+      ...(agent || {}),
       id: agent?.id,
       name: name.trim(), desc: desc.trim(), tag: tag.trim() || "Custom",
       systemPrompt: prompt.trim(), icon, tone, includeAmpup,
@@ -168,8 +170,15 @@ export function AgentBuilder({ agent, onSave, onClose, onDeleted, onOpenConnecto
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
               <label style={{ ...label, marginBottom: 0, flex: 1 }}>Attached files <span style={{ fontWeight: 400, color: "var(--fg-muted)" }}>(injected as context)</span></label>
-              <input ref={fileRef} type="file" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ""; }} />
-              <button className="btn btn-sm btn-outline" disabled={uploading} onClick={() => fileRef.current?.click()}>
+              <button type="button" className="btn btn-sm btn-outline" disabled={uploading} onClick={() => {
+                if (uploading) return;
+                const input = document.createElement("input");
+                input.type = "file";
+                input.style.cssText = "position:fixed;left:-9999px;top:0;";
+                input.addEventListener("change", () => { const f = input.files && input.files[0]; if (f) uploadFile(f); try { document.body.removeChild(input); } catch {} });
+                document.body.appendChild(input);
+                input.click();
+              }}>
                 {uploading ? <Icons.Refresh size={14} className="spin" /> : <Icons.Paperclip size={14} />} {uploading ? "Uploading…" : "Upload file"}
               </button>
             </div>
@@ -191,8 +200,10 @@ export function AgentBuilder({ agent, onSave, onClose, onDeleted, onOpenConnecto
         </div>
 
         <div style={{ display: "flex", gap: 10, padding: "14px 16px", borderTop: "1px solid var(--border-subtle)" }}>
-          {editing && !agent.builtin && (
-            <button className="btn btn-sm btn-ghost" style={{ color: "var(--fg-danger, var(--accent))" }} onClick={() => { deleteAgent(agent.id); onDeleted?.(agent.id); }}>Delete</button>
+          {editing && (
+            <button className="btn btn-sm btn-ghost" style={{ color: "var(--fg-danger, var(--accent))" }} onClick={() => { deleteAgent(agent.id); onDeleted?.(agent.id); }}>
+              {editingSystem ? "Reset to default" : "Delete"}
+            </button>
           )}
           <div style={{ flex: 1 }} />
           <button className="btn btn-sm btn-ghost" onClick={onClose}>Cancel</button>

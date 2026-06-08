@@ -15,7 +15,7 @@ import { Onboarding } from "./onboarding";
 import { Signup } from "./signup";
 import { AgentBuilder } from "./agentbuilder";
 import { ENTITY_ORDER, ENTITIES, countOf, useDataStatus, getConnectors } from "@/lib/gtm/data";
-import { listAgents } from "@/lib/gtm/agents";
+import { listAgents, duplicateAgent } from "@/lib/gtm/agents";
 import { CONFIG } from "@/lib/gtm/config";
 import { getAccount, isSignedUp, saveAccount, startTrial, resetBilling, billingStatus, refreshBillingStatus } from "@/lib/gtm/billing";
 
@@ -182,6 +182,20 @@ export function App() {
     if (CONFIG.onboarding.enabled && !onboarded) setFlow({ name: "onboarding", firstRun: true });
     else { setFlow(null); showToast("Welcome to AmpUp" + (data.name ? `, ${data.name.split(" ")[0]}` : "") + " 👋", "success"); }
   };
+
+  // Google sign-in: if a session cookie is present, treat it as a completed
+  // signup (verified email drives the trial/billing). Also toasts on return.
+  useEffect(() => {
+    fetch("/api/auth/session").then((r) => r.json()).then((d) => {
+      const newGoogle = d && d.user && d.user.email && !isSignedUp();
+      if (newGoogle) signupDone({ name: d.user.name || "", email: d.user.email, company: "" });
+      const params = new URLSearchParams(window.location.search);
+      const s = params.get("signin");
+      if (s === "google" && !newGoogle) showToast("Signed in with Google", "success");
+      else if (s === "error") showToast("Google sign-in didn’t complete — try again", "error");
+      if (s) window.history.replaceState({}, "", window.location.pathname);
+    }).catch(() => {});
+  }, []);
   const onboardingDone = (data) => {
     const p = { name: data.name, email: data.email, company: data.company, role: data.role, size: data.size, goals: data.goals, calendar: !!data.calendar };
     setProfile(p);
@@ -206,7 +220,7 @@ export function App() {
       <SideNav route={route} go={go} openList={openList} openChat={openChat} themeResolved={themeResolved} toggleTheme={toggleTheme} profile={profile} on={onProfileAction} />
       <main className="main">
         <TrialBanner route={route} onUpgrade={() => go("plans")} />
-        {route.name === "home" && <HomeScreen agents={agents} connectors={connectors} openChat={openChat} openAgent={openAgent} openList={openList} onNav={go} onCreateAgent={() => setBuilder("new")} onEditAgent={(a) => setBuilder(a)} />}
+        {route.name === "home" && <HomeScreen agents={agents} connectors={connectors} openChat={openChat} openAgent={openAgent} openList={openList} onNav={go} onCreateAgent={() => setBuilder("new")} onEditAgent={(a) => setBuilder(a)} onCopyAgent={(a) => { duplicateAgent(a); setAgentsVersion((v) => v + 1); showToast(`Duplicated ${a.name}`, "success"); }} />}
         {route.name === "connectors" && <ConnectorsScreen connectors={connectors} onToast={showToast} />}
         {route.name === "notetaker" && <NotetakerScreen onToast={showToast} />}
         {route.name === "files" && <FilesScreen onNewChat={openChat} />}
