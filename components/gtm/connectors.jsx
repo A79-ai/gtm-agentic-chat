@@ -9,98 +9,61 @@ import { MCP_CATALOG, AUTH_LABEL } from "@/lib/gtm/mcpCatalog";
 
 const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
 
-function CustomMcpSection() {
-  const [servers, setServers] = useState([]);
-  const [editing, setEditing] = useState(null); // server | "new" | null
-  useEffect(() => { setServers(listMcpServers()); }, []);
-  const refresh = () => setServers(listMcpServers());
-  const onSave = (s) => { saveMcpServer(s); setEditing(null); refresh(); };
-  const remove = (s) => { deleteMcpServer(s.id); refresh(); };
-  const toggle = (s) => { setMcpServerEnabled(s.id, !(s.enabled !== false)); refresh(); };
-
+// A user's saved custom MCP server, rendered in the unified grid.
+function McpServerCard({ s, onToggle, onEdit, onRemove }) {
+  const on = s.enabled !== false;
   return (
-    <div style={{ marginTop: 36 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div className="eyebrow" style={{ marginBottom: 6 }}>Custom MCP</div>
-          <h3 style={{ fontSize: 20, marginBottom: 4 }}>Bring your own MCP servers</h3>
-          <p style={{ fontSize: 13.5, color: "var(--fg-muted)", maxWidth: 560 }}>Connect any Model Context Protocol server. Its tools become available to the agent in new chats, alongside your CRM.</p>
+    <div className={"card conn-card" + (on ? " connected" : "")}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--bg-muted)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-primary)", flexShrink: 0 }}><Icons.Plug size={18} /></div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontWeight: 600, fontSize: 16, color: "var(--fg-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
+          <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>MCP</span>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11, fontFamily: "var(--font-mono)" }}>{s.slug}</span>
+          </div>
         </div>
-        <button className="btn btn-sm btn-primary" onClick={() => setEditing("new")}><Icons.Plus size={15} /> Add MCP server</button>
       </div>
-      {servers.length === 0 ? (
-        <button className="card" onClick={() => setEditing("new")} style={{ border: "1.5px dashed var(--border-default)", background: "transparent", padding: "26px 16px", width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 10, cursor: "pointer", color: "var(--fg-muted)" }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--bg-muted)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icons.Plug size={22} /></div>
-          <div style={{ fontWeight: 500, fontSize: 14, color: "var(--fg-secondary)" }}>No custom MCP servers yet — add one</div>
+      <div style={{ fontSize: 12.5, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1, wordBreak: "break-all" }}>{s.url}</div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button className="btn btn-sm btn-outline" onClick={() => onToggle(s)} title={on ? "Disable" : "Enable"}>
+          {on ? <><Icons.CheckCircle size={14} /> Enabled</> : <>Disabled</>}
         </button>
-      ) : (
-        <div className="conn-grid">
-          {servers.map((s) => {
-            const on = s.enabled !== false;
-            return (
-              <div key={s.id} className={"card conn-card" + (on ? " connected" : "")}>
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--bg-muted)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-primary)", flexShrink: 0 }}><Icons.Plug size={18} /></div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 16, color: "var(--fg-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
-                    <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
-                      <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>MCP</span>
-                      <span className="badge" style={{ padding: "2px 8px", fontSize: 11, fontFamily: "var(--font-mono)" }}>{s.slug}</span>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ fontSize: 12.5, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1, wordBreak: "break-all" }}>{s.url}</div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button className="btn btn-sm btn-outline" onClick={() => toggle(s)} title={on ? "Disable" : "Enable"}>
-                    {on ? <><Icons.CheckCircle size={14} /> Enabled</> : <>Disabled</>}
-                  </button>
-                  <button className="icon-btn" title="Edit" onClick={() => setEditing(s)}><Icons.Sliders size={15} /></button>
-                  <button className="icon-btn" title="Remove" onClick={() => remove(s)}><Icons.X size={15} /></button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      <CatalogSection servers={servers} onAdd={(item) => setEditing({ name: item.name, url: item.url })} />
-
-      {editing && (
-        <McpServerModal server={editing === "new" ? null : editing} onSave={onSave} onClose={() => setEditing(null)} />
-      )}
+        <button className="icon-btn" title="Edit" onClick={() => onEdit(s)}><Icons.Sliders size={15} /></button>
+        <button className="icon-btn" title="Remove" onClick={() => onRemove(s)}><Icons.X size={15} /></button>
+      </div>
     </div>
   );
 }
 
-// Curated GTM MCP suggestions. "Add" prefills the modal with name + URL; already
-// connected servers (matched by URL) drop off the list.
-function CatalogSection({ servers, onAdd }) {
-  const addedUrls = new Set(servers.map((s) => (s.url || "").replace(/\/+$/, "")));
-  const items = MCP_CATALOG.filter((i) => !i.url || !addedUrls.has(i.url.replace(/\/+$/, "")));
-  if (items.length === 0) return null;
+// A recommended GTM MCP server from the catalog. API-key servers prefill the
+// Add modal; OAuth servers aren't one-click addable yet (the token modal can't
+// run an OAuth handshake), so they show an "OAuth — soon" state + Docs.
+function McpCatalogCard({ i, onAdd }) {
+  const oauth = i.auth === "oauth";
   return (
-    <div style={{ marginTop: 28 }}>
-      <div className="eyebrow" style={{ marginBottom: 6 }}>Recommended for GTM</div>
-      <p style={{ fontSize: 13, color: "var(--fg-muted)", maxWidth: 560, marginBottom: 14 }}>Popular MCP servers for prospecting, research and revenue ops. Click Add to prefill the connection, then drop in your key.</p>
-      <div className="conn-grid">
-        {items.map((i) => (
-          <div key={i.slug} className="card conn-card">
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--bg-muted)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-primary)", flexShrink: 0 }}><Icons.Plug size={18} /></div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 16, color: "var(--fg-primary)" }}>{i.name}</div>
-                <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
-                  <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>{i.category}</span>
-                  <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>{AUTH_LABEL[i.auth] || i.auth}</span>
-                </div>
-              </div>
-            </div>
-            <div style={{ fontSize: 13, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1 }}>{i.desc}</div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <button className="btn btn-sm btn-outline" onClick={() => onAdd(i)}><Icons.Plus size={14} /> Add</button>
-              {i.docsUrl && <a className="btn btn-sm btn-ghost" href={i.docsUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "var(--fg-muted)" }}>Docs</a>}
-            </div>
+    <div className="card conn-card">
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--bg-muted)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-primary)", flexShrink: 0 }}><Icons.Plug size={18} /></div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontWeight: 600, fontSize: 16, color: "var(--fg-primary)" }}>{i.name}</div>
+          <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>MCP</span>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>{i.category}</span>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>{AUTH_LABEL[i.auth] || i.auth}</span>
           </div>
-        ))}
+        </div>
+      </div>
+      <div style={{ fontSize: 13, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1 }}>{i.desc}</div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {oauth ? (
+          <span className="btn btn-sm" title="OAuth connect isn't supported yet — use Docs to set it up" style={{ background: "var(--bg-muted)", color: "var(--fg-muted)", border: "1px solid var(--border-subtle)", cursor: "default" }}>
+            <Icons.Spark size={13} /> OAuth — soon
+          </span>
+        ) : (
+          <button className="btn btn-sm btn-outline" onClick={() => onAdd(i)}><Icons.Plus size={14} /> Add</button>
+        )}
+        {i.docsUrl && <a className="btn btn-sm btn-ghost" href={i.docsUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "var(--fg-muted)" }}>Docs</a>}
       </div>
     </div>
   );
@@ -182,12 +145,19 @@ function ConnectModal({ connector, amp, mode = "connect", onClose, onToast }) {
 
 export function ConnectorsScreen({ connectors, onToast }) {
   const [tab, setTab] = useState("All");
+  const [query, setQuery] = useState("");
   const [connecting, setConnecting] = useState(null); // { connector, mode }
   const [conns, setConns] = useState(connectors);
+  const [servers, setServers] = useState([]);
+  const [mcpEditing, setMcpEditing] = useState(null); // null | "new" | server(edit) | {name,url}(prefill)
   useEffect(() => { setConns(connectors); }, [connectors]);
+  useEffect(() => { setServers(listMcpServers()); }, []);
   const amp = getAmpersand();
-  const list = conns.filter((c) => tab === "All" || c.cat === tab);
-  const connectedCount = conns.filter((c) => c.connected).length;
+
+  const refreshServers = () => setServers(listMcpServers());
+  const onMcpSave = (s) => { saveMcpServer(s); setMcpEditing(null); refreshServers(); };
+  const onMcpRemove = (s) => { deleteMcpServer(s.id); refreshServers(); };
+  const onMcpToggle = (s) => { setMcpServerEnabled(s.id, !(s.enabled !== false)); refreshServers(); };
 
   // Re-pull the live catalog + connection state (after a connect/disconnect).
   const refetch = () =>
@@ -206,18 +176,44 @@ export function ConnectorsScreen({ connectors, onToast }) {
   };
   const onContact = (c) => onToast(`${c.name} is an Enterprise connector — contact sales to enable it.`, "info");
 
+  // One unified, searchable list: Ampersand integrations, your custom MCP
+  // servers, then recommended MCP servers. Custom + recommended are tab-category
+  // "MCP"; search matches name/description across all three.
+  const q = query.trim().toLowerCase();
+  const matches = (...fields) => !q || fields.some((f) => (f || "").toLowerCase().includes(q));
+  const showMcp = tab === "All" || tab === "MCP";
+
+  const ampList = conns.filter((c) => (tab === "All" || c.cat === tab) && matches(c.name, c.desc));
+  const customList = showMcp ? servers.filter((s) => matches(s.name, s.url, s.slug)) : [];
+  const addedUrls = new Set(servers.map((s) => (s.url || "").replace(/\/+$/, "")));
+  const catalogList = showMcp
+    ? MCP_CATALOG.filter((i) => (!i.url || !addedUrls.has(i.url.replace(/\/+$/, ""))) && matches(i.name, i.desc, i.category))
+    : [];
+
+  const connectedCount = conns.filter((c) => c.connected).length;
+  const totalShown = ampList.length + customList.length + catalogList.length;
+
   return (
     <div className="scroll" style={{ flex: 1 }}>
       <div className="screen-pad" style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 18 }}>
           <div style={{ flex: 1, minWidth: 220 }}>
             <div className="eyebrow" style={{ marginBottom: 6 }}>Org tools</div>
             <h2 style={{ marginBottom: 6 }}>Connect your stack</h2>
-            <p style={{ fontSize: 14, color: "var(--fg-muted)", maxWidth: 520 }}>Wire up CRM, call recordings and notes. Every agent reasons over exactly what you connect here.</p>
+            <p style={{ fontSize: 14, color: "var(--fg-muted)", maxWidth: 520 }}>Wire up CRM, call recordings, notes and any MCP server. Every agent reasons over exactly what you connect here.</p>
           </div>
           <div className="badge badge-success" style={{ height: "fit-content", padding: "6px 12px" }}>
             <Icons.Check size={14} /> {connectedCount} of {connectors.length} connected
           </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+          <div className="attach-search" style={{ flex: 1, minWidth: 220, margin: 0 }}>
+            <Icons.Search size={16} style={{ color: "var(--fg-muted)" }} />
+            <input placeholder="Search connectors…" value={query} onChange={(e) => setQuery(e.target.value)} />
+            {query && <button className="icon-btn" style={{ width: 26, height: 26 }} onClick={() => setQuery("")}><Icons.X size={15} /></button>}
+          </div>
+          <button className="btn btn-sm btn-primary" onClick={() => setMcpEditing("new")}><Icons.Plus size={15} /> Add MCP server</button>
         </div>
 
         <div className="scroll hide-scrollbar" style={{ overflowX: "auto", marginBottom: 20, paddingBottom: 2 }}>
@@ -226,9 +222,18 @@ export function ConnectorsScreen({ connectors, onToast }) {
           </div>
         </div>
 
-        <div className="conn-grid">{list.map((c) => <ConnectorCard key={c.id} c={c} onConnect={onConnect} onContact={onContact} onManage={onManage} />)}</div>
+        <div className="conn-grid">
+          {ampList.map((c) => <ConnectorCard key={c.id} c={c} onConnect={onConnect} onContact={onContact} onManage={onManage} />)}
+          {customList.map((s) => <McpServerCard key={s.id} s={s} onToggle={onMcpToggle} onEdit={setMcpEditing} onRemove={onMcpRemove} />)}
+          {catalogList.map((i) => <McpCatalogCard key={i.slug} i={i} onAdd={(item) => setMcpEditing({ name: item.name, url: item.url })} />)}
+        </div>
 
-        {(tab === "All" || tab === "MCP") && <CustomMcpSection />}
+        {totalShown === 0 && (
+          <div style={{ textAlign: "center", color: "var(--fg-muted)", padding: "48px 16px" }}>
+            <Icons.Search size={24} style={{ marginBottom: 10 }} />
+            <div style={{ fontSize: 14 }}>No connectors match “{query}”{tab !== "All" ? ` in ${tab}` : ""}.</div>
+          </div>
+        )}
       </div>
       {connecting && (
         <ConnectModal
@@ -238,6 +243,9 @@ export function ConnectorsScreen({ connectors, onToast }) {
           onClose={() => { setConnecting(null); refetch(); }}
           onToast={onToast}
         />
+      )}
+      {mcpEditing && (
+        <McpServerModal server={mcpEditing === "new" ? null : mcpEditing} onSave={onMcpSave} onClose={() => setMcpEditing(null)} />
       )}
     </div>
   );

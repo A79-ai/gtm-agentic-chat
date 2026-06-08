@@ -62,7 +62,7 @@ export function McpServerModal({ server, onSave, onClose }) {
             </div>
           )}
           <div style={{ fontSize: 11.5, color: "var(--fg-muted)", lineHeight: 1.5 }}>
-            The token is stored in your browser and sent securely with each chat request. It never enters the app build.
+            Supports API-key / bearer-token auth (interactive OAuth isn’t supported yet). The token is stored in your browser and sent securely with each chat request — it never enters the app build.
           </div>
         </div>
         <div style={{ display: "flex", gap: 10, padding: "14px 16px", borderTop: "1px solid var(--border-subtle)" }}>
