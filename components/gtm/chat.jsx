@@ -5,7 +5,7 @@ import { DefaultChatTransport } from "ai";
 import { Icons, LogoMark } from "./icons";
 import { EntityIcon, RefChip } from "./ui";
 import { ENTITIES, FIELDS, SUGGESTIONS, byId, related, subtitleOf, addUpload, listConversations, saveConversation, deleteConversation } from "@/lib/gtm/data";
-import { enabledMcpServers } from "@/lib/gtm/mcpServers";
+import { enabledMcpServers, refreshOauthServers } from "@/lib/gtm/mcpServers";
 import { agentFiles } from "@/lib/gtm/agents";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { LoadingIndicator } from "./LoadingIndicator";
@@ -398,6 +398,9 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
   const scrollRef = useRef(null);
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages]);
 
+  // Refresh any OAuth MCP tokens nearing expiry so this conversation starts with
+  // a fresh token (long single sessions past expiry should be reopened).
+  useEffect(() => { refreshOauthServers(); }, []);
   // Rehydrate a reopened conversation's transcript once on mount.
   useEffect(() => { if (resume?.messages?.length) setMessages(resume.messages); }, []);
   // Persist the transcript locally so it shows in History. The durable run keeps

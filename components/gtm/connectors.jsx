@@ -57,10 +57,12 @@ function McpServerCard({ s, onToggle, onEdit, onRemove }) {
 }
 
 // A recommended GTM MCP server from the catalog. API-key servers prefill the
-// Add modal; OAuth servers aren't one-click addable yet (the token modal can't
-// run an OAuth handshake), so they show an "OAuth — soon" state + Docs.
-function McpCatalogCard({ i, onAdd }) {
+// Add modal; OAuth servers with a hosted endpoint that supports dynamic client
+// registration can connect via the OAuth popup; the rest (no endpoint, or no
+// DCR like HubSpot) stay "OAuth — soon" + Docs.
+function McpCatalogCard({ i, onAdd, onConnect }) {
   const oauth = i.auth === "oauth";
+  const oauthConnectable = oauth && !!i.url && !i.noDcr;
   return (
     <div className="card conn-card">
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -76,8 +78,10 @@ function McpCatalogCard({ i, onAdd }) {
       </div>
       <div style={{ fontSize: 13, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1 }}>{i.desc}</div>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        {oauth ? (
-          <span className="btn btn-sm" title="OAuth connect isn't supported yet — use Docs to set it up" style={{ background: "var(--bg-muted)", color: "var(--fg-muted)", border: "1px solid var(--border-subtle)", cursor: "default" }}>
+        {oauthConnectable ? (
+          <button className="btn btn-sm btn-outline" onClick={() => onConnect(i)}><Icons.Plug size={14} /> Connect</button>
+        ) : oauth ? (
+          <span className="btn btn-sm" title="This server needs a pre-registered OAuth app — use Docs to set it up" style={{ background: "var(--bg-muted)", color: "var(--fg-muted)", border: "1px solid var(--border-subtle)", cursor: "default" }}>
             <Icons.Spark size={13} /> OAuth — soon
           </span>
         ) : (
@@ -179,6 +183,33 @@ export function ConnectorsScreen({ connectors, onToast }) {
   const onMcpRemove = (s) => { deleteMcpServer(s.id); refreshServers(); };
   const onMcpToggle = (s) => { setMcpServerEnabled(s.id, !(s.enabled !== false)); refreshServers(); };
 
+  // OAuth connect: open the provider consent in a popup; the callback posts the
+  // resulting server config back, which we save to the registry.
+  const onOauthConnect = (item) => {
+    const w = 520, h = 720;
+    const left = window.screenX + Math.max(0, (window.outerWidth - w) / 2);
+    const top = window.screenY + Math.max(0, (window.outerHeight - h) / 2);
+    const popup = window.open(
+      `/api/mcp/oauth/start?url=${encodeURIComponent(item.url)}&name=${encodeURIComponent(item.name)}`,
+      "mcp-oauth",
+      `width=${w},height=${h},left=${left},top=${top}`,
+    );
+    const onMessage = (ev) => {
+      if (ev.origin !== window.location.origin || !ev.data || typeof ev.data !== "object") return;
+      if (ev.data.type === "mcp-oauth-success" && ev.data.server) {
+        saveMcpServer(ev.data.server);
+        refreshServers();
+        onToast(`Connected ${item.name}`, "success");
+        cleanup();
+      } else if (ev.data.type === "mcp-oauth-error") {
+        onToast(`Couldn't connect ${item.name}: ${ev.data.error || "OAuth failed"}`, "error");
+        cleanup();
+      }
+    };
+    const cleanup = () => { window.removeEventListener("message", onMessage); try { popup && popup.close(); } catch {} };
+    window.addEventListener("message", onMessage);
+  };
+
   // Re-pull the live catalog + connection state (after a connect/disconnect).
   const refetch = () =>
     fetch("/api/connectors")
@@ -245,7 +276,7 @@ export function ConnectorsScreen({ connectors, onToast }) {
         <div className="conn-grid">
           {ampList.map((c) => <ConnectorCard key={c.id} c={c} onConnect={onConnect} onContact={onContact} onManage={onManage} />)}
           {customList.map((s) => <McpServerCard key={s.id} s={s} onToggle={onMcpToggle} onEdit={setMcpEditing} onRemove={onMcpRemove} />)}
-          {catalogList.map((i) => <McpCatalogCard key={i.slug} i={i} onAdd={(item) => setMcpEditing({ name: item.name, url: item.url })} />)}
+          {catalogList.map((i) => <McpCatalogCard key={i.slug} i={i} onAdd={(item) => setMcpEditing({ name: item.name, url: item.url })} onConnect={onOauthConnect} />)}
         </div>
 
         {totalShown === 0 && (
