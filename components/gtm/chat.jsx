@@ -510,7 +510,10 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
   };
 
   const subjectType = attached[0] ? attached[0].type : "none";
-  const suggestions = SUGGESTIONS[subjectType] || SUGGESTIONS.none;
+  // An agent carries its own starter questions; fall back to the record-type
+  // suggestions (or the generic pipeline ones) when none is set or no agent.
+  const agentStarters = agent && Array.isArray(agent.starterQuestions) ? agent.starterQuestions.filter(Boolean) : [];
+  const suggestions = agentStarters.length ? agentStarters : SUGGESTIONS[subjectType] || SUGGESTIONS.none;
   const title = attached.length === 1 ? attached[0].name : attached.length > 1 ? `${attached.length} records` : "your pipeline";
   const empty = messages.length === 0;
   const lastId = messages.length ? messages[messages.length - 1].id : null;
@@ -551,9 +554,9 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
             {empty ? (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "46vh", textAlign: "center", gap: 8 }}>
                 <div style={{ width: 52, height: 52, borderRadius: 14, background: "var(--accent-soft)", color: "var(--fg-primary)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}><LogoMark size={28} /></div>
-                <h3 style={{ fontFamily: "var(--font-hero)", fontSize: 26, color: "var(--fg-primary)" }}>Chat with {title}</h3>
+                <h3 style={{ fontFamily: "var(--font-hero)", fontSize: 26, color: "var(--fg-primary)" }}>{agent ? agent.name : `Chat with ${title}`}</h3>
                 <p style={{ fontSize: 14, color: "var(--fg-muted)", maxWidth: 440, marginBottom: 6 }}>
-                  {attached.length ? "Ask anything about the attached records. I reason across your connected CRM, calls and notes." : "Attach a record below, or ask about your pipeline. I reason across your connected sources."}
+                  {agent ? (agent.desc || "Ask anything to get started — I reason across your connected sources.") : attached.length ? "Ask anything about the attached records. I reason across your connected CRM, calls and notes." : "Attach a record below, or ask about your pipeline. I reason across your connected sources."}
                 </p>
                 {attached.length > 0 && <div className="chip-wrap" style={{ justifyContent: "center", marginBottom: 14 }}>{attached.map((r) => <RefChip key={r.id} record={r} onOpen={onOpenRecord} />)}</div>}
                 <div className="suggest">{suggestions.map((sug, i) => <button key={i} onClick={() => send(sug)}>{sug}</button>)}</div>
