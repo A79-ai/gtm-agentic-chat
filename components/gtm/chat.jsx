@@ -68,6 +68,10 @@ const fileToBase64 = (file) =>
 
 const textOf = (m) => (m.parts || []).filter((p) => p.type === "text").map((p) => p.text).join("");
 const toolName = (type) => type.replace(/^tool-/, "").replace(/^mcp__[a-z0-9-]+__/, "").replace(/_/g, " ");
+// Cheap transcript signature (message count + last message text length) so the
+// save effect can skip when nothing changed — e.g. a pure reopen, or no-op
+// re-renders — and only persist once per settled turn.
+const convoSig = (msgs) => `${msgs.length}:${textOf(msgs[msgs.length - 1] || {}).length}`;
 
 function TraceRow({ part }) {
   const done = part.state === "output-available" || part.state === "output-error";
@@ -387,6 +391,9 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
   // AmpUp row id once this conversation is persisted server-side; threaded into
   // subsequent saves so they UPDATE the same row instead of creating new ones.
   const ampupIdRef = useRef(resume?.ampupId);
+  // Signature of the last-saved transcript, seeded from the reopened transcript
+  // so reopening doesn't immediately re-save unchanged content.
+  const lastSavedSigRef = useRef(resume?.messages?.length ? convoSig(resume.messages) : "");
   const agentRef = useRef(agent);
   agentRef.current = agent;
   const [histOpen, setHistOpen] = useState(false);
@@ -534,8 +541,12 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
   // debounce on message stability: once deltas stop arriving, save the final
   // transcript and remember the AmpUp row id so later saves update it in place.
   useEffect(() => {
+    if (turnBusy) return; // wait for the turn to settle — one save per turn, not per chunk
     if (!messages.some((m) => m.role === "user")) return;
+    const sig = convoSig(messages);
+    if (sig === lastSavedSigRef.current) return; // unchanged (e.g. just reopened)
     const t = setTimeout(() => {
+      lastSavedSigRef.current = sig;
       const deal = attachedRef.current.find((r) => r.type === "deal");
       const acct = attachedRef.current.find((r) => r.type === "account");
       saveConversation({
@@ -546,9 +557,9 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
         dealId: deal?.id,
         accountId: acct?.id,
       }).then((ampupId) => { if (ampupId != null) ampupIdRef.current = ampupId; });
-    }, 900);
+    }, 600);
     return () => clearTimeout(t);
-  }, [messages, conversationId]);
+  }, [messages, turnBusy, conversationId]);
 
   const addRec = (r) => setAttached((a) => (a.some((x) => x.id === r.id) ? a : [...a, r]));
   const removeRec = (r) => setAttached((a) => a.filter((x) => x.id !== r.id));
