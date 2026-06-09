@@ -12,6 +12,12 @@ live data — "list my open opportunities", "summarize my last meeting with Acme
 The connectors, data sync, access control, and hydration all live **behind your
 AmpUp MCP endpoint** — this app is a thin, durable chat client in front of it.
 
+![Home — agents over your live CRM, calls and notes](./public/screenshots/01-home.png)
+
+|  |  |
+|---|---|
+| ![Chat grounded in a deal](./public/screenshots/02-chat.png) | ![Your pipeline, synced from the CRM](./public/screenshots/03-deals.png) |
+
 ## Deploy
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/a79-ai/gtm-agentic-chat)
