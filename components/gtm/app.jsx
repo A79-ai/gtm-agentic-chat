@@ -147,6 +147,31 @@ function Toast({ toast }) {
 
 export function App({ authUser, onAuth0Logout } = {}) {
   const { ready, refresh } = useDataStatus(); // re-render the tree when records/connectors load
+
+  // Onboarding completion is remembered PER signed-in user — the app is
+  // multi-tenant (a shared free-trial org), so a returning user skips
+  // onboarding on every later login, while a different user on the same
+  // browser still gets their own first run. Keyed off the stable Auth0 id.
+  const userKey = (authUser && (authUser.sub || authUser.email)) || "local";
+  const OB_KEY = `ampup-onboarded:${userKey}`;
+  const PROFILE_KEY = `ampup-profile:${userKey}`;
+  // True once this user has finished onboarding. Falls back to the legacy,
+  // pre-multi-tenant single key and migrates it to this user once (then clears
+  // it), so an already-onboarded user isn't sent through onboarding again.
+  const readOnboarded = () => {
+    try {
+      if (localStorage.getItem(OB_KEY) === "1") return true;
+      if (localStorage.getItem("ampup-onboarded") === "1") {
+        localStorage.setItem(OB_KEY, "1");
+        const lp = localStorage.getItem("ampup-profile");
+        if (lp && !localStorage.getItem(PROFILE_KEY)) localStorage.setItem(PROFILE_KEY, lp);
+        localStorage.removeItem("ampup-onboarded");
+        localStorage.removeItem("ampup-profile");
+        return true;
+      }
+      return false;
+    } catch { return false; }
+  };
   const t = useTweaks();
   const themeResolved = t.themePref === "system" ? systemTheme() : t.themePref;
   const [route, setRoute] = useState(() => routeForPath(window.location.pathname));
@@ -163,16 +188,15 @@ export function App({ authUser, onAuth0Logout } = {}) {
   const [sheet, setSheet] = useState(false);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
-  const [profile, setProfile] = useState(() => { try { return JSON.parse(localStorage.getItem("ampup-profile") || "{}"); } catch { return {}; } });
+  const [profile, setProfile] = useState(() => { try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || localStorage.getItem("ampup-profile") || "{}"); } catch { return {}; } });
   const [account, setAccount] = useState(() => getAccount());
   // When Auth0 owns identity, show the real signed-in user in the profile menu.
   const navProfile = authUser
     ? { ...profile, name: profile.name || authUser.name || authUser.email, email: authUser.email || profile.email, picture: authUser.picture }
     : profile;
   const [flow, setFlow] = useState(() => {
-    const onboarded = (() => { try { return localStorage.getItem("ampup-onboarded") === "1"; } catch { return false; } })();
     if (CONFIG.signup.enabled && !AUTH0_ENABLED && !isSignedUp()) return { name: "signup", firstRun: true };
-    if (CONFIG.onboarding.enabled && !onboarded) return { name: "onboarding", firstRun: true };
+    if (CONFIG.onboarding.enabled && !readOnboarded()) return { name: "onboarding", firstRun: true };
     return null;
   });
 
@@ -218,7 +242,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
   }, []);
 
   const restartDemo = () => {
-    ["onboarded", "profile"].forEach((k) => { try { localStorage.removeItem("ampup-" + k); } catch {} });
+    [OB_KEY, PROFILE_KEY].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
     resetBilling();
     window.location.reload();
   };
@@ -228,9 +252,8 @@ export function App({ authUser, onAuth0Logout } = {}) {
     setAccount(getAccount());
     const next = { ...profile, name: data.name, email: data.email, company: data.company };
     setProfile(next);
-    try { localStorage.setItem("ampup-profile", JSON.stringify(next)); } catch {}
-    const onboarded = (() => { try { return localStorage.getItem("ampup-onboarded") === "1"; } catch { return false; } })();
-    if (CONFIG.onboarding.enabled && !onboarded) setFlow({ name: "onboarding", firstRun: true });
+    try { localStorage.setItem(PROFILE_KEY, JSON.stringify(next)); } catch {}
+    if (CONFIG.onboarding.enabled && !readOnboarded()) setFlow({ name: "onboarding", firstRun: true });
     else { setFlow(null); showToast("Welcome to AmpUp" + (data.name ? `, ${data.name.split(" ")[0]}` : "") + " 👋", "success"); }
   };
 
@@ -250,7 +273,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
   const onboardingDone = (data) => {
     const p = { name: data.name, email: data.email, company: data.company, role: data.role, size: data.size, goals: data.goals, calendar: !!data.calendar };
     setProfile(p);
-    try { localStorage.setItem("ampup-profile", JSON.stringify(p)); localStorage.setItem("ampup-onboarded", "1"); } catch {}
+    try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); localStorage.setItem(OB_KEY, "1"); } catch {}
     const firstRun = flow && flow.firstRun;
     setFlow(null);
     if (firstRun) showToast("Welcome to AmpUp" + (data.name ? `, ${data.name.split(" ")[0]}` : "") + " 👋", "success");
@@ -264,11 +287,12 @@ export function App({ authUser, onAuth0Logout } = {}) {
     else if (action === "onboarding") setFlow({ name: "onboarding", firstRun: false });
     else if (action === "restart") restartDemo();
     else if (action === "signout") {
-      // Clear local app state, then end the auth session. Under Auth0 we must
-      // call logout() — the session lives in localStorage and would otherwise
-      // silently re-authenticate on reload. Auth0 logout redirects to origin,
-      // landing on the sign-in screen (so no manual reload here).
-      ["onboarded", "profile"].forEach((k) => { try { localStorage.removeItem("ampup-" + k); } catch {} });
+      // End the auth session. Under Auth0 we must call logout() — the session
+      // lives in localStorage and would otherwise silently re-authenticate on
+      // reload. Auth0 logout redirects to origin, landing on the sign-in screen
+      // (so no manual reload here). We intentionally KEEP the per-user
+      // onboarding/profile keys so a returning user isn't re-onboarded on every
+      // login; "Restart" replays onboarding for the current user on demand.
       resetBilling();
       if (AUTH0_ENABLED && onAuth0Logout) {
         onAuth0Logout();
