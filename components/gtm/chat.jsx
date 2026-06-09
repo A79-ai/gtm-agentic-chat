@@ -45,6 +45,26 @@ const scopeServersForAgent = (agent, connected) => {
   );
 };
 
+// Text-ish files (under the size cap) are read in the browser and inlined
+// straight into the prompt — usable instantly, no upload round-trip. Binary /
+// rich formats (or anything larger) fall back to the AmpUp DataSource +
+// read_file path. The cap bounds per-turn token cost, since inlined content
+// rides the context while the file stays attached.
+const INLINE_MAX_BYTES = 32 * 1024;
+const TEXT_FILE_RE =
+  /\.(md|markdown|txt|text|csv|tsv|json|jsonl|ya?ml|xml|html?|log|ini|toml|srt|vtt|tex|rst|[cm]?[jt]sx?|py|rb|go|rs|java|kt|c|h|cpp|cc|hpp|cs|php|swift|sh|bash|zsh|sql|css|scss|less|env|conf)$/i;
+const isInlineable = (file) =>
+  file.size <= INLINE_MAX_BYTES &&
+  (((file.type || "").startsWith("text/")) || TEXT_FILE_RE.test(file.name || ""));
+
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result).split(",")[1] || "");
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+
 const textOf = (m) => (m.parts || []).filter((p) => p.type === "text").map((p) => p.text).join("");
 const toolName = (type) => type.replace(/^tool-/, "").replace(/^mcp__[a-z0-9-]+__/, "").replace(/_/g, " ");
 
@@ -149,7 +169,10 @@ function AttachPicker({ attached, onPick, onClose }) {
 }
 
 function FileChip({ file, onRemove }) {
-  const pending = file.status === "uploading" || file.datasourceId == null;
+  // Inlined files are usable the moment their text is read (no datasourceId
+  // needed); only the binary upload path shows a pending spinner.
+  const ready = !!file.text || file.datasourceId != null;
+  const pending = file.status === "uploading" || !ready;
   return (
     <span className="file-chip" title={file.fileName}>
       {pending ? <Icons.Refresh size={13} className="spin" /> : <Icons.Paperclip size={13} />}
@@ -184,7 +207,7 @@ function Composer({ onSend, attached, onRemove, files, onUploadFile, onRemoveFil
         {(attached.length > 0 || files.length > 0) && (
           <div className="chip-tray">
             {attached.map((r) => <RefChip key={r.id} record={r} removable onRemove={onRemove} />)}
-            {files.map((f) => <FileChip key={f.datasourceId ?? f.fileName} file={f} onRemove={onRemoveFile} />)}
+            {files.map((f) => <FileChip key={f.id ?? f.datasourceId ?? f.fileName} file={f} onRemove={onRemoveFile} />)}
           </div>
         )}
         <textarea ref={ref} value={text} rows={1}
@@ -293,7 +316,15 @@ function contextPreamble(records, files = []) {
     const lines = records.map((r) => `- ${ENTITIES[r.type].label}: ${r.name}${subtitleOf(r) ? ` (${subtitleOf(r)})` : ""}`).join("\n");
     blocks.push(`The user has attached these CRM records. Ground your answer in them and use tools to fetch more detail as needed:\n${lines}`);
   }
-  const withId = files.filter((f) => f.datasourceId != null);
+  // Inlined files carry their full text — embed it directly so the agent
+  // answers without any tool call.
+  const inline = files.filter((f) => f.text);
+  if (inline.length) {
+    const docs = inline.map((f) => `### ${f.fileName}\n${f.text}`).join("\n\n");
+    blocks.push(`The user attached these files; their full contents are included below — use them directly to answer:\n\n${docs}`);
+  }
+  // DataSource-only files (binary / large): the agent reads them on demand.
+  const withId = files.filter((f) => !f.text && f.datasourceId != null);
   if (withId.length) {
     const lines = withId.map((f) => `- ${f.fileName} (datasource_id: ${f.datasourceId})`).join("\n");
     blocks.push(`The user uploaded these files. Read their contents with the read_file tool (pass the datasource_id) before answering questions about them:\n${lines}`);
@@ -503,31 +534,63 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
 
   const addRec = (r) => setAttached((a) => (a.some((x) => x.id === r.id) ? a : [...a, r]));
   const removeRec = (r) => setAttached((a) => a.filter((x) => x.id !== r.id));
-  const removeFile = (f) => setFiles((fs) => fs.filter((x) => x.datasourceId !== f.datasourceId));
+  const fileKey = (f) => f.id ?? f.datasourceId ?? f.fileName;
+  const removeFile = (f) => setFiles((fs) => fs.filter((x) => fileKey(x) !== fileKey(f)));
   const clear = () => { runIdRef.current = undefined; setMessages([]); setTurnBusy(false); };
   const send = (t) => { setTurnBusy(true); sendMessage({ text: t }); };
   const doRegenerate = () => { setTurnBusy(true); regenerate(); };
 
-  // Read a file as base64 and upload it; link to an attached deal/account.
+  // Persist a file to the org as an AmpUp DataSource (so it's saved and linked
+  // to any attached deal/account). Returns the parsed /api/upload response.
+  const persistDataSource = async (file) => {
+    const b64 = await fileToBase64(file);
+    const deal = attachedRef.current.find((r) => r.type === "deal");
+    const acct = attachedRef.current.find((r) => r.type === "account");
+    return apiFetch("/api/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ file_name: file.name, file_content_base64: b64, opportunity_id: deal?.id, account_id: acct?.id }),
+    }).then((r) => r.json());
+  };
+
   const uploadFile = async (file) => {
-    if (!file || uploading) return;
+    if (!file) return;
+    const id = `f-${Date.now()}-${file.size}`;
+    const linkedName =
+      attachedRef.current.find((r) => r.type === "deal")?.name ||
+      attachedRef.current.find((r) => r.type === "account")?.name ||
+      "";
+
+    // Inline path: read the text in the browser so it's usable INSTANTLY (its
+    // content rides the prompt context — no upload round-trip, no read_file).
+    // The DataSource is still created in the BACKGROUND for persistence / CRM
+    // linking, then backfilled onto the entry; if it fails, inline still works.
+    if (isInlineable(file)) {
+      let text = "";
+      try { text = await file.text(); } catch { /* fall through to upload */ }
+      if (text.trim()) {
+        setFiles((fs) => [...fs, { id, fileName: file.name, text, datasourceId: null, status: "ready", ts: Date.now(), linkedName }]);
+        onToast(`Attached ${file.name}`, "success");
+        void persistDataSource(file)
+          .then((res) => {
+            if (res?.ok) {
+              setFiles((fs) => fs.map((f) => (f.id === id ? { ...f, datasourceId: res.datasourceId } : f)));
+              addUpload({ datasourceId: res.datasourceId, fileName: file.name, ts: Date.now(), linkedName });
+            }
+          })
+          .catch((e) => console.warn("background DataSource upload failed:", e));
+        return;
+      }
+    }
+
+    // Fallback: binary / unreadable-as-text / oversized → upload to AmpUp and
+    // let the agent read it back with read_file. Blocking, with a spinner.
+    if (uploading) return;
     setUploading(true);
     try {
-      const b64 = await new Promise((res, rej) => {
-        const fr = new FileReader();
-        fr.onload = () => res(String(fr.result).split(",")[1] || "");
-        fr.onerror = rej;
-        fr.readAsDataURL(file);
-      });
-      const deal = attachedRef.current.find((r) => r.type === "deal");
-      const acct = attachedRef.current.find((r) => r.type === "account");
-      const res = await apiFetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ file_name: file.name, file_content_base64: b64, opportunity_id: deal?.id, account_id: acct?.id }),
-      }).then((r) => r.json());
+      const res = await persistDataSource(file);
       if (res.ok) {
-        const entry = { datasourceId: res.datasourceId, fileName: res.fileName, status: res.status, ts: Date.now(), linkedName: deal?.name || acct?.name || "" };
+        const entry = { id, datasourceId: res.datasourceId, fileName: res.fileName, status: res.status, ts: Date.now(), linkedName };
         setFiles((fs) => [...fs.filter((x) => x.datasourceId !== entry.datasourceId), entry]);
         addUpload(entry);
         onToast(`Uploaded ${file.name} — the agent can read it now`, "success");
