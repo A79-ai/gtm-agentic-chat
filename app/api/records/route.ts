@@ -171,8 +171,10 @@ export async function GET(req: Request) {
     };
   });
 
-  // Count open deals per owner.
+  // Count OPEN deals per owner (exclude closed-won / closed-lost stages).
+  const isOpenStage = (stage: string) => !/closed|won|lost/i.test(stage);
   for (const d of deals) {
+    if (!isOpenStage(d.stage)) continue;
     const o = owners.get(d.ownerId as string);
     if (o) (o.openDeals as number)++;
   }

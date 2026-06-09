@@ -8,6 +8,7 @@ import {
   registerOAuthClient,
   callbackUrl,
 } from "@/lib/mcpOauth";
+import { isBlockedUrl } from "@/lib/ssrf";
 
 // Begin the OAuth flow for an MCP server: discover the authorization server,
 // dynamically register this deployment as a client, build the PKCE authorization
@@ -19,6 +20,12 @@ export async function GET(req: Request) {
   const name = (searchParams.get("name") || "").trim();
   if (!/^https?:\/\//i.test(mcpUrl)) {
     return Response.json({ error: "valid ?url= required" }, { status: 400 });
+  }
+  if (isBlockedUrl(mcpUrl)) {
+    return Response.json(
+      { error: "That URL points at a private or reserved address." },
+      { status: 400 },
+    );
   }
 
   const redirectUrl = callbackUrl(origin);

@@ -26,9 +26,13 @@ const catalogSlugsForCategories = (categories) => {
   return MCP_CATALOG.filter((c) => wanted.has(c.category)).map((c) => c.slug);
 };
 
+// An agent constrains the chat's server set only if it lists explicit servers
+// OR categories. An empty list is NOT a constraint — a user-built agent that
+// ticked no servers should behave like a plain chat (use everything connected),
+// not silently scope to zero servers.
 const agentIsScoped = (agent) =>
   !!agent &&
-  (Array.isArray(agent.mcpServerIds) ||
+  ((Array.isArray(agent.mcpServerIds) && agent.mcpServerIds.length > 0) ||
     (Array.isArray(agent.mcpCategories) && agent.mcpCategories.length > 0));
 
 // Connected servers this agent should use: its explicit slugs plus any connected

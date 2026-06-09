@@ -1,4 +1,5 @@
 import { listServerTools } from "@/lib/mcp";
+import { isBlockedUrl } from "@/lib/ssrf";
 
 // Probe a user-supplied MCP server: connect + tools/list, report how many tools
 // it exposes (and a small sample) so the Connectors UI can validate a server
@@ -13,6 +14,12 @@ export async function POST(req: Request) {
   const url = (body.url || "").trim();
   if (!/^https?:\/\//i.test(url)) {
     return Response.json({ ok: false, error: "Enter a valid http(s) URL" }, { status: 400 });
+  }
+  if (isBlockedUrl(url)) {
+    return Response.json(
+      { ok: false, error: "That URL points at a private or reserved address." },
+      { status: 400 },
+    );
   }
   try {
     const tools = await listServerTools({
