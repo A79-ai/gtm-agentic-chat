@@ -30,6 +30,10 @@ function Gated() {
         // → "signup is disabled for organization"). New users are auto-provisioned
         // on first login, so both CTAs go to the same Universal Login.
         onSignup={() => loginWithRedirect()}
+        // Skip the account-picker and go straight to Google.
+        onGoogle={() =>
+          loginWithRedirect({ authorizationParams: { connection: "google-oauth2" } })
+        }
       />
     );
   }
