@@ -7,6 +7,7 @@ import { EntityIcon, RefChip } from "./ui";
 import { ENTITIES, FIELDS, SUGGESTIONS, byId, related, subtitleOf, addUpload, listConversations, saveConversation, deleteConversation } from "@/lib/gtm/data";
 import { enabledMcpServers, refreshOauthServers } from "@/lib/gtm/mcpServers";
 import { agentFiles } from "@/lib/gtm/agents";
+import MCP_CATALOG from "@/config/mcp-catalog.json";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { LoadingIndicator } from "./LoadingIndicator";
 import { apiFetch, getMcpKey } from "@/lib/gtm/auth";
@@ -313,7 +314,7 @@ function HistoryDrawer({ open, onClose, onSelect, activeId }) {
   );
 }
 
-export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, onToast, onOpenConversation, onNewChat }) {
+export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, onToast, onOpenConversation, onNewChat, onNav }) {
   const conversationId = useMemo(() => resume?.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `c-${Date.now()}`), []);
   const runIdRef = useRef(resume?.runId);
   const agentRef = useRef(agent);
@@ -325,7 +326,21 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
   const [ctxOpen, setCtxOpen] = useState(false);
   const [ctxCollapsed, setCtxCollapsed] = useState(() => { try { return localStorage.getItem("ampup-ctx-collapsed") === "1"; } catch { return false; } });
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [toolPromptDismissed, setToolPromptDismissed] = useState(false);
   const toggleCollapse = () => setCtxCollapsed((v) => { const n = !v; try { localStorage.setItem("ampup-ctx-collapsed", n ? "1" : "0"); } catch {} return n; });
+
+  // MCP tools this agent is scoped to but the user hasn't connected yet. Prompt
+  // them to connect on open so the agent can actually use those tools. Resolved
+  // against the catalog for display names; recomputes when the agent changes
+  // (ChatScreen remounts per chat open, so reconnecting then reopening clears it).
+  const missingTools = useMemo(() => {
+    const ids = agent && Array.isArray(agent.mcpServerIds) ? agent.mcpServerIds : [];
+    if (ids.length === 0) return [];
+    const connected = new Set(enabledMcpServers().map((s) => s.slug));
+    return ids
+      .filter((id) => !connected.has(id))
+      .map((id) => MCP_CATALOG.find((c) => c.slug === id) || { slug: id, name: id });
+  }, [agent]);
   const attachedRef = useRef(attached);
   attachedRef.current = attached;
   const filesRef = useRef(files);
@@ -516,6 +531,20 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
           <button className="btn btn-sm btn-outline ctx-collapse-btn" title={ctxCollapsed ? "Show context panel" : "Hide context panel"} onClick={toggleCollapse}><Icons.Panel size={14} /> {ctxCollapsed ? "Show panel" : "Hide panel"}</button>
           <button className="btn btn-sm btn-outline hide-mobile" onClick={shareChat}><Icons.Share size={14} /> Share</button>
         </div>
+
+        {agent && missingTools.length > 0 && !toolPromptDismissed && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px var(--pad)", borderBottom: "1px solid var(--border-subtle)", background: "var(--accent-soft)", fontSize: 13 }}>
+            <span style={{ color: "var(--accent)", display: "flex", flexShrink: 0 }}><Icons.Plug size={16} /></span>
+            <div style={{ flex: 1, minWidth: 0, color: "var(--fg-secondary)", lineHeight: 1.45 }}>
+              <strong style={{ color: "var(--fg-primary)", fontWeight: 600 }}>Connect {missingTools.length === 1 ? "a tool" : "tools"} to get the most out of {agent.name}.</strong>{" "}
+              It uses {missingTools.map((t) => t.name).join(", ")}{agent.includeAmpup !== false ? " alongside your AmpUp CRM" : ""}. You can still chat now — it'll use what's connected.
+            </div>
+            <button className="btn btn-sm btn-primary" style={{ flexShrink: 0 }} onClick={() => (onNav ? onNav("connectors") : null)}>
+              <Icons.Plug size={13} /> Connect
+            </button>
+            <button className="icon-btn" title="Dismiss" style={{ flexShrink: 0 }} onClick={() => setToolPromptDismissed(true)}><Icons.X size={15} /></button>
+          </div>
+        )}
 
         <div ref={scrollRef} className="scroll chat-scroll">
           <div className="chat-inner">

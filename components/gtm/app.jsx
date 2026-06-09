@@ -315,7 +315,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
         {route.name === "plans" && <PlansScreen onToast={showToast} />}
         {route.name === "list" && <EntityList key={route.type} type={route.type} onOpen={openRecord} onChat={(recs) => openChat(recs || [])} onToast={showToast} onRefresh={refresh} />}
         {route.name === "detail" && <EntityDetail key={route.record.id} record={route.record} onOpen={openRecord} onChat={(r) => openChat([r])} onBack={() => openList(route.record.type)} />}
-        {route.name === "chat" && <ChatScreen key={chatKey} seedAttached={chatSeed} resume={chatResume} agent={chatAgent} onBack={() => go("home")} onOpenRecord={openRecord} onToast={showToast} onOpenConversation={openConversation} onNewChat={() => openChat([])} />}
+        {route.name === "chat" && <ChatScreen key={chatKey} seedAttached={chatSeed} resume={chatResume} agent={chatAgent} onBack={() => go("home")} onOpenRecord={openRecord} onToast={showToast} onOpenConversation={openConversation} onNewChat={() => openChat([])} onNav={go} />}
       </main>
       <BottomNav route={route} go={go} openChat={openChat} onRecords={() => setSheet(true)} onProfile={() => setTweaksOpen((v) => !v)} />
       {sheet && <RecordsSheet openList={openList} onClose={() => setSheet(false)} />}

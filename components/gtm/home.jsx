@@ -65,7 +65,7 @@ function AgentTile({ agent, connectors, onOpen, onEdit, onCopy }) {
 
 export function HomeScreen({ agents, connectors, openChat, openAgent, openList, onNav, onCreateAgent, onEditAgent, onCopyAgent }) {
   const [tab, setTab] = useState("All");
-  const tabs = ["All", "Pipeline", "Calls", "Prospecting", "Research"];
+  const tabs = ["All", "Pipeline", "Calls", "Prospecting", "Research", "Customers"];
   const list = agents.filter((a) => tab === "All" || a.tag === tab);
   const connected = connectors.filter((c) => c.connected);
   const firstOf = (t) => { const r = recordsOf(t); return r.length ? [r[0]] : []; };
