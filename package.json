@@ -1,8 +1,15 @@
 {
   "name": "gtm-agentic-chat",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "license": "MIT",
   "description": "Self-deployable agentic chat over your CRM / notetaker / knowledge base, powered by the AmpUp MCP server and the Vercel AI SDK + Workflow DevKit.",
+  "author": "A79, Inc.",
+  "homepage": "https://a79.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/a79-ai/gtm-agentic-chat.git"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

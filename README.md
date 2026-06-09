@@ -16,9 +16,9 @@ AmpUp MCP endpoint** — this app is a thin, durable chat client in front of it.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/a79-ai/gtm-agentic-chat)
 
-> **Note:** this repo is currently **private**, so the one-click Deploy button
-> only works for collaborators. To enable the button for everyone, make the repo
-> public. Otherwise, clone it and deploy with the Vercel CLI (`vercel deploy`).
+> The one-click Deploy button requires the repo to be **public**. If you're
+> viewing a private fork, clone it and deploy with the Vercel CLI
+> (`vercel deploy`) instead.
 
 Set these environment variables (Vercel will prompt for the required ones):
 
@@ -74,6 +74,20 @@ The durable workflow runtime runs locally via the Workflow DevKit
   occasionally truncated before the agent finished; retrying succeeded, and
   steady-state requests were reliable. If you see a turn cut short, retry.
 - Conversation history lives in the durable run (the stream *is* the transcript);
-  there's no separate database. Cold-reopen replay is available at
-  `/api/conversation/[runId]` but is not access-controlled in this template —
-  add ownership checks before exposing it to multiple users.
+  there's no separate database. Cold-reopen replay at `/api/conversation/[runId]`
+  is gated behind the per-user key in multi-tenant mode — keep `MULTI_TENANT=true`
+  when conversations are user-specific.
+
+## Privacy, security & license
+
+- **[PRIVACY.md](./PRIVACY.md)** — exactly where your data goes. This is a
+  self-hosted client: it runs in **your** Vercel account with **your**
+  credentials, and the template authors receive none of your data. Your chat
+  data flows only to your chosen LLM provider (Anthropic or the Vercel AI
+  Gateway) and to your AmpUp MCP endpoint; there is no telemetry and no
+  transcript database.
+- **[SECURITY.md](./SECURITY.md)** — how to report a vulnerability
+  (`security@a79.ai`) and an operator hardening checklist (set
+  `AUTH_SESSION_SECRET` / `OAUTH_STATE_SECRET`, restrict `ALLOWED_ORIGIN`, use
+  `MULTI_TENANT=true` for more than one user).
+- **License:** [MIT](./LICENSE).
