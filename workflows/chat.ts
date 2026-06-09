@@ -73,10 +73,19 @@ async function callMcpStep(
   server: ServerCfg,
   bareName: string,
   args: Record<string, unknown>,
-) {
+): Promise<{ ok: boolean; content: string }> {
   "use step";
   const { callServerTool } = await import("../lib/mcp");
-  return callServerTool(resolveCfg(server), bareName, args ?? {});
+  try {
+    return await callServerTool(resolveCfg(server), bareName, args ?? {});
+  } catch (err) {
+    // Return a terminal error result instead of throwing: the tool part reaches
+    // a final state (so the client stops "loading") and the model gets a result
+    // it can explain, rather than the turn hanging or dying silently.
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`MCP tool "${bareName}" failed:`, err);
+    return { ok: false, content: `Tool "${bareName}" failed: ${message}` };
+  }
 }
 
 type Discovered = { slug: string; defs: McpToolDef[]; cfg: ServerCfg };
@@ -153,15 +162,23 @@ export async function conversationWorkflow(
         ...buildServerTools(provider, WEB_SEARCH),
       },
     });
-    const result = await agent.stream({
-      messages: history,
-      writable,
-      preventClose: true, // keep the durable stream open for the next turn
-      stopWhen: stepCountIs(MAX_STEPS),
-      collectUIMessages: true,
-    });
-    if (result.uiMessages?.length) {
-      history.push(...(await convertToModelMessages(result.uiMessages)));
+    try {
+      const result = await agent.stream({
+        messages: history,
+        writable,
+        preventClose: true, // keep the durable stream open for the next turn
+        stopWhen: stepCountIs(MAX_STEPS),
+        collectUIMessages: true,
+      });
+      if (result.uiMessages?.length) {
+        history.push(...(await convertToModelMessages(result.uiMessages)));
+      }
+    } catch (err) {
+      // Swallow a failed turn so it doesn't crash the whole conversation run
+      // (the hook loop must keep serving follow-up turns). The workflow runtime
+      // doesn't let us write a custom terminal chunk here, so the client settles
+      // the spinner via its own stall watchdog.
+      console.error("chat turn failed:", err);
     }
   };
 

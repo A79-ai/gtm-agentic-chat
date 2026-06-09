@@ -22,6 +22,23 @@ export type McpServer = {
 // modules) never enters the workflow bundle. A fresh connection per call keeps
 // each durable step self-contained / replayable.
 
+// Bound every MCP round-trip. Without this a hung server (no response, never
+// erroring) keeps a tool call "in progress" until the function's 300s limit —
+// which the client reads as a turn that loads forever. A timeout converts the
+// hang into a terminal error the agent can respond to.
+const MCP_TIMEOUT_MS = Number(process.env.MCP_TIMEOUT_MS) || 45_000;
+
+function withTimeout<T>(p: Promise<T>, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`${label} timed out after ${MCP_TIMEOUT_MS}ms`)),
+      MCP_TIMEOUT_MS,
+    );
+  });
+  return Promise.race([p, timeout]).finally(() => clearTimeout(timer)) as Promise<T>;
+}
+
 function headersFor(server: McpServer): Record<string, string> {
   if (!server.token) return {};
   const header =
@@ -38,7 +55,7 @@ async function connect(server: McpServer): Promise<Client> {
     requestInit: { headers: headersFor(server) },
   });
   const client = new Client({ name: "gtm-agentic-chat", version: "0.1.0" });
-  await client.connect(transport);
+  await withTimeout(client.connect(transport), `MCP connect "${server.slug}"`);
   return client;
 }
 
@@ -46,7 +63,7 @@ async function connect(server: McpServer): Promise<Client> {
 export async function listServerTools(server: McpServer): Promise<McpToolDef[]> {
   const client = await connect(server);
   try {
-    const { tools } = await client.listTools();
+    const { tools } = await withTimeout(client.listTools(), `MCP listTools "${server.slug}"`);
     return tools.map((t) => ({
       name: t.name,
       description: t.description ?? "",
@@ -68,7 +85,10 @@ export async function callServerTool(
 ): Promise<{ ok: boolean; content: string }> {
   const client = await connect(server);
   try {
-    const res = await client.callTool({ name, arguments: args ?? {} });
+    const res = await withTimeout(
+      client.callTool({ name, arguments: args ?? {} }),
+      `MCP tool "${name}"`,
+    );
     const parts = (res.content ?? []) as Array<{ type: string; text?: string }>;
     const content = parts
       .map((c) => (c.type === "text" ? (c.text ?? "") : JSON.stringify(c)))

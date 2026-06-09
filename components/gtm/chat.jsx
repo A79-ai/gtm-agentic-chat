@@ -468,6 +468,21 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
     );
     if (toolRunning) setTurnBusy(true);
   }, [messages]);
+  // Stall watchdog. A turn that fails server-side before producing an assistant
+  // message (e.g. a model error) leaves `status` stuck on "streaming" (the
+  // durable stream stays open) with no assistant message to settle on — so the
+  // spinner would run forever. Tool calls are server-bounded (≤45s), and a live
+  // turn streams deltas continuously, so any window with NO message activity
+  // this long is a genuine stall: settle it and surface an error. The `messages`
+  // dep resets the timer on every chunk, so a healthy turn never trips it.
+  useEffect(() => {
+    if (!turnBusy) return;
+    const t = setTimeout(() => {
+      setTurnBusy(false);
+      onToast?.("That request stalled before completing — please try again.", "error");
+    }, 90000);
+    return () => clearTimeout(t);
+  }, [turnBusy, messages]);
   const scrollRef = useRef(null);
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages]);
 
