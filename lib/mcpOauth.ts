@@ -18,12 +18,23 @@ export const OAUTH_COOKIE_MAX_AGE = 600; // 10 min — long enough for a consent
 
 const CLIENT_NAME = "GTM Agentic Chat";
 
+// Random per-process secret used ONLY in non-production when no secret is set,
+// so the OAuth-connect flow works in dev without a known constant. Never falls
+// back to AMPUP_MCP_API_KEY — a signing key and a data key shouldn't be coupled.
+const DEV_STATE_SECRET = crypto.randomBytes(32).toString("hex");
+
 function stateSecret(): string {
-  return (
-    process.env.OAUTH_STATE_SECRET ||
-    process.env.AMPUP_MCP_API_KEY ||
-    "gtm-agentic-chat-oauth-dev-secret"
-  );
+  const s = process.env.OAUTH_STATE_SECRET || process.env.AUTH_SESSION_SECRET;
+  if (s) return s;
+  // Fail closed in production: never sign the OAuth state cookie with a
+  // guessable, publicly-known constant (this is an open template).
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "OAUTH_STATE_SECRET must be set to use the OAuth MCP-connect flow in production " +
+        "(generate with `openssl rand -hex 32`).",
+    );
+  }
+  return DEV_STATE_SECRET;
 }
 
 const b64url = (buf: Buffer) =>

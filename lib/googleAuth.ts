@@ -16,13 +16,23 @@ export function googleConfigured(): boolean {
   return !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 }
 
+// Random per-process secret used ONLY in non-production when no secret is set
+// (so dev works out of the box without shipping a known constant). Cookies
+// signed with it don't survive a restart — fine for local dev.
+const DEV_SESSION_SECRET = crypto.randomBytes(32).toString("hex");
+
 function sessionSecret(): string {
-  return (
-    process.env.AUTH_SESSION_SECRET ||
-    process.env.OAUTH_STATE_SECRET ||
-    process.env.GOOGLE_CLIENT_SECRET ||
-    "gtm-agentic-chat-session-dev-secret"
-  );
+  const s = process.env.AUTH_SESSION_SECRET || process.env.OAUTH_STATE_SECRET;
+  if (s) return s;
+  // Fail closed in production: never sign session cookies with a guessable,
+  // publicly-known constant (this is an open template).
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "AUTH_SESSION_SECRET must be set when Google sign-in is enabled in production " +
+        "(generate with `openssl rand -hex 32`).",
+    );
+  }
+  return DEV_SESSION_SECRET;
 }
 
 const b64url = (buf: Buffer) =>
