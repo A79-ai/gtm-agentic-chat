@@ -12,12 +12,28 @@ export function getStripe(): Stripe | null {
   return _stripe;
 }
 
+// Absolute base URL to send Stripe redirects back to. Derived from the actual
+// request origin first, so a cloned/self-deployed template "just works" on
+// whatever host serves it (localhost, a Vercel alias, a preview URL) without
+// requiring NEXT_PUBLIC_SITE_URL to be set per deploy. A stale/dev
+// NEXT_PUBLIC_SITE_URL must NOT win here — that previously sent prod checkouts
+// back to localhost. It's honored only as a fallback when no host is present.
 export function siteUrl(req: Request): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    req.headers.get("origin") ||
-    new URL(req.url).origin
-  );
+  const strip = (u: string) => u.replace(/\/+$/, "");
+
+  // Browser-initiated checkout (same-origin fetch) carries the public origin.
+  const origin = req.headers.get("origin");
+  if (origin) return strip(origin);
+
+  // No Origin header (e.g. server-side call): reconstruct from forwarded host.
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+  if (host) {
+    const proto = req.headers.get("x-forwarded-proto") || "https";
+    return `${proto}://${host}`;
+  }
+
+  if (process.env.NEXT_PUBLIC_SITE_URL) return strip(process.env.NEXT_PUBLIC_SITE_URL);
+  return new URL(req.url).origin;
 }
 
 // One org per deploy → identity is the signup email. Find the customer by email
