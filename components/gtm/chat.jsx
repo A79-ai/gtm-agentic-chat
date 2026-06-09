@@ -12,6 +12,35 @@ import { MessageResponse } from "@/components/ai-elements/message";
 import { LoadingIndicator } from "./LoadingIndicator";
 import { apiFetch, getMcpKey } from "@/lib/gtm/auth";
 
+// Agents can scope to MCP servers two ways: by explicit catalog slug
+// (mcpServerIds) or by category (mcpCategories — e.g. "Call recording", "CRM"),
+// which matches WHATEVER provider in that category the user has connected, so
+// the agent isn't pinned to a specific vendor. The built-in AmpUp CRM (via
+// includeAmpup) already covers the "CRM" category for the missing-tools prompt.
+const AMPUP_COVERS = new Set(["CRM"]);
+const CATEGORY_LABELS = { "Call recording": "a call recorder", "CRM": "a CRM" };
+
+const catalogSlugsForCategories = (categories) => {
+  if (!Array.isArray(categories) || categories.length === 0) return [];
+  const wanted = new Set(categories);
+  return MCP_CATALOG.filter((c) => wanted.has(c.category)).map((c) => c.slug);
+};
+
+const agentIsScoped = (agent) =>
+  !!agent &&
+  (Array.isArray(agent.mcpServerIds) ||
+    (Array.isArray(agent.mcpCategories) && agent.mcpCategories.length > 0));
+
+// Connected servers this agent should use: its explicit slugs plus any connected
+// server whose catalog category the agent asked for.
+const scopeServersForAgent = (agent, connected) => {
+  const ids = new Set(Array.isArray(agent.mcpServerIds) ? agent.mcpServerIds : []);
+  const catSlugs = new Set(catalogSlugsForCategories(agent.mcpCategories));
+  return connected.filter(
+    (s) => ids.has(s.slug) || ids.has(s.id) || catSlugs.has(s.slug) || catSlugs.has(s.id),
+  );
+};
+
 const textOf = (m) => (m.parts || []).filter((p) => p.type === "text").map((p) => p.text).join("");
 const toolName = (type) => type.replace(/^tool-/, "").replace(/^mcp__[a-z0-9-]+__/, "").replace(/_/g, " ");
 
@@ -334,12 +363,22 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
   // against the catalog for display names; recomputes when the agent changes
   // (ChatScreen remounts per chat open, so reconnecting then reopening clears it).
   const missingTools = useMemo(() => {
-    const ids = agent && Array.isArray(agent.mcpServerIds) ? agent.mcpServerIds : [];
-    if (ids.length === 0) return [];
+    if (!agent) return [];
     const connected = new Set(enabledMcpServers().map((s) => s.slug));
-    return ids
-      .filter((id) => !connected.has(id))
-      .map((id) => MCP_CATALOG.find((c) => c.slug === id) || { slug: id, name: id });
+    const out = [];
+    // Explicit servers the agent wants but the user hasn't connected.
+    for (const id of Array.isArray(agent.mcpServerIds) ? agent.mcpServerIds : []) {
+      if (!connected.has(id)) out.push(MCP_CATALOG.find((c) => c.slug === id) || { slug: id, name: id });
+    }
+    // Categories with no connected provider — prompt generically ("a call
+    // recorder") rather than naming a vendor. Skip categories AmpUp already
+    // covers when its built-in CRM is on.
+    for (const cat of Array.isArray(agent.mcpCategories) ? agent.mcpCategories : []) {
+      if (agent.includeAmpup !== false && AMPUP_COVERS.has(cat)) continue;
+      const anyConnected = catalogSlugsForCategories([cat]).some((s) => connected.has(s));
+      if (!anyConnected) out.push({ slug: `category:${cat}`, name: CATEGORY_LABELS[cat] || cat });
+    }
+    return out;
   }, [agent]);
   const attachedRef = useRef(attached);
   attachedRef.current = attached;
@@ -373,9 +412,7 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
           // An agent scopes the chat to its server subset (by slug or id); a plain
           // chat exposes every enabled server. The built-in ampup CRM is added
           // server-side unless the agent opts out (includeAmpup=false).
-          const servers = ag && Array.isArray(ag.mcpServerIds)
-            ? all.filter((s) => ag.mcpServerIds.includes(s.slug) || ag.mcpServerIds.includes(s.id))
-            : all;
+          const servers = agentIsScoped(ag) ? scopeServersForAgent(ag, all) : all;
           return {
             body: {
               conversationId,
