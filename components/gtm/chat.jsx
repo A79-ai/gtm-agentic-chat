@@ -4,7 +4,8 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Icons, LogoMark } from "./icons";
 import { EntityIcon, RefChip } from "./ui";
-import { ENTITIES, FIELDS, SUGGESTIONS, byId, related, subtitleOf, addUpload, listConversations, saveConversation, deleteConversation } from "@/lib/gtm/data";
+import { ENTITIES, FIELDS, SUGGESTIONS, byId, related, subtitleOf, addUpload } from "@/lib/gtm/data";
+import { listConversations, saveConversation, deleteConversation } from "@/lib/gtm/conversations";
 import { enabledMcpServers, refreshOauthServers } from "@/lib/gtm/mcpServers";
 import { agentFiles } from "@/lib/gtm/agents";
 import MCP_CATALOG from "@/config/mcp-catalog.json";
@@ -342,12 +343,14 @@ function timeAgo(ts) {
 }
 
 // Left slide-over listing past conversations; reopening rehydrates the full
-// transcript from localStorage (see saveConversation in lib/gtm/data).
+// transcript. Source of truth is the server (AmpUp) when signed in, else
+// localStorage — see lib/gtm/conversations.
 function HistoryDrawer({ open, onClose, onSelect, activeId }) {
   const [items, setItems] = useState([]);
-  useEffect(() => { if (open) setItems(listConversations()); }, [open]);
+  const refresh = () => listConversations().then(setItems).catch(() => setItems([]));
+  useEffect(() => { if (open) refresh(); }, [open]);
   if (!open) return null;
-  const remove = (e, id) => { e.stopPropagation(); deleteConversation(id); setItems(listConversations()); };
+  const remove = async (e, c) => { e.stopPropagation(); await deleteConversation(c); refresh(); };
   return (
     <div className="sheet-backdrop" style={{ justifyContent: "flex-start", zIndex: 96 }} onClick={onClose}>
       <aside className="hist-drawer" onClick={(e) => e.stopPropagation()}>
@@ -369,7 +372,7 @@ function HistoryDrawer({ open, onClose, onSelect, activeId }) {
                 {c.preview && <div className="hist-preview">{c.preview}</div>}
                 <div className="hist-meta">{timeAgo(c.updatedAt)} · {c.messageCount} message{c.messageCount === 1 ? "" : "s"}</div>
               </div>
-              <button className="icon-btn hist-del" title="Delete" onClick={(e) => remove(e, c.id)}><Icons.X size={15} /></button>
+              <button className="icon-btn hist-del" title="Delete" onClick={(e) => remove(e, c)}><Icons.X size={15} /></button>
             </div>
           ))}
         </div>
@@ -381,6 +384,9 @@ function HistoryDrawer({ open, onClose, onSelect, activeId }) {
 export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, onToast, onOpenConversation, onNewChat, onNav }) {
   const conversationId = useMemo(() => resume?.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `c-${Date.now()}`), []);
   const runIdRef = useRef(resume?.runId);
+  // AmpUp row id once this conversation is persisted server-side; threaded into
+  // subsequent saves so they UPDATE the same row instead of creating new ones.
+  const ampupIdRef = useRef(resume?.ampupId);
   const agentRef = useRef(agent);
   agentRef.current = agent;
   const [histOpen, setHistOpen] = useState(false);
@@ -522,13 +528,25 @@ export function ChatScreen({ seedAttached, resume, agent, onBack, onOpenRecord, 
   useEffect(() => { refreshOauthServers(); }, []);
   // Rehydrate a reopened conversation's transcript once on mount.
   useEffect(() => { if (resume?.messages?.length) setMessages(resume.messages); }, []);
-  // Persist the transcript locally so it shows in History. The durable run keeps
-  // its stream open across turns (preventClose), so `status` never settles to
-  // "ready" — instead debounce on message stability: once deltas stop arriving,
-  // save the final transcript.
+  // Persist the transcript so it shows in History (server-backed + cross-device
+  // when signed in, else localStorage). The durable run keeps its stream open
+  // across turns (preventClose), so `status` never settles to "ready" — instead
+  // debounce on message stability: once deltas stop arriving, save the final
+  // transcript and remember the AmpUp row id so later saves update it in place.
   useEffect(() => {
     if (!messages.some((m) => m.role === "user")) return;
-    const t = setTimeout(() => saveConversation({ id: conversationId, runId: runIdRef.current, messages }), 900);
+    const t = setTimeout(() => {
+      const deal = attachedRef.current.find((r) => r.type === "deal");
+      const acct = attachedRef.current.find((r) => r.type === "account");
+      saveConversation({
+        id: conversationId,
+        ampupId: ampupIdRef.current,
+        runId: runIdRef.current,
+        messages,
+        dealId: deal?.id,
+        accountId: acct?.id,
+      }).then((ampupId) => { if (ampupId != null) ampupIdRef.current = ampupId; });
+    }, 900);
     return () => clearTimeout(t);
   }, [messages, conversationId]);
 
