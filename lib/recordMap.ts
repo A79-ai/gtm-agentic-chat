@@ -79,10 +79,18 @@ export const NORMALIZE: Record<string, (r: Rec, i: number) => Rec> = {
 };
 
 // The MCP list tool per UI entity type + the array key its rows live under.
+// Multi-tenant (shared free-trial org): scope meetings to the signed-in user so
+// the badge count and the list both reflect only their own meetings. With
+// `only_my_meetings:false` the backend returns an org-wide `total` (every user's
+// meetings) while the list items stay FGA-scoped to the caller — that mismatch
+// is the "138 in the badge, 0 in the list" bug. Single-org/legacy keeps the
+// org-wide view (one admin identity, no per-user scoping).
+const SCOPE_MEETINGS_TO_USER = process.env.MULTI_TENANT === "true";
+
 export const LIST_TOOL: Record<string, { tool: string; args?: Rec }> = {
   account: { tool: "list_accounts" },
   deal: { tool: "list_opportunities" },
-  meeting: { tool: "list_meetings", args: { only_my_meetings: false } },
+  meeting: { tool: "list_meetings", args: { only_my_meetings: SCOPE_MEETINGS_TO_USER } },
   task: { tool: "list_tasks" },
   contact: { tool: "list_contacts" },
 };

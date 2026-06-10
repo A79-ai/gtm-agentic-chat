@@ -3,7 +3,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { Icons } from "./icons";
 import { ConnLogo } from "./ui";
 import { CAT_TABS, getAmpersand, setConnectors, getConnectors } from "@/lib/gtm/data";
-import { useMcpKeyContext, ampersandGroupRef } from "@/lib/gtm/auth";
+import { useMcpKeyContext, ampersandGroupRef, seedInstallation } from "@/lib/gtm/auth";
 import { listMcpServers, saveMcpServer, deleteMcpServer, setMcpServerEnabled } from "@/lib/gtm/mcpServers";
 import { McpServerModal } from "./McpServerModal";
 import { MCP_CATALOG, AUTH_LABEL } from "@/lib/gtm/mcpCatalog";
@@ -166,6 +166,13 @@ function ConnectModal({ connector, amp, mode = "connect", onClose, onToast }) {
               groupRef={gref}
               consumerRef={cref}
               onToast={onToast}
+              onInstalled={(id, config) =>
+                seedInstallation(id, config, {
+                  integration: connector.ampersandName || connector.provider || connector.id,
+                  groupRef: gref,
+                  provider: connector.provider || connector.id,
+                })
+              }
               onDone={onClose}
             />
           </Suspense>
