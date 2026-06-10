@@ -66,13 +66,14 @@ async function postJson(path: string, key: string, body: unknown): Promise<unkno
 }
 
 // Wait for the Ampersand webhook to mirror the new install row before seeding —
-// /backfills silently no-ops if the row isn't there yet. Returns the row id.
+// /backfills silently no-ops if the row isn't there yet. Returns the full row
+// (we need its integration_id for the upsert below).
 async function awaitInstallRow(
   key: string,
   installationId: string,
   groupRef: string,
   provider: string,
-): Promise<string | null> {
+): Promise<Rec | null> {
   const want = provider.toLowerCase();
   for (let attempt = 0; attempt < 6; attempt++) {
     try {
@@ -81,14 +82,14 @@ async function awaitInstallRow(
       });
       const rows: Rec[] = res.ok ? ((await res.json()) as Rec[]) : [];
       const byId = rows.find((r) => s(r.id) === installationId);
-      if (byId) return s(byId.id);
+      if (byId) return byId;
       const byMatch = rows.find(
         (r) =>
           s(r.group_ref) === groupRef &&
           (s(r.provider).toLowerCase() === want ||
             s(r.integration_name).toLowerCase() === want),
       );
-      if (byMatch) return s(byMatch.id);
+      if (byMatch) return byMatch;
     } catch {
       // ignore and retry
     }
@@ -158,10 +159,30 @@ export async function POST(req: Request) {
     ),
   ).then((rs) => rs.some(Boolean));
 
-  // Future seed (our Inngest) needs the mirrored install row to exist.
+  // Both the upsert and the seed need the mirrored install row to exist.
   let seeded = false;
-  const rowId = await awaitInstallRow(key, installationId, groupRef, provider);
-  if (rowId) {
+  let upserted = false;
+  const row = await awaitInstallRow(key, installationId, groupRef, provider);
+  if (row) {
+    const rowId = s(row.id);
+    // Upsert the installation. Beyond mirroring installed_objects, this is the
+    // ONLY path that activates the free-trial notetaker trial server-side
+    // (_maybe_activate_notetaker_trial fires for free-trial + calendar
+    // providers). Without it `notetaker_trial_started_at` is never set, the
+    // notetaker scheduling cron filters the user out, and the meeting-recorder
+    // never joins any meeting. integration_id comes from the webhook-mirrored
+    // row (the upsert requires it).
+    const up = await postJson("/sales-agents/api/v1/ampersand/installations", key, {
+      installation_id: rowId,
+      integration_name: s(row.integration_name) || integration,
+      integration_id: s(row.integration_id),
+      provider: s(row.provider) || provider,
+      group_ref: s(row.group_ref) || groupRef,
+      consumer_ref: s(row.consumer_ref) || s(row.user_id) || undefined,
+      installed_objects: objectNames,
+    });
+    upserted = up != null;
+
     const res = await postJson("/sales-agents/api/v1/ampersand/backfills", key, {
       installation_id: rowId,
       integration_name: integration,
@@ -171,7 +192,7 @@ export async function POST(req: Request) {
   }
 
   return Response.json(
-    { ok: true, seeded, historical, objects: objectNames, installRowFound: !!rowId },
+    { ok: true, seeded, upserted, historical, objects: objectNames, installRowFound: !!row },
     { headers: CORS },
   );
 }
