@@ -440,7 +440,7 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
           <EntityIcon type={type} size={46} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2 style={{ marginBottom: 4 }}>{meta.plural}</h2>
-            <p style={{ fontSize: 13.5, color: "var(--fg-muted)" }}>{countLabel} {meta.plural.toLowerCase()} · synced from your connected CRM</p>
+            <p style={{ fontSize: 13.5, color: "var(--fg-muted)" }}>{countLabel} {meta.plural.toLowerCase()} in your workspace</p>
           </div>
         </div>
 
