@@ -45,7 +45,11 @@ body {
 /* ============================================================
    Layout
    ============================================================ */
-.app { display: flex; height: 100%; width: 100%; }
+/* Height tracks the *visual* viewport: `--app-h` (set live from
+   window.visualViewport in app.jsx) keeps the chat composer above the iOS
+   soft keyboard; `100dvh` is the no-JS / Android fallback; `100vh` is the
+   last resort for browsers without dvh. */
+.app { display: flex; height: 100vh; height: 100dvh; height: var(--app-h, 100dvh); width: 100%; }
 
 /* Left rail (desktop) */
 .rail {

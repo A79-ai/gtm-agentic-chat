@@ -47,7 +47,7 @@ export function Welcome({ onLogin, onSignup, onGoogle }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100, overflowY: "auto", background: T.leftBg, fontFamily: FONT }}>
       <style>{`
-        .wl-grid { display: grid; grid-template-columns: minmax(420px, 0.82fr) 1.18fr; min-height: 100vh; }
+        .wl-grid { display: grid; grid-template-columns: minmax(420px, 0.82fr) 1.18fr; min-height: 100dvh; }
         .wl-right { display: flex; }
         @media (max-width: 920px) {
           .wl-grid { grid-template-columns: 1fr; }
@@ -58,7 +58,7 @@ export function Welcome({ onLogin, onSignup, onGoogle }) {
 
       <div className="wl-grid">
         {/* LEFT — auth */}
-        <div style={{ padding: "clamp(40px, 5vw, 64px)", display: "flex", flexDirection: "column", background: T.leftBg, borderRight: `1px solid ${T.edge}`, minHeight: "100vh" }}>
+        <div style={{ padding: "clamp(40px, 5vw, 64px)", display: "flex", flexDirection: "column", background: T.leftBg, borderRight: `1px solid ${T.edge}`, minHeight: "100dvh" }}>
           <Logo ink={T.logoInk} height={26} />
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", maxWidth: 420, padding: "48px 0" }}>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.04em", color: T.eyebrow, marginBottom: 14 }}>Welcome</div>
@@ -94,7 +94,7 @@ export function Welcome({ onLogin, onSignup, onGoogle }) {
         </div>
 
         {/* RIGHT — carousel */}
-        <div className="wl-right" style={{ position: "relative", background: T.rightBg, overflow: "hidden", alignItems: "center", minHeight: "100vh" }}>
+        <div className="wl-right" style={{ position: "relative", background: T.rightBg, overflow: "hidden", alignItems: "center", minHeight: "100dvh" }}>
           <div style={{ position: "absolute", left: "clamp(40px, 5vw, 72px)", right: "clamp(32px, 3vw, 56px)", top: "50%", transform: "translateY(-50%)" }}>
             <ProductCarousel theme={theme} width={760} />
           </div>

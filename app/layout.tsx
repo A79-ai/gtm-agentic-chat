@@ -1,9 +1,20 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "AmpUp · GTM Agent",
   description: "Chat over your CRM, meetings, and knowledge base.",
+};
+
+// `viewportFit: "cover"` is required for `env(safe-area-inset-*)` to resolve to
+// anything but 0 on notched devices. `interactiveWidget: "resizes-content"`
+// shrinks the layout viewport when the on-screen keyboard opens on Android so
+// `100dvh` tracks above it (iOS needs the visualViewport JS in app.jsx).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
 };
 
 // Set theme/accent/density before paint to avoid a flash.
