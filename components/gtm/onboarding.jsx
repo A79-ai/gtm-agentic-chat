@@ -4,7 +4,7 @@
 import React, { useState, Suspense } from "react";
 import { Icons, LogoMark, Logos } from "./icons";
 import { getAmpersand, getConnectors } from "@/lib/gtm/data";
-import { useMcpKeyContext, ampersandGroupRef } from "@/lib/gtm/auth";
+import { useMcpKeyContext, ampersandGroupRef, seedInstallation } from "@/lib/gtm/auth";
 
 const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
 
@@ -115,6 +115,13 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
                   groupRef={calGroupRef}
                   consumerRef={calConsumerRef}
                   onToast={() => {}}
+                  onInstalled={(id, config) =>
+                    seedInstallation(id, config, {
+                      integration: googleIntegration(),
+                      groupRef: calGroupRef,
+                      provider: "google",
+                    })
+                  }
                   onDone={() => setCal("connected")}
                 />
               </Suspense>
