@@ -6,6 +6,7 @@ import { Icons, LogoMark } from "./icons";
 import { EntityIcon } from "./ui";
 import { ENTITY_ORDER, ENTITIES, countOf, initials } from "@/lib/gtm/data";
 import { CONFIG } from "@/lib/gtm/config";
+import { roleMeta, roleBadgeStyle } from "@/lib/gtm/roles";
 
 // close on outside-click / Escape
 function useDismiss(onClose) {
@@ -46,9 +47,10 @@ function RecordsFlyout({ anchor, onPick, onClose, onFiles }) {
   );
 }
 
-function ProfileMenu({ anchor, profile, on, onClose }) {
+function ProfileMenu({ anchor, profile, role, on, onClose }) {
   const ref = useDismiss(onClose);
   const style = anchor ? { position: "fixed", left: anchor.left, bottom: anchor.bottom, zIndex: 90 } : {};
+  const rm = roleMeta(role);
   const Item = ({ icon, label, sub, onClick }) => (
     <button className="menu-item" onClick={() => { onClick(); onClose(); }}>
       {React.createElement(icon, { size: 17 })}
@@ -63,9 +65,11 @@ function ProfileMenu({ anchor, profile, on, onClose }) {
         <div style={{ minWidth: 0, flex: 1 }}>
           <div className="pm-name">{profile.name || "Your name"}</div>
           <div className="pm-email">{profile.email || "you@company.com"}</div>
+          {role ? <span style={{ ...roleBadgeStyle(rm.tone), marginTop: 6 }}>{rm.label}</span> : null}
         </div>
       </div>
       <div className="menu-section">
+        <Item icon={Icons.User} label="View profile" onClick={() => on("profile")} />
         <Item icon={Icons.Brain} label="Notetaker" onClick={() => on("notetaker")} />
         {CONFIG.billing.enabled ? <Item icon={Icons.Spark} label="Plans & billing" onClick={() => on("plans")} /> : null}
         <Item icon={Icons.Sliders} label="Tweaks" onClick={() => on("tweaks")} />
@@ -83,7 +87,7 @@ function ProfileMenu({ anchor, profile, on, onClose }) {
   );
 }
 
-export function SideNav({ route, go, openList, openChat, themeResolved, toggleTheme, profile, on }) {
+export function SideNav({ route, go, openList, openChat, themeResolved, toggleTheme, profile, role, on }) {
   const [flyout, setFlyout] = useState(null); // 'records' | 'profile' | null
   const [anchor, setAnchor] = useState(null);
   const recordsActive = route.name === "list" || route.name === "detail";
@@ -120,7 +124,7 @@ export function SideNav({ route, go, openList, openChat, themeResolved, toggleTh
         </button>
       </nav>
       {flyout === "records" && <RecordsFlyout anchor={anchor} onPick={openList} onFiles={() => on("files")} onClose={() => setFlyout(null)} />}
-      {flyout === "profile" && <ProfileMenu anchor={anchor} profile={profile} on={on} onClose={() => setFlyout(null)} />}
+      {flyout === "profile" && <ProfileMenu anchor={anchor} profile={profile} role={role} on={on} onClose={() => setFlyout(null)} />}
     </>
   );
 }
