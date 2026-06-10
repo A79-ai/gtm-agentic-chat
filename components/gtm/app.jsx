@@ -1,7 +1,7 @@
 // App shell — router, rail / bottom-nav + records sheet, theme, tweaks
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Icons } from "./icons";
-import { AUTH0_ENABLED } from "@/lib/gtm/auth";
+import { AUTH0_ENABLED, apiFetch } from "@/lib/gtm/auth";
 import { EntityIcon } from "./ui";
 import { HomeScreen } from "./home";
 import { ConnectorsScreen } from "./connectors";
@@ -11,6 +11,7 @@ import { ChatScreen } from "./chat";
 import { NotetakerScreen } from "./notetaker";
 import { FilesScreen } from "./files";
 import { PlansScreen } from "./plans";
+import { ProfileScreen } from "./profile";
 import { SideNav, BottomNav } from "./nav";
 import { Onboarding } from "./onboarding";
 import { Signup } from "./signup";
@@ -24,7 +25,7 @@ const mq = () => window.matchMedia("(prefers-color-scheme: dark)");
 const systemTheme = () => (mq().matches ? "dark" : "light");
 
 // Named screens that map 1:1 to /<name>. "home" maps to "/".
-const NAMED_ROUTES = ["home", "chat", "connectors", "notetaker", "files", "plans"];
+const NAMED_ROUTES = ["home", "chat", "connectors", "notetaker", "files", "plans", "profile"];
 
 function pathForRoute(route) {
   if (!route || !route.name) return "/";
@@ -194,6 +195,18 @@ export function App({ authUser, onAuth0Logout } = {}) {
   const navProfile = authUser
     ? { ...profile, name: profile.name || authUser.name || authUser.email, email: authUser.email || profile.email, picture: authUser.picture }
     : profile;
+  // Signed-in user's role + workspace info — drives the profile page and the
+  // role badge in the profile menu. Fetched once (the per-user key is already
+  // minted by the time <App/> mounts under AuthedApp).
+  const [me, setMe] = useState(null);
+  useEffect(() => {
+    let live = true;
+    apiFetch("/api/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (live && d && !d.error) setMe(d); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, []);
   // Pre-fill the onboarding "About you" step from the signed-in Auth0 profile.
   // Auth0's `name` is often just the email for database users — fall back to
   // given/family name in that case so we don't drop the email into the name box.
@@ -295,7 +308,8 @@ export function App({ authUser, onAuth0Logout } = {}) {
   };
 
   const onProfileAction = (action) => {
-    if (action === "notetaker") go("notetaker");
+    if (action === "profile") go("profile");
+    else if (action === "notetaker") go("notetaker");
     else if (action === "files") go("files");
     else if (action === "plans") go("plans");
     else if (action === "tweaks") setTweaksOpen(true);
@@ -320,7 +334,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
 
   return (
     <div className="app">
-      <SideNav route={route} go={go} openList={openList} openChat={openChat} themeResolved={themeResolved} toggleTheme={toggleTheme} profile={navProfile} on={onProfileAction} />
+      <SideNav route={route} go={go} openList={openList} openChat={openChat} themeResolved={themeResolved} toggleTheme={toggleTheme} profile={navProfile} role={me?.role} on={onProfileAction} />
       <main className="main">
         <TrialBanner route={route} onUpgrade={() => go("plans")} />
         {route.name === "home" && <HomeScreen agents={agents} connectors={connectors} openChat={openChat} openAgent={openAgent} openList={openList} onNav={go} onCreateAgent={() => setBuilder("new")} onEditAgent={(a) => setBuilder(a)} onCopyAgent={(a) => { duplicateAgent(a); setAgentsVersion((v) => v + 1); showToast(`Duplicated ${a.name}`, "success"); }} />}
@@ -328,6 +342,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
         {route.name === "notetaker" && <NotetakerScreen onToast={showToast} />}
         {route.name === "files" && <FilesScreen onNewChat={openChat} />}
         {route.name === "plans" && <PlansScreen onToast={showToast} />}
+        {route.name === "profile" && <ProfileScreen me={me} authUser={authUser} />}
         {route.name === "list" && <EntityList key={route.type} type={route.type} onOpen={openRecord} onChat={(recs) => openChat(recs || [])} onToast={showToast} onRefresh={refresh} />}
         {route.name === "detail" && <EntityDetail key={route.record.id} record={route.record} onOpen={openRecord} onChat={(r) => openChat([r])} onBack={() => openList(route.record.type)} />}
         {route.name === "chat" && <ChatScreen key={chatKey} seedAttached={chatSeed} resume={chatResume} agent={chatAgent} onBack={() => go("home")} onOpenRecord={openRecord} onToast={showToast} onOpenConversation={openConversation} onNewChat={() => openChat([])} onNav={go} />}
