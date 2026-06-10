@@ -304,7 +304,37 @@ export function App({ authUser, onAuth0Logout } = {}) {
     try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); localStorage.setItem(OB_KEY, "1"); } catch {}
     const firstRun = flow && flow.firstRun;
     setFlow(null);
-    if (firstRun) showToast("Welcome to AmpUp" + (data.name ? `, ${data.name.split(" ")[0]}` : "") + " 👋", "success");
+    if (firstRun) {
+      showToast("Welcome to AmpUp" + (data.name ? `, ${data.name.split(" ")[0]}` : "") + " 👋", "success");
+      seedWorkspace(p);
+    }
+  };
+
+  // Fire the backend free-trial demo seed (per-user accounts/deals/meetings) so
+  // a brand-new trial workspace isn't empty and the chat has data to work with.
+  // Once per user (the LLM seed is paid) — guarded here AND server-side via the
+  // onboarding status check; "Restart onboarding" reuses the same guard, so it
+  // never re-fires. Multi-tenant only: the legacy single-org path has no
+  // per-user key to scope the seed to.
+  const seedWorkspace = (p) => {
+    if (!AUTH0_ENABLED) return;
+    const SEED_KEY = `ampup-seeded:${userKey}`;
+    try { if (localStorage.getItem(SEED_KEY) === "1") return; localStorage.setItem(SEED_KEY, "1"); } catch {}
+    apiFetch("/api/onboarding-seed", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ company: p.company, role: p.role, size: p.size, email: p.email || authUser?.email }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!(d && d.ok && d.seeded)) return;
+        showToast("Setting up a sample workspace — deals and meetings will appear shortly", "success");
+        // The backend seed (LLM-generated accounts/deals/meetings) lands
+        // asynchronously over a couple of minutes. Re-pull a few times so the
+        // new records surface without a manual reload.
+        [30, 75, 150, 240].forEach((s) => setTimeout(() => refresh(), s * 1000));
+      })
+      .catch(() => {});
   };
 
   const onProfileAction = (action) => {
