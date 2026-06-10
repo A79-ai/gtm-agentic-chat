@@ -76,7 +76,9 @@ export async function GET(req: Request) {
   const [rawAccounts, rawDeals, rawMeetings, rawTasks] = await Promise.all([
     list("list_accounts", { limit: 200 }, key),
     list("list_opportunities", { limit: 200 }, key),
-    list("list_meetings", { limit: 50, only_my_meetings: false }, key),
+    // Scope to the signed-in user in multi-tenant (matches /api/list + /api/counts
+    // so the bulk store doesn't carry other users' meetings).
+    list("list_meetings", { limit: 50, only_my_meetings: process.env.MULTI_TENANT === "true" }, key),
     list("list_tasks", { limit: 200 }, key),
   ]);
 

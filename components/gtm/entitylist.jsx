@@ -347,7 +347,11 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
     setLoading(true);
     try {
       const url = `/api/list?type=${type}&page=${page}&size=${SIZE}` + (search ? `&search=${encodeURIComponent(search)}` : "");
-      const res = await fetch(url).then((r) => r.json());
+      // apiFetch injects the per-user x-ampup-mcp-key; a bare fetch() 401s in
+      // multi-tenant mode (the list endpoint requires the key), which silently
+      // emptied every records list ("No meetings synced yet" despite a non-zero
+      // badge count, which loads via apiFetch).
+      const res = await apiFetch(url).then((r) => r.json());
       if (my !== reqId.current) return; // a newer request superseded this one
       setItems(Array.isArray(res.items) ? res.items : []);
       setTotal(typeof res.total === "number" ? res.total : null);
