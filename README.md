@@ -16,7 +16,8 @@ AmpUp MCP endpoint** — this app is a thin, durable chat client in front of it.
 
 |  |  |
 |---|---|
-| ![Chat grounded in a deal](./public/screenshots/02-chat.png) | ![Your pipeline, synced from the CRM](./public/screenshots/03-deals.png) |
+| ![Chat grounded in a deal — risks, signals and the next best action](./public/screenshots/02-chat.png) | ![Your pipeline at a glance](./public/screenshots/03-deals.png) |
+| ![Connect your stack — CRM, call recorders, and any MCP server](./public/screenshots/04-connectors.png) | ![Responsive on mobile](./public/screenshots/05-mobile.png) |
 
 ## Deploy
 
