@@ -207,6 +207,30 @@ export function App({ authUser, onAuth0Logout } = {}) {
       .catch(() => {});
     return () => { live = false; };
   }, []);
+  // Mobile keyboard: track the visual viewport height into `--app-h` so the app
+  // shell (and the chat composer pinned at its bottom) shrinks above the iOS
+  // soft keyboard. iOS Safari doesn't respond to `interactive-widget`/`dvh` for
+  // the keyboard, so this JS is the only cross-platform fix. rAF-coalesced to
+  // avoid thrash on the per-scroll resize events.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const root = document.documentElement;
+    let raf = 0;
+    const apply = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => root.style.setProperty("--app-h", `${Math.round(vv.height)}px`));
+    };
+    apply();
+    vv.addEventListener("resize", apply);
+    vv.addEventListener("scroll", apply);
+    return () => {
+      cancelAnimationFrame(raf);
+      vv.removeEventListener("resize", apply);
+      vv.removeEventListener("scroll", apply);
+      root.style.removeProperty("--app-h");
+    };
+  }, []);
   // Pre-fill the onboarding "About you" step from the signed-in Auth0 profile.
   // Auth0's `name` is often just the email for database users — fall back to
   // given/family name in that case so we don't drop the email into the name box.
