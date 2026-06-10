@@ -99,6 +99,17 @@ export function McpKeyProvider({ children }) {
   return <KeyCtx.Provider value={value}>{children}</KeyCtx.Provider>;
 }
 
+// After the SDK exchanges the auth code, strip the ?code/&state (and any error)
+// params so a reload/back-nav can't replay a now-consumed code, and restore the
+// intended path.
+function onRedirectCallback(appState) {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  for (const p of ["code", "state", "error", "error_description"]) url.searchParams.delete(p);
+  const dest = (appState?.returnTo || url.pathname) + url.search + url.hash;
+  window.history.replaceState({}, document.title, dest);
+}
+
 // Wrap the app in the Auth0 provider when configured; otherwise render children
 // directly (single-org / local fallback unchanged).
 export function AuthGate({ children }) {
@@ -114,6 +125,7 @@ export function AuthGate({ children }) {
       }}
       cacheLocation="localstorage"
       useRefreshTokens
+      onRedirectCallback={onRedirectCallback}
     >
       {children}
     </Auth0Provider>

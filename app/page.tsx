@@ -9,8 +9,24 @@ import { Welcome } from "@/components/gtm/welcome";
 
 // Inner gate: reads Auth0 state (only valid inside AuthGate's provider) and
 // decides login vs app. When Auth0 is disabled it renders the app as before.
+function AuthError({ detail, onRetry }: { detail?: string; onRetry: () => void }) {
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0b0b0c", color: "#fff", padding: 24 }}>
+      <div style={{ maxWidth: 420, textAlign: "center" }}>
+        <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 10 }}>Sign-in didn&apos;t finish</h1>
+        <p style={{ opacity: 0.65, fontSize: 14, lineHeight: 1.55, marginBottom: 22 }}>
+          We couldn&apos;t complete the login{detail ? ` (${detail})` : ""}. This usually clears up on a retry.
+        </p>
+        <button onClick={onRetry} style={{ background: "#FFB712", color: "#1a1a1a", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 600, fontSize: 15, cursor: "pointer" }}>
+          Try signing in again
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Gated() {
-  const { isLoading, isAuthenticated, loginWithRedirect } = useAuth0();
+  const { isLoading, isAuthenticated, loginWithRedirect, error } = useAuth0();
 
   if (!AUTH0_ENABLED) {
     return (
@@ -21,6 +37,16 @@ function Gated() {
   }
 
   if (isLoading) return null;
+
+  // A failed callback (expired/replayed code, "invalid state", consent denied)
+  // leaves us unauthenticated — either with an `error`, or rarely with the
+  // `?code` still in the URL and no error. Surface a clear retry instead of
+  // silently dropping to the marketing splash (which looks like login did
+  // nothing). Retrying starts a fresh transaction, which clears it.
+  const stuckCallback = typeof window !== "undefined" && /[?&]code=/.test(window.location.search);
+  if (error || (!isAuthenticated && stuckCallback)) {
+    return <AuthError detail={error?.message} onRetry={() => loginWithRedirect()} />;
+  }
 
   if (!isAuthenticated) {
     return (
