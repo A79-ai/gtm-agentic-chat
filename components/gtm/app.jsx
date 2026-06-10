@@ -194,6 +194,21 @@ export function App({ authUser, onAuth0Logout } = {}) {
   const navProfile = authUser
     ? { ...profile, name: profile.name || authUser.name || authUser.email, email: authUser.email || profile.email, picture: authUser.picture }
     : profile;
+  // Pre-fill the onboarding "About you" step from the signed-in Auth0 profile.
+  // Auth0's `name` is often just the email for database users — fall back to
+  // given/family name in that case so we don't drop the email into the name box.
+  const onboardingInitial = (() => {
+    if (!authUser) return profile;
+    const realName =
+      authUser.name && authUser.name !== authUser.email
+        ? authUser.name
+        : [authUser.given_name, authUser.family_name].filter(Boolean).join(" ");
+    return {
+      ...profile,
+      name: profile.name || realName || "",
+      email: profile.email || authUser.email || "",
+    };
+  })();
   const [flow, setFlow] = useState(() => {
     if (CONFIG.signup.enabled && !AUTH0_ENABLED && !isSignedUp()) return { name: "signup", firstRun: true };
     if (CONFIG.onboarding.enabled && !readOnboarded()) return { name: "onboarding", firstRun: true };
@@ -324,7 +339,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
         <Signup initial={{ name: profile.name, email: profile.email, company: profile.company }} onFinish={signupDone} />
       )}
       {flow && flow.name === "onboarding" && (
-        <Onboarding initial={profile} onFinish={onboardingDone} onCancel={flow.firstRun ? null : () => setFlow(null)} collectIdentity={!isSignedUp()} />
+        <Onboarding initial={onboardingInitial} onFinish={onboardingDone} onCancel={flow.firstRun ? null : () => setFlow(null)} collectIdentity={!isSignedUp()} />
       )}
       {builder && (
         <AgentBuilder
