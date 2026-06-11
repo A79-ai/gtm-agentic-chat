@@ -1,4 +1,5 @@
 import { type GoogleUser, readCookie, SESSION_COOKIE, verify } from "@/lib/googleAuth";
+import { isProEmail } from "@/lib/gtm/pro";
 import { customerStatus, getStripe } from "@/lib/stripe";
 
 export const maxDuration = 15;
@@ -17,6 +18,12 @@ export async function GET(req: Request) {
   const user = verify<GoogleUser>(readCookie(req, SESSION_COOKIE));
   if (!user?.email) {
     return Response.json({ configured: true, state: "none" });
+  }
+
+  // Allowlist Pro: internal domains / explicitly granted emails are Pro without
+  // a Stripe subscription (see lib/gtm/pro.js).
+  if (isProEmail(user.email)) {
+    return Response.json({ configured: true, state: "subscribed", plan: "pro", comp: true });
   }
 
   try {
