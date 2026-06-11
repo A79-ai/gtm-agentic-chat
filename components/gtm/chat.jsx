@@ -881,7 +881,16 @@ export function ChatScreen({
     if (toolPending) {
       return;
     }
-    const t = setTimeout(() => setTurnBusy(false), 1100);
+    // Quiet-window settle. There is no terminal turn-finish signal (the durable
+    // stream stays `status: "streaming"` forever via preventClose), so we settle
+    // once deltas go quiet. A multi-step turn narrates between tool calls ("Let
+    // me pull up the deal context…") and the model's gap between finishing that
+    // text and emitting the NEXT tool call routinely exceeds a second, so a short
+    // window settles prematurely: the caret + Copy/Regenerate actions flash in,
+    // then streaming resumes (looks like the turn ended early). Use a wider
+    // window so normal inter-step gaps don't trip it; the 90s watchdog below
+    // still catches genuine stalls, and a running tool re-engages immediately.
+    const t = setTimeout(() => setTurnBusy(false), 3500);
     return () => clearTimeout(t);
   }, [messages, turnBusy, status]);
   // Re-engage if the agent fires another tool after appearing to settle (a
