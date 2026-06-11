@@ -64,7 +64,7 @@ function domainOf(url) {
 function McpServerCard({ s, onToggle, onEdit, onRemove }) {
   const on = s.enabled !== false;
   return (
-    <div className={"card conn-card" + (on ? "connected" : "")}>
+    <div className={"card conn-card" + (on ? " connected" : "")}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <McpLogo domain={domainOf(s.url)} />
         <div style={{ minWidth: 0, flex: 1 }}>
@@ -207,7 +207,7 @@ function ConnectorCard({ c, onConnect, onContact, onManage }) {
   // (Ampersand surfaces the disconnect/uninstall flow when already installed).
   const manageable = connected && !enterprise && c.ampersandName;
   return (
-    <div className={"card conn-card" + (connected ? "connected" : "")}>
+    <div className={"card conn-card" + (connected ? " connected" : "")}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <ConnLogo logo={c.logo} />
         <div style={{ minWidth: 0, flex: 1 }}>
@@ -523,7 +523,7 @@ export function ConnectorsScreen({ connectors, onToast }) {
           <div className="pilltabs">
             {CAT_TABS.map((t) => (
               <button
-                className={"pilltab" + (tab === t ? "active" : "")}
+                className={"pilltab" + (tab === t ? " active" : "")}
                 key={t}
                 onClick={() => setTab(t)}
               >

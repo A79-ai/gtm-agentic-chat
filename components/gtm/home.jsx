@@ -20,7 +20,7 @@ function AgentTile({ agent, connectors, onOpen, onEdit, onCopy }) {
   };
   return (
     <div
-      className={"card" + (hover ? "card-hover" : "")}
+      className={"card" + (hover ? " card-hover" : "")}
       onClick={onOpen}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -341,7 +341,7 @@ export function HomeScreen({
             <div className="pilltabs">
               {tabs.map((t) => (
                 <button
-                  className={"pilltab" + (tab === t ? "active" : "")}
+                  className={"pilltab" + (tab === t ? " active" : "")}
                   key={t}
                   onClick={() => setTab(t)}
                 >

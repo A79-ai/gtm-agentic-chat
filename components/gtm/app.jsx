@@ -219,7 +219,7 @@ function TweaksPanel({ t, onClose }) {
           <div className="swatch-row">
             {accents.map(([k, c]) => (
               <button
-                className={"swatch" + (t.accent === k ? "on" : "")}
+                className={"swatch" + (t.accent === k ? " on" : "")}
                 key={k}
                 onClick={() => t.setAccent(k)}
                 style={{ background: c }}
