@@ -559,6 +559,9 @@ select.create-input { cursor: pointer; appearance: none; background-image: linea
 .ob-step.done .ob-step-dot { background: var(--accent); border-color: var(--accent); color: #1a1200; }
 .ob-aside-foot { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--rail-text-muted); }
 .ob-aside-foot svg { color: var(--g-300); }
+.ob-gh-star { display: flex; align-items: center; gap: 9px; margin-top: 22px; padding: 9px 13px; border-radius: 9px; border: 1px solid var(--rail-border); color: var(--rail-text); font-size: 13px; font-weight: 500; text-decoration: none; transition: border-color .15s, background .15s; }
+.ob-gh-star:hover { border-color: var(--accent); background: rgba(255, 255, 255, 0.04); }
+.ob-gh-star svg { color: var(--g-300); }
 
 .ob-main { display: flex; flex-direction: column; min-width: 0; }
 .ob-main-head { display: flex; align-items: flex-start; justify-content: space-between; padding: 26px 30px 14px; }

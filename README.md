@@ -158,6 +158,10 @@ org that issues per-user session keys; see `lib/gtm/auth.jsx` for the backbone.
   In multi-tenant mode, conversations are persisted per-user via AmpUp and the
   cold-reopen replay at `/api/conversation/[runId]` is gated behind the per-user key.
 
+## How it compares
+
+Tools like **Lightfield** and **Monaco** are polished, SaaS-only platforms that *replace* your CRM and host your data in their cloud. This kit takes the opposite bet: open source, deployed to **your** Vercel, running agents **over the CRM and tools you already own**. The full breakdown, with honest trade-offs, is in **[COMPARISON.md](./COMPARISON.md)**.
+
 ## Privacy, security & license
 
 - **[PRIVACY.md](./PRIVACY.md)**: exactly where your data goes. This is a
