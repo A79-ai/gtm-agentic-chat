@@ -19,6 +19,14 @@ AmpUp MCP endpoint** — this app is a thin, durable chat client in front of it.
 | ![Chat grounded in a deal — risks, signals and the next best action](./public/screenshots/02-chat.png) | ![Your pipeline at a glance](./public/screenshots/03-deals.png) |
 | ![Connect your stack — CRM, call recorders, and any MCP server](./public/screenshots/04-connectors.png) | ![Responsive on mobile](./public/screenshots/05-mobile.png) |
 
+## Demos
+
+**Embeddable chat widget** — one `<script src="/widget.js">` tag drops the chat onto any site (Shadow-DOM launcher → chrome-less `/embed` iframe), grounded in your CRM:
+
+<video src="https://github.com/A79-ai/gtm-agentic-chat/raw/main/public/features/embed-chat-demo.mp4" controls muted width="100%"></video>
+
+[▶ Watch the embed demo](./public/features/embed-chat-demo.mp4)
+
 ## Deploy
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/a79-ai/gtm-agentic-chat)
