@@ -61,6 +61,17 @@ export function Signup({ initial, onFinish }) {
                 </div>
               ))}
             </div>
+            <a
+              className="ob-gh-star"
+              href={CONFIG.repoUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+              title="Open source. Run it yourself on Vercel"
+            >
+              <Icons.Github size={16} />
+              <span>Open source. Star it on GitHub</span>
+              <Icons.Star size={13} style={{ marginLeft: "auto", opacity: 0.85 }} />
+            </a>
           </div>
           <div className="ob-aside-foot">
             <Icons.Spark size={14} />{" "}
