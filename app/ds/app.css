@@ -596,6 +596,7 @@ select.create-input { cursor: pointer; appearance: none; background-image: linea
    UI that overflows the card. Bound + scroll it so it stays inside the card. */
 .gcal-amp { width: 100%; max-height: min(60vh, 520px); overflow-y: auto; overflow-x: hidden; padding: 4px; }
 .cal-installing { padding: 18px; text-align: center; font-size: 13.5px; color: var(--fg-muted); }
+.gcal-sync-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-lg); background: var(--bg-muted); color: var(--fg-muted); font-size: 12.5px; line-height: 1.45; }
 .gcal-head { display: flex; align-items: center; gap: 13px; margin-bottom: 18px; }
 .gcal-logo { width: 40px; height: 40px; display: flex; flex-shrink: 0; }
 .gcal-title { font-size: 16px; font-weight: 600; color: var(--fg-primary); }

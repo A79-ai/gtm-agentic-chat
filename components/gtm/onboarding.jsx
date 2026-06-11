@@ -185,16 +185,25 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
             ))}
           </div>
           {cal === "connected" ? (
-            <div className="gcal-account">
-              <span className="gcal-gm">
-                <Logos.Google />
-              </span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <div className="gcal-acc-nm">{f.name || "You"}</div>
-                <div className="gcal-acc-em">{f.email || "you@company.com"}</div>
-              </span>
-              <span className="gcal-syncing">Syncing events…</span>
-            </div>
+            <>
+              <div className="gcal-account">
+                <span className="gcal-gm">
+                  <Logos.Google />
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <div className="gcal-acc-nm">{f.name || "You"}</div>
+                  <div className="gcal-acc-em">{f.email || "you@company.com"}</div>
+                </span>
+                <span className="gcal-syncing">Syncing events…</span>
+              </div>
+              <div className="gcal-sync-note">
+                <Icons.Clock size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+                <span>
+                  Your calendar syncs in the background — events keep refreshing about every 10
+                  minutes. You can finish setup now; there's nothing to wait for.
+                </span>
+              </div>
+            </>
           ) : cal === "connecting" ? (
             <div className="gcal-amp">
               <Suspense
