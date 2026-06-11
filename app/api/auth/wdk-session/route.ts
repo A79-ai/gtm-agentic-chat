@@ -1,7 +1,10 @@
 // Mint a short-lived per-user MCP key. The client sends its Auth0 access token;
 // we exchange it on the api-service for a per-user sk-a79 key scoped to the
 // caller's org/user. This replaces the shared env key in multi-tenant mode.
-const AMPUP_API_BASE = process.env.AMPUP_API_BASE || "https://free-trial.staging.a79dev.com";
+// Defaults to the operator's own host (AMPUP_MCP_URL minus the /mcp suffix) so a
+// public clone never targets a foreign backend.
+const AMPUP_API_BASE =
+  process.env.AMPUP_API_BASE || (process.env.AMPUP_MCP_URL || "").replace(/\/mcp\/?$/, "");
 
 const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 const CORS = {

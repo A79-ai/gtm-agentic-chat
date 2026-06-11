@@ -2,8 +2,11 @@
 // server-side source of truth (cross-device) and — crucially — org/user-safe:
 // AmpUp derives org_id/user_id from the authenticated key and scopes every row
 // to the owner. We never trust client-supplied identity. The transcript rides
-// in `extra_metadata` so reopening is self-contained.
-const AMPUP_API_BASE = process.env.AMPUP_API_BASE || "https://free-trial.staging.a79dev.com";
+// in `extra_metadata` so reopening is self-contained. Defaults to the operator's
+// own host (AMPUP_MCP_URL minus /mcp) so a public clone never targets a foreign
+// backend.
+const AMPUP_API_BASE =
+  process.env.AMPUP_API_BASE || (process.env.AMPUP_MCP_URL || "").replace(/\/mcp\/?$/, "");
 const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 const CORS = {
   "Access-Control-Allow-Origin": ALLOW_ORIGIN,
