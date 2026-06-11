@@ -5,6 +5,7 @@
 // Both CTAs route to Auth0 Universal Login for the free-trial org (which offers
 // Google + email); a new user is auto-provisioned on first login.
 import React from "react";
+import { CONFIG } from "@/lib/gtm/config";
 import { Icons, Logo, Logos } from "./icons";
 import { ProductCarousel } from "./product-carousel";
 
@@ -255,6 +256,32 @@ export function Welcome({ onLogin, onSignup, onGoogle }) {
                 </span>
               ))}
             </div>
+
+            <a
+              href={CONFIG.repoUrl}
+              rel="noopener noreferrer"
+              style={{
+                marginTop: 24,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 9,
+                width: "fit-content",
+                padding: "9px 14px",
+                borderRadius: 999,
+                border: `1px solid ${T.btnBorder}`,
+                color: T.btnInk,
+                fontSize: 13,
+                fontWeight: 500,
+                textDecoration: "none",
+                fontFamily: FONT,
+              }}
+              target="_blank"
+              title="Open source. Run it yourself on Vercel"
+            >
+              <Icons.Github size={15} />
+              Open source. Star it on GitHub
+              <Icons.Star size={13} style={{ color: T.accent }} />
+            </a>
           </div>
         </div>
 
