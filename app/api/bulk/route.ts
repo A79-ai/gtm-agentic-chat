@@ -20,15 +20,24 @@ function keyOf(req: Request): string {
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   // Multi-tenant: never fall back to the shared env key. Without a per-request
   // key the route 401s instead of serving one org's data to everyone.
-  if (process.env.MULTI_TENANT === "true") return headerKey ?? "";
+  if (process.env.MULTI_TENANT === "true") {
+    return headerKey ?? "";
+  }
   return headerKey ?? process.env.AMPUP_MCP_API_KEY ?? "";
 }
 
-type Action = { tool: string; idParam: string; valueParam?: string; fixed?: Record<string, unknown> };
+type Action = {
+  tool: string;
+  idParam: string;
+  valueParam?: string;
+  fixed?: Record<string, unknown>;
+};
 
 // (type, action) -> MCP tool. `valueParam` actions require a `value`.
 const MAP: Record<string, Record<string, Action>> = {
-  deal: { stage: { tool: "change_opportunity_stage", idParam: "opportunity_id", valueParam: "stage" } },
+  deal: {
+    stage: { tool: "change_opportunity_stage", idParam: "opportunity_id", valueParam: "stage" },
+  },
   task: {
     complete: { tool: "update_task", idParam: "task_id", fixed: { status: "COMPLETED" } },
     priority: { tool: "update_task", idParam: "task_id", valueParam: "priority" },
@@ -47,17 +56,34 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (it: T) => Promise<
 
 export async function POST(req: Request) {
   const key = keyOf(req);
-  if (!key) return Response.json({ error: "no key" }, { status: 401, headers: CORS });
+  if (!key) {
+    return Response.json({ error: "no key" }, { status: 401, headers: CORS });
+  }
 
-  const body = (await req.json().catch(() => ({}))) as { type?: string; action?: string; ids?: string[]; value?: string };
+  const body = (await req.json().catch(() => ({}))) as {
+    type?: string;
+    action?: string;
+    ids?: string[];
+    value?: string;
+  };
   const spec = body.type && body.action ? MAP[body.type]?.[body.action] : undefined;
   const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : [];
-  if (!spec) return Response.json({ error: "unsupported action" }, { status: 400, headers: CORS });
-  if (!ids.length) return Response.json({ error: "no ids" }, { status: 400, headers: CORS });
-  if (spec.valueParam && !body.value) return Response.json({ error: "value required" }, { status: 400, headers: CORS });
+  if (!spec) {
+    return Response.json({ error: "unsupported action" }, { status: 400, headers: CORS });
+  }
+  if (!ids.length) {
+    return Response.json({ error: "no ids" }, { status: 400, headers: CORS });
+  }
+  if (spec.valueParam && !body.value) {
+    return Response.json({ error: "value required" }, { status: 400, headers: CORS });
+  }
 
   const results = await mapLimit(ids, 4, async (id) => {
-    const args = { [spec.idParam]: id, ...(spec.fixed || {}), ...(spec.valueParam ? { [spec.valueParam]: body.value } : {}) };
+    const args = {
+      [spec.idParam]: id,
+      ...(spec.fixed || {}),
+      ...(spec.valueParam ? { [spec.valueParam]: body.value } : {}),
+    };
     try {
       const r = await callAmpupTool(spec.tool, args, key);
       return { id, ok: r.ok };
@@ -67,5 +93,13 @@ export async function POST(req: Request) {
   });
 
   const done = results.filter((r) => r.ok).length;
-  return Response.json({ ok: done === ids.length, done, total: ids.length, failed: results.filter((r) => !r.ok).map((r) => r.id) }, { headers: CORS });
+  return Response.json(
+    {
+      ok: done === ids.length,
+      done,
+      total: ids.length,
+      failed: results.filter((r) => !r.ok).map((r) => r.id),
+    },
+    { headers: CORS }
+  );
 }

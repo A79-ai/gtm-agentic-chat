@@ -1,0 +1,85 @@
+name: E2E
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Credential-free: assert the login experience on your deployed app. Set the
+      # E2E_DEPLOY_URL repo variable to your deployment; skipped if unset (so a
+      # fork's CI never hits someone else's site).
+      - name: Login smoke (deployed app)
+        if: vars.E2E_DEPLOY_URL != ''
+        env:
+          E2E_BASE_URL: ${{ vars.E2E_DEPLOY_URL }}
+        run: pnpm exec playwright test e2e/login.spec.ts
+
+      # Detect whether the bench secrets are configured (skip on forks / unset).
+      - name: Detect bench secrets
+        env:
+          BENCH_KEY: ${{ secrets.E2E_AMPUP_MCP_API_KEY }}
+        run: |
+          if [ -n "$BENCH_KEY" ]; then echo "HAS_BENCH=true" >> "$GITHUB_ENV"; else echo "HAS_BENCH=false" >> "$GITHUB_ENV"; fi
+
+      - name: Write bench env
+        if: env.HAS_BENCH == 'true'
+        env:
+          MCP_URL: ${{ secrets.E2E_AMPUP_MCP_URL }}
+          MCP_KEY: ${{ secrets.E2E_AMPUP_MCP_API_KEY }}
+          GATEWAY_KEY: ${{ secrets.E2E_AI_GATEWAY_API_KEY }}
+        run: |
+          {
+            echo "AMPUP_MCP_URL=$MCP_URL"
+            echo "AMPUP_MCP_API_KEY=$MCP_KEY"
+            echo "AI_GATEWAY_API_KEY=$GATEWAY_KEY"
+            echo "NEXT_PUBLIC_AUTH0_DOMAIN="
+            echo "NEXT_PUBLIC_AUTH0_CLIENT_ID="
+            echo "MULTI_TENANT="
+            echo "NEXT_PUBLIC_SIGNUP_ENABLED=false"
+            echo "NEXT_PUBLIC_ONBOARDING_ENABLED=false"
+          } > .env.e2e
+
+      # Bench specs (chat + entity lists) against the single-org bench.
+      - name: Bench specs (chat + entities)
+        if: env.HAS_BENCH == 'true'
+        run: pnpm exec playwright test e2e/chat.spec.ts e2e/entities.spec.ts
+
+      - name: Note skipped bench
+        if: env.HAS_BENCH != 'true'
+        run: echo "::notice::Bench specs skipped — set E2E_AMPUP_MCP_URL / E2E_AMPUP_MCP_API_KEY / E2E_AI_GATEWAY_API_KEY secrets to enable."
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

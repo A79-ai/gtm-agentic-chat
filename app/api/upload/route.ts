@@ -21,7 +21,9 @@ function keyOf(req: Request): string {
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   // Multi-tenant: never fall back to the shared env key. Without a per-request
   // key the route 401s instead of serving one org's data to everyone.
-  if (process.env.MULTI_TENANT === "true") return headerKey ?? "";
+  if (process.env.MULTI_TENANT === "true") {
+    return headerKey ?? "";
+  }
   return headerKey ?? process.env.AMPUP_MCP_API_KEY ?? "";
 }
 
@@ -34,33 +36,49 @@ type Body = {
 
 export async function POST(req: Request) {
   const key = keyOf(req);
-  if (!key) return Response.json({ error: "no key" }, { status: 401, headers: CORS });
+  if (!key) {
+    return Response.json({ error: "no key" }, { status: 401, headers: CORS });
+  }
 
   const body = (await req.json().catch(() => ({}))) as Body;
-  if (!body.file_name || !body.file_content_base64) {
-    return Response.json({ error: "file_name and file_content_base64 required" }, { status: 400, headers: CORS });
+  if (!(body.file_name && body.file_content_base64)) {
+    return Response.json(
+      { error: "file_name and file_content_base64 required" },
+      { status: 400, headers: CORS }
+    );
   }
 
   const args: Record<string, unknown> = {
     file_name: body.file_name,
     file_content_base64: body.file_content_base64,
   };
-  if (body.opportunity_id) args.opportunity_id = body.opportunity_id;
-  else if (body.account_id) args.account_id = body.account_id;
+  if (body.opportunity_id) {
+    args.opportunity_id = body.opportunity_id;
+  } else if (body.account_id) {
+    args.account_id = body.account_id;
+  }
 
   try {
     const r = await callAmpupTool("upload_file", args, key);
-    if (!r.ok) return Response.json({ ok: false, error: r.content.slice(0, 300) }, { status: 502, headers: CORS });
+    if (!r.ok) {
+      return Response.json(
+        { ok: false, error: r.content.slice(0, 300) },
+        { status: 502, headers: CORS }
+      );
+    }
     let datasourceId: number | null = null;
     let status = "";
     try {
       const o = JSON.parse(r.content) as { id?: number; datasource_id?: number; status?: string };
-      datasourceId = (o.id ?? o.datasource_id) ?? null;
+      datasourceId = o.id ?? o.datasource_id ?? null;
       status = o.status || "";
     } catch {
       /* leave null — caller still gets ok */
     }
-    return Response.json({ ok: true, datasourceId, fileName: body.file_name, status }, { headers: CORS });
+    return Response.json(
+      { ok: true, datasourceId, fileName: body.file_name, status },
+      { headers: CORS }
+    );
   } catch (e) {
     return Response.json({ ok: false, error: String(e) }, { status: 502, headers: CORS });
   }

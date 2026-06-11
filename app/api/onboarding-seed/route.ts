@@ -32,7 +32,9 @@ function keyOf(req: Request): string {
   const headerKey =
     req.headers.get("x-ampup-mcp-key") ??
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (process.env.MULTI_TENANT === "true") return headerKey ?? "";
+  if (process.env.MULTI_TENANT === "true") {
+    return headerKey ?? "";
+  }
   return headerKey ?? process.env.AMPUP_MCP_API_KEY ?? "";
 }
 
@@ -62,31 +64,56 @@ const SIZE_MAP: Record<string, string> = {
 function mapSize(...candidates: (string | undefined)[]): string {
   for (const c of candidates) {
     const v = (c || "").replace(/[‒-―]/g, "-").trim().toLowerCase();
-    if (SIZES.has(v)) return v;
-    if (SIZE_MAP[v]) return SIZE_MAP[v];
+    if (SIZES.has(v)) {
+      return v;
+    }
+    if (SIZE_MAP[v]) {
+      return SIZE_MAP[v];
+    }
   }
   return "11-50";
 }
 
 // Personal mailbox providers — a poor company signal, so skip the lookup.
 const PERSONAL = new Set([
-  "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "live.com",
-  "yahoo.com", "icloud.com", "me.com", "proton.me", "protonmail.com", "aol.com",
+  "gmail.com",
+  "googlemail.com",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "yahoo.com",
+  "icloud.com",
+  "me.com",
+  "proton.me",
+  "protonmail.com",
+  "aol.com",
 ]);
 function companyDomain(email: string | undefined): string {
   const at = (email || "").split("@")[1]?.trim().toLowerCase();
-  if (!at || PERSONAL.has(at) || !at.includes(".")) return "";
+  if (!at || PERSONAL.has(at) || !at.includes(".")) {
+    return "";
+  }
   return at;
 }
 
-type Lookup = { company_name?: string; industry?: string; company_products?: string; company_size?: string };
+type Lookup = {
+  company_name?: string;
+  industry?: string;
+  company_products?: string;
+  company_size?: string;
+};
 
 export async function POST(req: Request) {
   const key = keyOf(req);
-  if (!key) return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS });
+  if (!key) {
+    return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS });
+  }
 
   const body = (await req.json().catch(() => ({}))) as {
-    company?: string; role?: string; size?: string; email?: string;
+    company?: string;
+    role?: string;
+    size?: string;
+    email?: string;
   };
   const auth = { Authorization: `Bearer ${key}` };
 
@@ -115,7 +142,9 @@ export async function POST(req: Request) {
         headers: { ...auth, "content-type": "application/json" },
         body: JSON.stringify({ url: domain }),
       });
-      if (r.ok) look = (await r.json()) as Lookup;
+      if (r.ok) {
+        look = (await r.json()) as Lookup;
+      }
     } catch {
       // Lookup is best-effort; defaults below keep the required fields valid.
     }
@@ -126,7 +155,8 @@ export async function POST(req: Request) {
     company_url: domain ? `https://${domain}` : "",
     company_name: companyName,
     industry: (look.industry || "").trim() || "Software",
-    company_products: (look.company_products || "").trim() || `${companyName}'s products and services`,
+    company_products:
+      (look.company_products || "").trim() || `${companyName}'s products and services`,
     company_size: mapSize(look.company_size, body.size),
     user_role: mapRole(body.role),
   };
@@ -140,7 +170,7 @@ export async function POST(req: Request) {
     if (!res.ok) {
       return Response.json(
         { ok: false, status: res.status, error: (await res.text()).slice(0, 300) },
-        { status: 502, headers: CORS },
+        { status: 502, headers: CORS }
       );
     }
     return Response.json({ ok: true, seeded: true }, { headers: CORS });

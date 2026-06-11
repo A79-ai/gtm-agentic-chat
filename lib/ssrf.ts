@@ -12,7 +12,9 @@ const BLOCKED_HOSTNAMES = new Set(["localhost", "metadata.google.internal"]);
 
 function ipv4Octets(host: string): number[] | null {
   const m = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (!m) return null;
+  if (!m) {
+    return null;
+  }
   const octets = m.slice(1, 5).map(Number);
   return octets.every((o) => o >= 0 && o <= 255) ? octets : null;
 }
@@ -38,18 +40,33 @@ export function isBlockedUrl(raw: string): boolean {
   } catch {
     return true;
   }
-  if (u.protocol !== "http:" && u.protocol !== "https:") return true;
+  if (u.protocol !== "http:" && u.protocol !== "https:") {
+    return true;
+  }
 
   const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (!host) return true;
-  if (BLOCKED_HOSTNAMES.has(host)) return true;
-  if (host.endsWith(".internal") || host.endsWith(".local")) return true;
+  if (!host) {
+    return true;
+  }
+  if (BLOCKED_HOSTNAMES.has(host)) {
+    return true;
+  }
+  if (host.endsWith(".internal") || host.endsWith(".local")) {
+    return true;
+  }
   // IPv6 loopback / link-local (fe80::/10) / unique-local (fc00::/7)
-  if (host === "::1" || host.startsWith("fe80:") || host.startsWith("fc") || host.startsWith("fd")) {
+  if (
+    host === "::1" ||
+    host.startsWith("fe80:") ||
+    host.startsWith("fc") ||
+    host.startsWith("fd")
+  ) {
     return true;
   }
   const v4 = ipv4Octets(host);
-  if (v4 && isPrivateIpv4(v4)) return true;
+  if (v4 && isPrivateIpv4(v4)) {
+    return true;
+  }
   return false;
 }
 

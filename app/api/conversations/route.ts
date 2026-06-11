@@ -22,7 +22,9 @@ function keyOf(req: Request): string {
   const headerKey =
     req.headers.get("x-ampup-mcp-key") ??
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (process.env.MULTI_TENANT === "true") return headerKey ?? "";
+  if (process.env.MULTI_TENANT === "true") {
+    return headerKey ?? "";
+  }
   return headerKey ?? process.env.AMPUP_MCP_API_KEY ?? "";
 }
 
@@ -32,7 +34,9 @@ const upstreamHeaders = (key: string) => ({
 });
 
 const safeParse = (s: unknown): Record<string, unknown> => {
-  if (typeof s !== "string" || !s) return {};
+  if (typeof s !== "string" || !s) {
+    return {};
+  }
   try {
     return JSON.parse(s) as Record<string, unknown>;
   } catch {
@@ -42,7 +46,11 @@ const safeParse = (s: unknown): Record<string, unknown> => {
 
 type Msg = { role?: string; parts?: { type?: string; text?: string }[] };
 const partsText = (m: Msg | undefined) =>
-  (m?.parts || []).filter((p) => p.type === "text").map((p) => p.text || "").join("").trim();
+  (m?.parts || [])
+    .filter((p) => p.type === "text")
+    .map((p) => p.text || "")
+    .join("")
+    .trim();
 
 // Project one AmpUp conversation row to the shape the chat client renders.
 function toClient(row: Record<string, unknown>) {
@@ -62,13 +70,17 @@ function toClient(row: Record<string, unknown>) {
 
 export async function GET(req: Request) {
   const key = keyOf(req);
-  if (!key) return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS });
+  if (!key) {
+    return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS });
+  }
   try {
     const res = await fetch(
       `${AMPUP_API_BASE}/api/v1/conversations?exclude_org_public=true&limit=50&offset=0`,
-      { headers: upstreamHeaders(key) },
+      { headers: upstreamHeaders(key) }
     );
-    if (!res.ok) return Response.json({ items: [], error: `upstream ${res.status}` }, { headers: CORS });
+    if (!res.ok) {
+      return Response.json({ items: [], error: `upstream ${res.status}` }, { headers: CORS });
+    }
     const data = (await res.json()) as { items?: Record<string, unknown>[] };
     const items = (data.items || []).map(toClient).filter((c) => c.messages.length > 0);
     return Response.json({ items }, { headers: CORS });
@@ -89,12 +101,17 @@ type SaveBody = {
 
 export async function POST(req: Request) {
   const key = keyOf(req);
-  if (!key) return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS });
+  if (!key) {
+    return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS });
+  }
 
   const body = (await req.json().catch(() => ({}))) as SaveBody;
   const messages = Array.isArray(body.messages) ? body.messages : [];
   if (!body.clientId || messages.length === 0) {
-    return Response.json({ error: "clientId and messages required" }, { status: 400, headers: CORS });
+    return Response.json(
+      { error: "clientId and messages required" },
+      { status: 400, headers: CORS }
+    );
   }
 
   const firstUser = messages.find((m) => m.role === "user");
@@ -128,7 +145,10 @@ export async function POST(req: Request) {
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      return Response.json({ ok: false, error: `upstream ${res.status}` }, { status: 502, headers: CORS });
+      return Response.json(
+        { ok: false, error: `upstream ${res.status}` },
+        { status: 502, headers: CORS }
+      );
     }
     const row = (await res.json()) as { id?: number };
     return Response.json({ ok: true, ampupId: row.id ?? body.ampupId }, { headers: CORS });

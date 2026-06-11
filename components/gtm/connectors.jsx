@@ -1,13 +1,17 @@
 // Connectors gallery screen
-import React, { useState, useEffect, Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
+import { ampersandGroupRef, apiFetch, seedInstallation, useMcpKeyContext } from "@/lib/gtm/auth";
+import { CAT_TABS, getAmpersand, getConnectors, setConnectors } from "@/lib/gtm/data";
+import { AUTH_LABEL, MCP_CATALOG } from "@/lib/gtm/mcpCatalog";
+import {
+  deleteMcpServer,
+  listMcpServers,
+  saveMcpServer,
+  setMcpServerEnabled,
+} from "@/lib/gtm/mcpServers";
 import { Icons } from "./icons";
-import { ConnLogo } from "./ui";
-import { CAT_TABS, getAmpersand, setConnectors, getConnectors } from "@/lib/gtm/data";
-import { useMcpKeyContext, ampersandGroupRef, seedInstallation } from "@/lib/gtm/auth";
-import { listMcpServers, saveMcpServer, deleteMcpServer, setMcpServerEnabled } from "@/lib/gtm/mcpServers";
 import { McpServerModal } from "./McpServerModal";
-import { MCP_CATALOG, AUTH_LABEL } from "@/lib/gtm/mcpCatalog";
-import { apiFetch } from "@/lib/gtm/auth";
+import { ConnLogo } from "./ui";
 
 const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
 
@@ -17,9 +21,30 @@ function McpLogo({ domain, size = 38 }) {
   const [err, setErr] = useState(false);
   const inner = Math.round(size * 0.55);
   return (
-    <div style={{ width: size, height: size, borderRadius: 10, background: "var(--bg-muted)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-primary)", flexShrink: 0, overflow: "hidden" }}>
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 10,
+        background: "var(--bg-muted)",
+        border: "1px solid var(--border-subtle)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "var(--fg-primary)",
+        flexShrink: 0,
+        overflow: "hidden",
+      }}
+    >
       {domain && !err ? (
-        <img src={`https://www.google.com/s2/favicons?sz=64&domain=${domain}`} alt="" width={inner} height={inner} style={{ borderRadius: 4 }} onError={() => setErr(true)} />
+        <img
+          alt=""
+          height={inner}
+          onError={() => setErr(true)}
+          src={`https://www.google.com/s2/favicons?sz=64&domain=${domain}`}
+          style={{ borderRadius: 4 }}
+          width={inner}
+        />
       ) : (
         <Icons.Plug size={inner} />
       )}
@@ -28,31 +53,77 @@ function McpLogo({ domain, size = 38 }) {
 }
 
 function domainOf(url) {
-  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; }
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
 }
 
 // A user's saved custom MCP server, rendered in the unified grid.
 function McpServerCard({ s, onToggle, onEdit, onRemove }) {
   const on = s.enabled !== false;
   return (
-    <div className={"card conn-card" + (on ? " connected" : "")}>
+    <div className={"card conn-card" + (on ? "connected" : "")}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <McpLogo domain={domainOf(s.url)} />
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontWeight: 600, fontSize: 16, color: "var(--fg-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
+          <div
+            style={{
+              fontWeight: 600,
+              fontSize: 16,
+              color: "var(--fg-primary)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {s.name}
+          </div>
           <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
-            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>MCP</span>
-            <span className="badge" style={{ padding: "2px 8px", fontSize: 11, fontFamily: "var(--font-mono)" }}>{s.slug}</span>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>
+              MCP
+            </span>
+            <span
+              className="badge"
+              style={{ padding: "2px 8px", fontSize: 11, fontFamily: "var(--font-mono)" }}
+            >
+              {s.slug}
+            </span>
           </div>
         </div>
       </div>
-      <div style={{ fontSize: 12.5, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1, wordBreak: "break-all" }}>{s.url}</div>
+      <div
+        style={{
+          fontSize: 12.5,
+          color: "var(--fg-muted)",
+          lineHeight: 1.5,
+          flex: 1,
+          wordBreak: "break-all",
+        }}
+      >
+        {s.url}
+      </div>
       <div style={{ display: "flex", gap: 8 }}>
-        <button className="btn btn-sm btn-outline" onClick={() => onToggle(s)} title={on ? "Disable" : "Enable"}>
-          {on ? <><Icons.CheckCircle size={14} /> Enabled</> : <>Disabled</>}
+        <button
+          className="btn btn-sm btn-outline"
+          onClick={() => onToggle(s)}
+          title={on ? "Disable" : "Enable"}
+        >
+          {on ? (
+            <>
+              <Icons.CheckCircle size={14} /> Enabled
+            </>
+          ) : (
+            <>Disabled</>
+          )}
         </button>
-        <button className="icon-btn" title="Edit" onClick={() => onEdit(s)}><Icons.Sliders size={15} /></button>
-        <button className="icon-btn" title="Remove" onClick={() => onRemove(s)}><Icons.X size={15} /></button>
+        <button className="icon-btn" onClick={() => onEdit(s)} title="Edit">
+          <Icons.Sliders size={15} />
+        </button>
+        <button className="icon-btn" onClick={() => onRemove(s)} title="Remove">
+          <Icons.X size={15} />
+        </button>
       </div>
     </div>
   );
@@ -72,24 +143,55 @@ function McpCatalogCard({ i, onAdd, onConnect }) {
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontWeight: 600, fontSize: 16, color: "var(--fg-primary)" }}>{i.name}</div>
           <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
-            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>MCP</span>
-            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>{i.category}</span>
-            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>{AUTH_LABEL[i.auth] || i.auth}</span>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>
+              MCP
+            </span>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>
+              {i.category}
+            </span>
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>
+              {AUTH_LABEL[i.auth] || i.auth}
+            </span>
           </div>
         </div>
       </div>
-      <div style={{ fontSize: 13, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1 }}>{i.desc}</div>
+      <div style={{ fontSize: 13, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1 }}>
+        {i.desc}
+      </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         {oauthConnectable ? (
-          <button className="btn btn-sm btn-outline" onClick={() => onConnect(i)}><Icons.Plug size={14} /> Connect</button>
+          <button className="btn btn-sm btn-outline" onClick={() => onConnect(i)}>
+            <Icons.Plug size={14} /> Connect
+          </button>
         ) : oauth ? (
-          <span className="btn btn-sm" title="This server needs a pre-registered OAuth app — use Docs to set it up" style={{ background: "var(--bg-muted)", color: "var(--fg-muted)", border: "1px solid var(--border-subtle)", cursor: "default" }}>
+          <span
+            className="btn btn-sm"
+            style={{
+              background: "var(--bg-muted)",
+              color: "var(--fg-muted)",
+              border: "1px solid var(--border-subtle)",
+              cursor: "default",
+            }}
+            title="This server needs a pre-registered OAuth app — use Docs to set it up"
+          >
             <Icons.Spark size={13} /> OAuth — soon
           </span>
         ) : (
-          <button className="btn btn-sm btn-outline" onClick={() => onAdd(i)}><Icons.Plus size={14} /> Add</button>
+          <button className="btn btn-sm btn-outline" onClick={() => onAdd(i)}>
+            <Icons.Plus size={14} /> Add
+          </button>
         )}
-        {i.docsUrl && <a className="btn btn-sm btn-ghost" href={i.docsUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "var(--fg-muted)" }}>Docs</a>}
+        {i.docsUrl && (
+          <a
+            className="btn btn-sm btn-ghost"
+            href={i.docsUrl}
+            rel="noreferrer"
+            style={{ fontSize: 12.5, color: "var(--fg-muted)" }}
+            target="_blank"
+          >
+            Docs
+          </a>
+        )}
       </div>
     </div>
   );
@@ -105,26 +207,47 @@ function ConnectorCard({ c, onConnect, onContact, onManage }) {
   // (Ampersand surfaces the disconnect/uninstall flow when already installed).
   const manageable = connected && !enterprise && c.ampersandName;
   return (
-    <div className={"card conn-card" + (connected ? " connected" : "")}>
+    <div className={"card conn-card" + (connected ? "connected" : "")}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <ConnLogo logo={c.logo} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontWeight: 600, fontSize: 16, color: "var(--fg-primary)" }}>{c.name}</div>
           <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
-            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>{c.cat}</span>
-            {enterprise && <span className="badge badge-enterprise" style={{ padding: "2px 8px", fontSize: 11 }}>Enterprise</span>}
+            <span className="badge" style={{ padding: "2px 8px", fontSize: 11 }}>
+              {c.cat}
+            </span>
+            {enterprise && (
+              <span className="badge badge-enterprise" style={{ padding: "2px 8px", fontSize: 11 }}>
+                Enterprise
+              </span>
+            )}
           </div>
         </div>
       </div>
-      <div style={{ fontSize: 13.5, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1 }}>{c.desc}</div>
+      <div style={{ fontSize: 13.5, color: "var(--fg-muted)", lineHeight: 1.5, flex: 1 }}>
+        {c.desc}
+      </div>
       <div>
         {connected ? (
           manageable ? (
-            <button className="btn btn-sm conn-manage" onClick={() => onManage(c)} title="Manage or disconnect">
-              <Icons.CheckCircle size={15} /> Connected <Icons.Sliders size={13} style={{ marginLeft: 2, opacity: 0.7 }} />
+            <button
+              className="btn btn-sm conn-manage"
+              onClick={() => onManage(c)}
+              title="Manage or disconnect"
+            >
+              <Icons.CheckCircle size={15} /> Connected{" "}
+              <Icons.Sliders size={13} style={{ marginLeft: 2, opacity: 0.7 }} />
             </button>
           ) : (
-            <span className="btn btn-sm" style={{ background: "var(--mint-glow-subtle)", color: "var(--fg-success)", border: "1px solid transparent", cursor: "default" }}>
+            <span
+              className="btn btn-sm"
+              style={{
+                background: "var(--mint-glow-subtle)",
+                color: "var(--fg-success)",
+                border: "1px solid transparent",
+                cursor: "default",
+              }}
+            >
               <Icons.CheckCircle size={15} /> Connected
             </span>
           )
@@ -150,22 +273,53 @@ function ConnectModal({ connector, amp, mode = "connect", onClose, onToast }) {
   const gref = ampersandGroupRef(orgId || amp.groupRef, userId, connector.scope) || amp.groupRef;
   const cref = connector.scope === "user" && userId ? userId : amp.consumerRef;
   return (
-    <div className="sheet-backdrop" style={{ alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div className="card" style={{ width: mode === "manage" ? "min(880px, 94vw)" : "min(560px, 92vw)", maxHeight: "90vh", display: "flex", flexDirection: "column", padding: 0 }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
+    <div
+      className="sheet-backdrop"
+      onClick={onClose}
+      style={{ alignItems: "center", justifyContent: "center" }}
+    >
+      <div
+        className="card"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: mode === "manage" ? "min(880px, 94vw)" : "min(560px, 92vw)",
+          maxHeight: "90vh",
+          display: "flex",
+          flexDirection: "column",
+          padding: 0,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "14px 16px",
+            borderBottom: "1px solid var(--border-subtle)",
+          }}
+        >
           <ConnLogo logo={connector.logo} size={32} />
-          <div style={{ flex: 1, fontWeight: 600, color: "var(--fg-primary)" }}>{mode === "manage" ? "Manage" : "Connect"} {connector.name}</div>
-          <button className="icon-btn" onClick={onClose}><Icons.X size={18} /></button>
+          <div style={{ flex: 1, fontWeight: 600, color: "var(--fg-primary)" }}>
+            {mode === "manage" ? "Manage" : "Connect"} {connector.name}
+          </div>
+          <button className="icon-btn" onClick={onClose}>
+            <Icons.X size={18} />
+          </button>
         </div>
         <div style={{ padding: 16, flex: 1, overflow: "auto" }}>
-          <Suspense fallback={<div style={{ padding: 24, textAlign: "center", color: "var(--fg-muted)" }}>Loading…</div>}>
+          <Suspense
+            fallback={
+              <div style={{ padding: 24, textAlign: "center", color: "var(--fg-muted)" }}>
+                Loading…
+              </div>
+            }
+          >
             <AmpersandConnect
-              integration={connector.ampersandName || connector.provider || connector.id}
-              project={amp.projectId}
               apiKey={amp.apiKey}
-              groupRef={gref}
               consumerRef={cref}
-              onToast={onToast}
+              groupRef={gref}
+              integration={connector.ampersandName || connector.provider || connector.id}
+              onDone={onClose}
               onInstalled={(id, config) =>
                 seedInstallation(id, config, {
                   integration: connector.ampersandName || connector.provider || connector.id,
@@ -173,7 +327,8 @@ function ConnectModal({ connector, amp, mode = "connect", onClose, onToast }) {
                   provider: connector.provider || connector.id,
                 })
               }
-              onDone={onClose}
+              onToast={onToast}
+              project={amp.projectId}
             />
           </Suspense>
         </div>
@@ -189,28 +344,45 @@ export function ConnectorsScreen({ connectors, onToast }) {
   const [conns, setConns] = useState(connectors);
   const [servers, setServers] = useState([]);
   const [mcpEditing, setMcpEditing] = useState(null); // null | "new" | server(edit) | {name,url}(prefill)
-  useEffect(() => { setConns(connectors); }, [connectors]);
-  useEffect(() => { setServers(listMcpServers()); }, []);
+  useEffect(() => {
+    setConns(connectors);
+  }, [connectors]);
+  useEffect(() => {
+    setServers(listMcpServers());
+  }, []);
   const amp = getAmpersand();
 
   const refreshServers = () => setServers(listMcpServers());
-  const onMcpSave = (s) => { saveMcpServer(s); setMcpEditing(null); refreshServers(); };
-  const onMcpRemove = (s) => { deleteMcpServer(s.id); refreshServers(); };
-  const onMcpToggle = (s) => { setMcpServerEnabled(s.id, !(s.enabled !== false)); refreshServers(); };
+  const onMcpSave = (s) => {
+    saveMcpServer(s);
+    setMcpEditing(null);
+    refreshServers();
+  };
+  const onMcpRemove = (s) => {
+    deleteMcpServer(s.id);
+    refreshServers();
+  };
+  const onMcpToggle = (s) => {
+    setMcpServerEnabled(s.id, !(s.enabled !== false));
+    refreshServers();
+  };
 
   // OAuth connect: open the provider consent in a popup; the callback posts the
   // resulting server config back, which we save to the registry.
   const onOauthConnect = (item) => {
-    const w = 520, h = 720;
+    const w = 520,
+      h = 720;
     const left = window.screenX + Math.max(0, (window.outerWidth - w) / 2);
     const top = window.screenY + Math.max(0, (window.outerHeight - h) / 2);
     const popup = window.open(
       `/api/mcp/oauth/start?url=${encodeURIComponent(item.url)}&name=${encodeURIComponent(item.name)}`,
       "mcp-oauth",
-      `width=${w},height=${h},left=${left},top=${top}`,
+      `width=${w},height=${h},left=${left},top=${top}`
     );
     const onMessage = (ev) => {
-      if (ev.origin !== window.location.origin || !ev.data || typeof ev.data !== "object") return;
+      if (ev.origin !== window.location.origin || !ev.data || typeof ev.data !== "object") {
+        return;
+      }
       if (ev.data.type === "mcp-oauth-success" && ev.data.server) {
         saveMcpServer(ev.data.server);
         refreshServers();
@@ -221,7 +393,12 @@ export function ConnectorsScreen({ connectors, onToast }) {
         cleanup();
       }
     };
-    const cleanup = () => { window.removeEventListener("message", onMessage); try { popup && popup.close(); } catch {} };
+    const cleanup = () => {
+      window.removeEventListener("message", onMessage);
+      try {
+        popup && popup.close();
+      } catch {}
+    };
     window.addEventListener("message", onMessage);
   };
 
@@ -229,18 +406,33 @@ export function ConnectorsScreen({ connectors, onToast }) {
   const refetch = () =>
     apiFetch("/api/connectors")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => { if (data) { setConnectors(data); setConns(getConnectors()); } })
+      .then((data) => {
+        if (data) {
+          setConnectors(data);
+          setConns(getConnectors());
+        }
+      })
       .catch(() => {});
 
   const onConnect = (c) => {
-    if (amp.configured && amp.apiKey) setConnecting({ connector: c, mode: "connect" });
-    else onToast("Ampersand isn't configured for this org yet — set sales_agent.ampersand_project_id / ampersand_api_key.", "info");
+    if (amp.configured && amp.apiKey) {
+      setConnecting({ connector: c, mode: "connect" });
+    } else {
+      onToast(
+        "Ampersand isn't configured for this org yet — set sales_agent.ampersand_project_id / ampersand_api_key.",
+        "info"
+      );
+    }
   };
   const onManage = (c) => {
-    if (amp.configured && amp.apiKey) setConnecting({ connector: c, mode: "manage" });
-    else onToast("Ampersand isn't configured for this org yet.", "info");
+    if (amp.configured && amp.apiKey) {
+      setConnecting({ connector: c, mode: "manage" });
+    } else {
+      onToast("Ampersand isn't configured for this org yet.", "info");
+    }
   };
-  const onContact = (c) => onToast(`${c.name} is an Enterprise connector — contact sales to enable it.`, "info");
+  const onContact = (c) =>
+    onToast(`${c.name} is an Enterprise connector — contact sales to enable it.`, "info");
 
   // One unified, searchable list: Ampersand integrations, your custom MCP
   // servers, then recommended MCP servers. Custom + recommended are tab-category
@@ -253,7 +445,11 @@ export function ConnectorsScreen({ connectors, onToast }) {
   const customList = showMcp ? servers.filter((s) => matches(s.name, s.url, s.slug)) : [];
   const addedUrls = new Set(servers.map((s) => (s.url || "").replace(/\/+$/, "")));
   const catalogList = showMcp
-    ? MCP_CATALOG.filter((i) => (!i.url || !addedUrls.has(i.url.replace(/\/+$/, ""))) && matches(i.name, i.desc, i.category))
+    ? MCP_CATALOG.filter(
+        (i) =>
+          !(i.url && addedUrls.has(i.url.replace(/\/+$/, ""))) &&
+          matches(i.name, i.desc, i.category)
+      )
     : [];
 
   const connectedCount = conns.filter((c) => c.connected).length;
@@ -262,56 +458,137 @@ export function ConnectorsScreen({ connectors, onToast }) {
   return (
     <div className="scroll" style={{ flex: 1 }}>
       <div className="screen-pad" style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 18 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            flexWrap: "wrap",
+            gap: 12,
+            marginBottom: 18,
+          }}
+        >
           <div style={{ flex: 1, minWidth: 220 }}>
-            <div className="eyebrow" style={{ marginBottom: 6 }}>Org tools</div>
+            <div className="eyebrow" style={{ marginBottom: 6 }}>
+              Org tools
+            </div>
             <h2 style={{ marginBottom: 6 }}>Connect your stack</h2>
-            <p style={{ fontSize: 14, color: "var(--fg-muted)", maxWidth: 520 }}>Wire up CRM, call recordings, notes and any MCP server. Every agent reasons over exactly what you connect here.</p>
+            <p style={{ fontSize: 14, color: "var(--fg-muted)", maxWidth: 520 }}>
+              Wire up CRM, call recordings, notes and any MCP server. Every agent reasons over
+              exactly what you connect here.
+            </p>
           </div>
-          <div className="badge badge-success" style={{ height: "fit-content", padding: "6px 12px" }}>
+          <div
+            className="badge badge-success"
+            style={{ height: "fit-content", padding: "6px 12px" }}
+          >
             <Icons.Check size={14} /> {connectedCount} of {connectors.length} connected
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 16,
+            flexWrap: "wrap",
+          }}
+        >
           <div className="attach-search" style={{ flex: 1, minWidth: 220, margin: 0 }}>
             <Icons.Search size={16} style={{ color: "var(--fg-muted)" }} />
-            <input placeholder="Search connectors…" value={query} onChange={(e) => setQuery(e.target.value)} />
-            {query && <button className="icon-btn" style={{ width: 26, height: 26 }} onClick={() => setQuery("")}><Icons.X size={15} /></button>}
+            <input
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search connectors…"
+              value={query}
+            />
+            {query && (
+              <button
+                className="icon-btn"
+                onClick={() => setQuery("")}
+                style={{ width: 26, height: 26 }}
+              >
+                <Icons.X size={15} />
+              </button>
+            )}
           </div>
-          <button className="btn btn-sm btn-primary" onClick={() => setMcpEditing("new")}><Icons.Plus size={15} /> Add MCP server</button>
+          <button className="btn btn-sm btn-primary" onClick={() => setMcpEditing("new")}>
+            <Icons.Plus size={15} /> Add MCP server
+          </button>
         </div>
 
-        <div className="scroll hide-scrollbar" style={{ overflowX: "auto", marginBottom: 20, paddingBottom: 2 }}>
+        <div
+          className="scroll hide-scrollbar"
+          style={{ overflowX: "auto", marginBottom: 20, paddingBottom: 2 }}
+        >
           <div className="pilltabs">
-            {CAT_TABS.map((t) => <button key={t} className={"pilltab" + (tab === t ? " active" : "")} onClick={() => setTab(t)}>{t}</button>)}
+            {CAT_TABS.map((t) => (
+              <button
+                className={"pilltab" + (tab === t ? "active" : "")}
+                key={t}
+                onClick={() => setTab(t)}
+              >
+                {t}
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="conn-grid">
-          {ampList.map((c) => <ConnectorCard key={c.id} c={c} onConnect={onConnect} onContact={onContact} onManage={onManage} />)}
-          {customList.map((s) => <McpServerCard key={s.id} s={s} onToggle={onMcpToggle} onEdit={setMcpEditing} onRemove={onMcpRemove} />)}
-          {catalogList.map((i) => <McpCatalogCard key={i.slug} i={i} onAdd={(item) => setMcpEditing({ name: item.name, url: item.url })} onConnect={onOauthConnect} />)}
+          {ampList.map((c) => (
+            <ConnectorCard
+              c={c}
+              key={c.id}
+              onConnect={onConnect}
+              onContact={onContact}
+              onManage={onManage}
+            />
+          ))}
+          {customList.map((s) => (
+            <McpServerCard
+              key={s.id}
+              onEdit={setMcpEditing}
+              onRemove={onMcpRemove}
+              onToggle={onMcpToggle}
+              s={s}
+            />
+          ))}
+          {catalogList.map((i) => (
+            <McpCatalogCard
+              i={i}
+              key={i.slug}
+              onAdd={(item) => setMcpEditing({ name: item.name, url: item.url })}
+              onConnect={onOauthConnect}
+            />
+          ))}
         </div>
 
         {totalShown === 0 && (
           <div style={{ textAlign: "center", color: "var(--fg-muted)", padding: "48px 16px" }}>
             <Icons.Search size={24} style={{ marginBottom: 10 }} />
-            <div style={{ fontSize: 14 }}>No connectors match “{query}”{tab !== "All" ? ` in ${tab}` : ""}.</div>
+            <div style={{ fontSize: 14 }}>
+              No connectors match “{query}”{tab === "All" ? "" : ` in ${tab}`}.
+            </div>
           </div>
         )}
       </div>
       {connecting && (
         <ConnectModal
-          connector={connecting.connector}
           amp={amp}
+          connector={connecting.connector}
           mode={connecting.mode}
-          onClose={() => { setConnecting(null); refetch(); }}
+          onClose={() => {
+            setConnecting(null);
+            refetch();
+          }}
           onToast={onToast}
         />
       )}
       {mcpEditing && (
-        <McpServerModal server={mcpEditing === "new" ? null : mcpEditing} onSave={onMcpSave} onClose={() => setMcpEditing(null)} />
+        <McpServerModal
+          onClose={() => setMcpEditing(null)}
+          onSave={onMcpSave}
+          server={mcpEditing === "new" ? null : mcpEditing}
+        />
       )}
     </div>
   );

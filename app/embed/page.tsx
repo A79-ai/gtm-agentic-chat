@@ -12,15 +12,15 @@
 // redirect/silent flow inside a cross-site iframe. The provider already uses
 // refresh-token rotation (`useRefreshTokens`), so renewal needs no 3P cookies.
 import { useEffect, useState } from "react";
+import { ChatScreen } from "@/components/gtm/chat";
 import {
-  AuthGate,
   AUTH0_ENABLED,
+  AuthGate,
   McpKeyProvider,
   useAuth0,
   useMcpKeyContext,
 } from "@/lib/gtm/auth";
 import { DataProvider } from "@/lib/gtm/data";
-import { ChatScreen } from "@/components/gtm/chat";
 
 function EmbedChat() {
   // Reuse the app shell's flex-column height (`.app` → `--app-h`/100dvh) so the
@@ -30,15 +30,15 @@ function EmbedChat() {
       <div className="app embed-app">
         <main className="main">
           <ChatScreen
-            seedAttached={[]}
-            resume={null}
             agent={null}
             onBack={null}
+            onNav={() => {}}
+            onNewChat={() => {}}
+            onOpenConversation={() => {}}
             onOpenRecord={() => {}}
             onToast={() => {}}
-            onOpenConversation={() => {}}
-            onNewChat={() => {}}
-            onNav={() => {}}
+            resume={null}
+            seedAttached={[]}
           />
         </main>
       </div>
@@ -62,14 +62,20 @@ function SignInPanel({ onSignIn }: { onSignIn: () => void }) {
 
 function EmbedAuthed() {
   const { key } = useMcpKeyContext();
-  if (!key) return null; // defer until the per-user key is minted
+  if (!key) {
+    return null; // defer until the per-user key is minted
+  }
   return <EmbedChat />;
 }
 
 function EmbedGate() {
   const { isLoading, isAuthenticated, loginWithPopup, loginWithRedirect } = useAuth0();
-  if (!AUTH0_ENABLED) return <EmbedChat />; // single-org dev
-  if (isLoading) return null;
+  if (!AUTH0_ENABLED) {
+    return <EmbedChat />; // single-org dev
+  }
+  if (isLoading) {
+    return null;
+  }
   if (!isAuthenticated) {
     const signIn = async () => {
       try {
@@ -97,7 +103,9 @@ export default function EmbedPage() {
   // from it. Origin-scoped both ways — outbound uses the referrer origin (the
   // framing page), inbound is checked against it. No '*'.
   useEffect(() => {
-    if (typeof window === "undefined" || window.parent === window) return;
+    if (typeof window === "undefined" || window.parent === window) {
+      return;
+    }
     let hostOrigin = "";
     try {
       hostOrigin = document.referrer ? new URL(document.referrer).origin : "";
@@ -105,7 +113,9 @@ export default function EmbedPage() {
       hostOrigin = "";
     }
     const onMsg = (e: MessageEvent) => {
-      if (hostOrigin && e.origin !== hostOrigin) return;
+      if (hostOrigin && e.origin !== hostOrigin) {
+        return;
+      }
       const d = (e.data || {}) as { type?: string; theme?: string };
       if (d.type === "ampup:host" && d.theme) {
         document.documentElement.dataset.theme = d.theme;
@@ -122,7 +132,9 @@ export default function EmbedPage() {
     }
     return () => window.removeEventListener("message", onMsg);
   }, []);
-  if (!mounted) return null;
+  if (!mounted) {
+    return null;
+  }
   return (
     <AuthGate>
       <EmbedGate />

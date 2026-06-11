@@ -1,7 +1,7 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import {
-  discoverOAuthProtectedResourceMetadata,
   discoverAuthorizationServerMetadata,
+  discoverOAuthProtectedResourceMetadata,
   registerClient,
 } from "@modelcontextprotocol/sdk/client/auth.js";
 import type {
@@ -25,13 +25,15 @@ const DEV_STATE_SECRET = crypto.randomBytes(32).toString("hex");
 
 function stateSecret(): string {
   const s = process.env.OAUTH_STATE_SECRET || process.env.AUTH_SESSION_SECRET;
-  if (s) return s;
+  if (s) {
+    return s;
+  }
   // Fail closed in production: never sign the OAuth state cookie with a
   // guessable, publicly-known constant (this is an open template).
   if (process.env.NODE_ENV === "production") {
     throw new Error(
       "OAUTH_STATE_SECRET must be set to use the OAuth MCP-connect flow in production " +
-        "(generate with `openssl rand -hex 32`).",
+        "(generate with `openssl rand -hex 32`)."
     );
   }
   return DEV_STATE_SECRET;
@@ -48,11 +50,17 @@ export function signState(payload: Record<string, unknown>): string {
 }
 
 export function verifyState<T = Record<string, unknown>>(token: string | undefined): T | null {
-  if (!token || !token.includes(".")) return null;
+  if (!(token && token.includes("."))) {
+    return null;
+  }
   const [body, sig] = token.split(".");
   const expected = b64url(crypto.createHmac("sha256", stateSecret()).update(body).digest());
-  if (sig.length !== expected.length) return null;
-  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+  if (sig.length !== expected.length) {
+    return null;
+  }
+  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
+    return null;
+  }
   try {
     return JSON.parse(Buffer.from(body.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString());
   } catch {
@@ -73,7 +81,9 @@ export async function discoverServer(mcpUrl: string): Promise<DiscoveredServer> 
   try {
     const prm = await discoverOAuthProtectedResourceMetadata(mcpUrl);
     asUrl = (prm.authorization_servers && prm.authorization_servers[0]) || new URL(mcpUrl).origin;
-    if (prm.resource) resource = String(prm.resource);
+    if (prm.resource) {
+      resource = String(prm.resource);
+    }
   } catch {
     // No protected-resource doc — fall back to the MCP origin as the AS.
     asUrl = new URL(mcpUrl).origin;
@@ -86,7 +96,7 @@ export async function discoverServer(mcpUrl: string): Promise<DiscoveredServer> 
 export async function registerOAuthClient(
   asUrl: string,
   metadata: AuthorizationServerMetadata | undefined,
-  redirectUrl: string,
+  redirectUrl: string
 ): Promise<OAuthClientInformationFull> {
   return registerClient(asUrl, {
     metadata,

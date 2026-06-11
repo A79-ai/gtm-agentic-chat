@@ -1,0 +1,83 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": [
+    "ultracite/biome/core",
+    "ultracite/biome/next",
+    "ultracite/biome/react"
+  ],
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "files": {
+    "includes": [
+      "**/*",
+      "!**/.next",
+      "!**/node_modules",
+      "!next-env.d.ts",
+      "!tsconfig.tsbuildinfo",
+      // Hand-tuned ES5 embed loader served verbatim to third-party sites.
+      "!public/widget.js",
+      // Leave CSS untouched: biome's property sorting reorders declarations and
+      // breaks shorthand/longhand cascade (e.g. the grid/height fallbacks).
+      "!**/*.css"
+    ]
+  },
+  "linter": {
+    "rules": {
+      // This codebase predates the linter. We keep ultracite's bug-catching rules
+      // (correctness / security / most suspicious) as errors, and relax the
+      // high-churn stylistic, a11y and complexity rules to a baseline we ratchet
+      // up over time rather than rewriting every component in one PR.
+      "a11y": {
+        "useButtonType": "off",
+        "noNoninteractiveElementInteractions": "off",
+        "noStaticElementInteractions": "off",
+        "useKeyWithClickEvents": "off",
+        "noLabelWithoutControl": "off",
+        "useSemanticElements": "off",
+        "noSvgWithoutTitle": "off"
+      },
+      "complexity": {
+        "useOptionalChain": "off",
+        "noForEach": "off",
+        "noExcessiveCognitiveComplexity": "off",
+        "useLiteralKeys": "off",
+        "noVoid": "off"
+      },
+      "correctness": {
+        "useExhaustiveDependencies": "off",
+        "noNestedComponentDefinitions": "off"
+      },
+      "performance": {
+        "useTopLevelRegex": "off",
+        "noImgElement": "off"
+      },
+      "style": {
+        "useTemplate": "off",
+        "noNestedTernary": "off",
+        "useConsistentTypeDefinitions": "off",
+        "useAtIndex": "off",
+        "useFilenamingConvention": "off",
+        "noNonNullAssertion": "off",
+        "noDescendingSpecificity": "off",
+        "noParameterAssign": "off",
+        "noExportedImports": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noEmptyBlockStatements": "off",
+        "noArrayIndexKey": "off",
+        "useIterableCallbackReturn": "off",
+        "noBitwiseOperators": "off",
+        // Pervasive, deliberate guard-call / ternary-statement idiom
+        // (`onChat && onChat(x)`, `set.has(k) ? set.delete(k) : set.add(k)`).
+        "noUnusedExpressions": "off",
+        // The Workflow DevKit requires `"use workflow"`/`"use step"` functions to
+        // be async even when they never await, so this rule fights the framework.
+        "useAwait": "off"
+      }
+    }
+  }
+}

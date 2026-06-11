@@ -15,8 +15,7 @@ Guidance:
 
 export const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT || DEFAULT_SYSTEM_PROMPT;
 
-export const WEB_SEARCH =
-  process.env.ENABLE_WEB_SEARCH === "true" ? { maxUses: 5 } : undefined;
+export const WEB_SEARCH = process.env.ENABLE_WEB_SEARCH === "true" ? { maxUses: 5 } : undefined;
 
 // Max tool-calling steps per turn before the agent must answer.
 export const MAX_STEPS = 30;

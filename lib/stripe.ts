@@ -7,8 +7,12 @@ let _stripe: Stripe | null = null;
 
 export function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) return null;
-  if (!_stripe) _stripe = new Stripe(key);
+  if (!key) {
+    return null;
+  }
+  if (!_stripe) {
+    _stripe = new Stripe(key);
+  }
   return _stripe;
 }
 
@@ -23,7 +27,9 @@ export function siteUrl(req: Request): string {
 
   // Browser-initiated checkout (same-origin fetch) carries the public origin.
   const origin = req.headers.get("origin");
-  if (origin) return strip(origin);
+  if (origin) {
+    return strip(origin);
+  }
 
   // No Origin header (e.g. server-side call): reconstruct from forwarded host.
   const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
@@ -32,7 +38,9 @@ export function siteUrl(req: Request): string {
     return `${proto}://${host}`;
   }
 
-  if (process.env.NEXT_PUBLIC_SITE_URL) return strip(process.env.NEXT_PUBLIC_SITE_URL);
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return strip(process.env.NEXT_PUBLIC_SITE_URL);
+  }
   return new URL(req.url).origin;
 }
 
@@ -40,7 +48,9 @@ export function siteUrl(req: Request): string {
 // (most recent) or create one. This is the "no DB" seam: Stripe is the store.
 export async function findOrCreateCustomer(stripe: Stripe, email: string, name?: string) {
   const existing = await stripe.customers.list({ email, limit: 1 });
-  if (existing.data[0]) return existing.data[0];
+  if (existing.data[0]) {
+    return existing.data[0];
+  }
   return stripe.customers.create({ email, name: name || undefined });
 }
 
@@ -55,13 +65,22 @@ type Status =
 export async function customerStatus(stripe: Stripe, email: string): Promise<Status> {
   const customers = await stripe.customers.list({ email, limit: 1 });
   const customer = customers.data[0];
-  if (!customer) return { state: "none" };
+  if (!customer) {
+    return { state: "none" };
+  }
   const subs = await stripe.subscriptions.list({ customer: customer.id, status: "all", limit: 10 });
   const sub = subs.data.find((s) => s.status === "active" || s.status === "trialing");
-  if (!sub) return { state: "none" };
+  if (!sub) {
+    return { state: "none" };
+  }
   if (sub.status === "trialing") {
     const endMs = (sub.trial_end || 0) * 1000;
-    return { state: "subscribed", plan: "pro", trialing: true, daysLeft: Math.max(0, Math.ceil((endMs - Date.now()) / 86_400_000)) };
+    return {
+      state: "subscribed",
+      plan: "pro",
+      trialing: true,
+      daysLeft: Math.max(0, Math.ceil((endMs - Date.now()) / 86_400_000)),
+    };
   }
   return { state: "subscribed", plan: "pro" };
 }

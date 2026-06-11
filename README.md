@@ -88,6 +88,37 @@ pnpm dev                     # http://localhost:3000
 The durable workflow runtime runs locally via the Workflow DevKit
 (`pnpm workflow:web` for the workflow dashboard).
 
+## Quality & tests
+
+```bash
+pnpm check       # Biome lint + format (ultracite preset)
+pnpm fix         # auto-fix lint + format
+pnpm typecheck   # tsc --noEmit
+pnpm build       # next build
+pnpm test        # Playwright e2e
+```
+
+CI (`.github/workflows/`) runs `check` + `typecheck` + `build` on every PR, plus
+the e2e suite.
+
+The e2e suite (`e2e/`) covers three flows and self-gates by target:
+
+- **chat** and **entity list-pages** run against a local single-org bench — `pnpm
+  test` boots `next dev` from `.env.e2e` (copy `.env.e2e.example`: an AmpUp MCP
+  URL + key for one org, overlays disabled) and drives the durable chat runtime
+  and the `/records/*` lists against live data.
+- **login** runs against a deployed multi-tenant app — point it at the deploy and
+  it asserts the Welcome CTAs hand off to Auth0 (no credentials needed):
+
+  ```bash
+  E2E_BASE_URL=https://your-app.vercel.app pnpm test
+  ```
+
+In CI the bench specs run when the `E2E_AMPUP_MCP_URL` / `E2E_AMPUP_MCP_API_KEY` /
+`E2E_AI_GATEWAY_API_KEY` secrets are set, and the login smoke runs when the
+`E2E_DEPLOY_URL` repo variable points at your deployment (both skip cleanly when
+unset).
+
 ## Notes / limits
 
 - **One org per deployment.** The MCP key in env scopes everything to one org.

@@ -2,22 +2,53 @@
 
 import { useEffect, useState } from "react";
 import { App } from "@/components/gtm/app";
-import { DataProvider } from "@/lib/gtm/data";
 import { ShareView } from "@/components/gtm/share-view";
-import { AuthGate, AUTH0_ENABLED, McpKeyProvider, useAuth0, useMcpKeyContext } from "@/lib/gtm/auth";
 import { Welcome } from "@/components/gtm/welcome";
+import {
+  AUTH0_ENABLED,
+  AuthGate,
+  McpKeyProvider,
+  useAuth0,
+  useMcpKeyContext,
+} from "@/lib/gtm/auth";
+import { DataProvider } from "@/lib/gtm/data";
 
 // Inner gate: reads Auth0 state (only valid inside AuthGate's provider) and
 // decides login vs app. When Auth0 is disabled it renders the app as before.
 function AuthError({ detail, onRetry }: { detail?: string; onRetry: () => void }) {
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0b0b0c", color: "#fff", padding: 24 }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#0b0b0c",
+        color: "#fff",
+        padding: 24,
+      }}
+    >
       <div style={{ maxWidth: 420, textAlign: "center" }}>
-        <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 10 }}>Sign-in didn&apos;t finish</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 10 }}>
+          Sign-in didn&apos;t finish
+        </h1>
         <p style={{ opacity: 0.65, fontSize: 14, lineHeight: 1.55, marginBottom: 22 }}>
-          We couldn&apos;t complete the login{detail ? ` (${detail})` : ""}. This usually clears up on a retry.
+          We couldn&apos;t complete the login{detail ? ` (${detail})` : ""}. This usually clears up
+          on a retry.
         </p>
-        <button onClick={onRetry} style={{ background: "#FFB712", color: "#1a1a1a", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 600, fontSize: 15, cursor: "pointer" }}>
+        <button
+          onClick={onRetry}
+          style={{
+            background: "#FFB712",
+            color: "#1a1a1a",
+            border: "none",
+            borderRadius: 10,
+            padding: "12px 24px",
+            fontWeight: 600,
+            fontSize: 15,
+            cursor: "pointer",
+          }}
+        >
           Try signing in again
         </button>
       </div>
@@ -36,7 +67,9 @@ function Gated() {
     );
   }
 
-  if (isLoading) return null;
+  if (isLoading) {
+    return null;
+  }
 
   // A failed callback (expired/replayed code, "invalid state", consent denied)
   // leaves us unauthenticated — either with an `error`, or rarely with the
@@ -51,15 +84,13 @@ function Gated() {
   if (!isAuthenticated) {
     return (
       <Welcome
+        // Skip the account-picker and go straight to Google.
+        onGoogle={() => loginWithRedirect({ authorizationParams: { connection: "google-oauth2" } })}
         onLogin={() => loginWithRedirect()}
         // The free-trial org disables the separate signup flow (screen_hint=signup
         // → "signup is disabled for organization"). New users are auto-provisioned
         // on first login, so both CTAs go to the same Universal Login.
         onSignup={() => loginWithRedirect()}
-        // Skip the account-picker and go straight to Google.
-        onGoogle={() =>
-          loginWithRedirect({ authorizationParams: { connection: "google-oauth2" } })
-        }
       />
     );
   }
@@ -76,15 +107,16 @@ function Gated() {
 function AuthedApp() {
   const { key } = useMcpKeyContext();
   const { user, logout } = useAuth0();
-  if (!key) return null;
+  if (!key) {
+    return null;
+  }
   return (
     <DataProvider>
       {/* App is a JS component; authUser/onAuth0Logout are consumed at runtime. */}
       <App
         {...({
           authUser: user,
-          onAuth0Logout: () =>
-            logout({ logoutParams: { returnTo: window.location.origin } }),
+          onAuth0Logout: () => logout({ logoutParams: { returnTo: window.location.origin } }),
         } as unknown as Record<string, never>)}
       />
     </DataProvider>
@@ -100,10 +132,14 @@ export default function Page() {
     setShareId(id);
     setMounted(true);
   }, []);
-  if (!mounted) return null;
+  if (!mounted) {
+    return null;
+  }
   // Public, read-only share link: render the transcript without the app, auth or
   // DataProvider — a recipient has no MCP key.
-  if (shareId) return <ShareView shareId={shareId} />;
+  if (shareId) {
+    return <ShareView shareId={shareId} />;
+  }
   return (
     <AuthGate>
       <Gated />

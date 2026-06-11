@@ -21,10 +21,18 @@ const s = (v: unknown): string => (v == null ? "" : String(v));
 
 // Map an AmpUp integration id to one of our connector brand logos.
 const LOGO: Record<string, string> = {
-  hubspot: "HubSpot", salesforce: "Salesforce", dynamicscrm: "Dynamics",
-  gong: "Gong", fireflies: "Fireflies", fathom: "Fathom", claricopilot: "Clari",
-  granola: "Granola", devrev: "DevRev", slack: "Slack",
-  google: "Google", microsoft: "Microsoft",
+  hubspot: "HubSpot",
+  salesforce: "Salesforce",
+  dynamicscrm: "Dynamics",
+  gong: "Gong",
+  fireflies: "Fireflies",
+  fathom: "Fathom",
+  claricopilot: "Clari",
+  granola: "Granola",
+  devrev: "DevRev",
+  slack: "Slack",
+  google: "Google",
+  microsoft: "Microsoft",
 };
 
 function apiBase(): string {
@@ -38,7 +46,9 @@ async function getJson(path: string, key: string): Promise<unknown> {
     const res = await fetch(`${apiBase()}${path}`, {
       headers: { Authorization: `Bearer ${key}` },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      return null;
+    }
     return await res.json();
   } catch {
     return null;
@@ -46,7 +56,9 @@ async function getJson(path: string, key: string): Promise<unknown> {
 }
 
 function configValue(configs: unknown, namespace: string, name: string): string {
-  if (!Array.isArray(configs)) return "";
+  if (!Array.isArray(configs)) {
+    return "";
+  }
   const c = (configs as Rec[]).find((x) => x.namespace === namespace && x.name === name);
   return c ? s(c.value) : "";
 }
@@ -58,7 +70,7 @@ export async function GET(req: Request) {
   const multiTenant = process.env.MULTI_TENANT === "true";
   // Multi-tenant: require a per-request key (no shared env fallback) so an
   // unauthenticated call 401s instead of serving one org's data.
-  const key = headerKey ?? (multiTenant ? "" : process.env.AMPUP_MCP_API_KEY ?? "");
+  const key = headerKey ?? (multiTenant ? "" : (process.env.AMPUP_MCP_API_KEY ?? ""));
   if (!key) {
     return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS });
   }
@@ -80,7 +92,9 @@ export async function GET(req: Request) {
   const connectedKeys = new Set<string>();
   for (const inst of installs) {
     for (const k of [inst.integration_id, inst.provider, inst.integration_name]) {
-      if (k) connectedKeys.add(s(k).toLowerCase());
+      if (k) {
+        connectedKeys.add(s(k).toLowerCase());
+      }
     }
   }
   const isConnected = (item: Rec) =>
@@ -102,9 +116,14 @@ export async function GET(req: Request) {
   // project's amp.yaml), not provider. Map provider -> name from the project.
   const providerToName: Record<string, string> = {};
   if (projectId && apiKey) {
-    const projInts = await fetch(`https://api.withampersand.com/v1/projects/${projectId}/integrations`, {
-      headers: { "X-Api-Key": apiKey },
-    }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const projInts = await fetch(
+      `https://api.withampersand.com/v1/projects/${projectId}/integrations`,
+      {
+        headers: { "X-Api-Key": apiKey },
+      }
+    )
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
     if (Array.isArray(projInts)) {
       for (const pi of projInts as Rec[]) {
         const prov = s(pi.provider).toLowerCase();
@@ -141,6 +160,6 @@ export async function GET(req: Request) {
       connectedCount: installs.length,
       connectors,
     },
-    { headers: CORS },
+    { headers: CORS }
   );
 }

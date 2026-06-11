@@ -1,13 +1,20 @@
 node_modules
 .next
 .vercel
+# Local env files (keep the *.example templates tracked).
 .env
-.env.local
+.env.*
+!.env.example
+!.env.e2e.example
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
 .swc
 .playwright-mcp/
-.playwright-mcp/
+# Playwright artifacts
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
 deploy-preview.sh
 deploy-prod.sh

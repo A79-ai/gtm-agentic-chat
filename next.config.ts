@@ -19,9 +19,7 @@ const nextConfig: NextConfig = {
   // (any path with a file extension), and the real /embed route untouched.
   async rewrites() {
     return {
-      beforeFiles: [
-        { source: "/((?!api/|_next/|embed|.*\\..*).*)", destination: "/" },
-      ],
+      beforeFiles: [{ source: "/((?!api/|_next/|embed|.*\\..*).*)", destination: "/" }],
     };
   },
   // Allow the /embed route to be framed by the allowlisted parent origins.

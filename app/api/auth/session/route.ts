@@ -1,10 +1,10 @@
 import {
-  verify,
-  readCookie,
-  googleConfigured,
   clearSessionCookie,
-  SESSION_COOKIE,
   type GoogleUser,
+  googleConfigured,
+  readCookie,
+  SESSION_COOKIE,
+  verify,
 } from "@/lib/googleAuth";
 
 // Current signed-in user (from the session cookie) + whether Google sign-in is

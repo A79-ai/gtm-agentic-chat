@@ -1,5 +1,5 @@
+import { type GoogleUser, readCookie, SESSION_COOKIE, verify } from "@/lib/googleAuth";
 import { getStripe, siteUrl } from "@/lib/stripe";
-import { verify, readCookie, SESSION_COOKIE, type GoogleUser } from "@/lib/googleAuth";
 
 export const maxDuration = 30;
 
@@ -9,14 +9,20 @@ export const maxDuration = 30;
 // (and cancel/modify) another customer's subscription.
 export async function POST(req: Request) {
   const stripe = getStripe();
-  if (!stripe) return Response.json({ error: "Stripe is not configured" }, { status: 501 });
+  if (!stripe) {
+    return Response.json({ error: "Stripe is not configured" }, { status: 501 });
+  }
 
   const user = verify<GoogleUser>(readCookie(req, SESSION_COOKIE));
-  if (!user?.email) return Response.json({ error: "sign in required" }, { status: 401 });
+  if (!user?.email) {
+    return Response.json({ error: "sign in required" }, { status: 401 });
+  }
 
   const customers = await stripe.customers.list({ email: user.email, limit: 1 });
   const customer = customers.data[0];
-  if (!customer) return Response.json({ error: "no customer for that account" }, { status: 404 });
+  if (!customer) {
+    return Response.json({ error: "no customer for that account" }, { status: 404 });
+  }
 
   const session = await stripe.billingPortal.sessions.create({
     customer: customer.id,
