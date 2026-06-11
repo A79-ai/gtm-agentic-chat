@@ -6,7 +6,7 @@ import { ampersandGroupRef, seedInstallation, useMcpKeyContext } from "@/lib/gtm
 import { getAmpersand, getConnectors } from "@/lib/gtm/data";
 import { Icons, LogoMark, Logos } from "./icons";
 
-const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
+const CalendarConnect = React.lazy(() => import("./CalendarConnect"));
 
 const ROLES = ["Account Executive", "SDR / BDR", "RevOps", "Sales Manager", "Founder", "Other"];
 const TEAM_SIZES = ["Just me", "2–10", "11–50", "51–200", "200+"];
@@ -204,11 +204,12 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
                   </div>
                 }
               >
-                <AmpersandConnect
+                <CalendarConnect
                   apiKey={amp.apiKey}
                   consumerRef={calConsumerRef}
                   groupRef={calGroupRef}
                   integration={googleIntegration()}
+                  module="calendar"
                   onDone={() => setCal("connected")}
                   onInstalled={(id, config) =>
                     seedInstallation(id, config, {
@@ -219,6 +220,7 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
                   }
                   onToast={() => {}}
                   project={amp.projectId}
+                  provider="google"
                 />
               </Suspense>
             </div>
