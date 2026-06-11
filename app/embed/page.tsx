@@ -93,6 +93,35 @@ export default function EmbedPage() {
   // Reads window/localStorage at mount; render client-only.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  // Widget handshake: announce ready to the embedding host and accept theme
+  // from it. Origin-scoped both ways — outbound uses the referrer origin (the
+  // framing page), inbound is checked against it. No '*'.
+  useEffect(() => {
+    if (typeof window === "undefined" || window.parent === window) return;
+    let hostOrigin = "";
+    try {
+      hostOrigin = document.referrer ? new URL(document.referrer).origin : "";
+    } catch {
+      hostOrigin = "";
+    }
+    const onMsg = (e: MessageEvent) => {
+      if (hostOrigin && e.origin !== hostOrigin) return;
+      const d = (e.data || {}) as { type?: string; theme?: string };
+      if (d.type === "ampup:host" && d.theme) {
+        document.documentElement.dataset.theme = d.theme;
+        document.documentElement.classList.toggle("dark", d.theme === "dark");
+      }
+    };
+    window.addEventListener("message", onMsg);
+    if (hostOrigin) {
+      try {
+        window.parent.postMessage({ type: "ampup:ready" }, hostOrigin);
+      } catch {
+        // Best-effort handshake.
+      }
+    }
+    return () => window.removeEventListener("message", onMsg);
+  }, []);
   if (!mounted) return null;
   return (
     <AuthGate>

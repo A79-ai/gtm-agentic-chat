@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AmpUp chat widget — demo host</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        margin: 0;
+        min-height: 100dvh;
+        background: #f5f5f4;
+        color: #1a1a1a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      main { max-width: 540px; text-align: center; }
+      h1 { font-size: 30px; margin: 0 0 12px; }
+      p { color: #555; line-height: 1.6; }
+      code {
+        display: inline-block;
+        background: #eceae7;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Demo host page</h1>
+      <p>
+        This page is a stand-in for a customer's website. It embeds the AmpUp GTM
+        chat with a single script tag — click the launcher in the bottom-right to
+        open the chat over your CRM, calls and notes.
+      </p>
+      <code>&lt;script src="/widget.js" data-theme="dark" async&gt;&lt;/script&gt;</code>
+    </main>
+    <!-- The widget: one tag, served from the app's own origin. -->
+    <script src="/widget.js" data-theme="dark" async></script>
+  </body>
+</html>
