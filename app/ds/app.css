@@ -629,3 +629,12 @@ select.create-input { cursor: pointer; appearance: none; background-image: linea
 .msg-agent .bubble td:not(:first-child) { border-left: 1px solid var(--border-subtle); }
 .msg-agent .bubble tbody tr:last-child td { border-bottom: none; }
 .msg-agent .bubble tbody tr:nth-child(even) td { background: color-mix(in oklab, var(--bg-muted) 30%, transparent); }
+
+/* ============================================================
+   Embed — chrome-less chat surface (/embed route, iframe/widget)
+   ============================================================ */
+.embed-app .main { padding-bottom: 0; }
+.embed-signin { height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--bg-page); }
+.embed-signin-card { text-align: center; max-width: 360px; }
+.embed-signin-card h1 { font-size: 22px; font-weight: 600; margin: 0 0 10px; color: var(--fg-primary); }
+.embed-signin-card p { font-size: 14px; color: var(--fg-muted); line-height: 1.55; margin: 0 0 22px; }
