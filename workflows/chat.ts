@@ -12,7 +12,7 @@ import {
 import { defineHook, getWritable } from "workflow";
 import { MAX_STEPS, SYSTEM_PROMPT, WEB_SEARCH } from "@/lib/config";
 import type { McpToolDef } from "@/lib/mcp";
-import { resolveModel } from "@/lib/model";
+import { type LlmOpts, resolveModel } from "@/lib/model";
 import { buildServerTools } from "@/lib/serverTools";
 
 /**
@@ -117,11 +117,15 @@ export async function conversationWorkflow(
   first: UIMessage,
   customServers: ServerCfg[] = [],
   systemPrompt?: string,
-  includeAmpup = true
+  includeAmpup = true,
+  llmOpts?: LlmOpts
 ) {
   "use workflow";
 
-  const { model, provider } = resolveModel();
+  // Model is fixed for the conversation (resolved at start, replayed from the
+  // persisted run input). A user's BYO key wins; otherwise the operator env key
+  // — the route only allows that for internal/Pro callers.
+  const { model, provider } = resolveModel(llmOpts);
   const writable = getWritable<UIMessageChunk>();
   const history: ModelMessage[] = [];
   const instructions = systemPrompt && systemPrompt.trim() ? systemPrompt : SYSTEM_PROMPT;

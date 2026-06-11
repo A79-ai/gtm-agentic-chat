@@ -1,5 +1,125 @@
+import { useState } from "react";
+import { clearLlmKey, getLlmKey, LLM_PROVIDERS, setLlmKey } from "@/lib/gtm/llmKey";
 import { roleBadgeStyle, roleMeta } from "@/lib/gtm/roles";
 import { Icons } from "./icons";
+
+function providerLabel(id) {
+  return LLM_PROVIDERS.find((p) => p.id === id)?.label || id;
+}
+
+function ApiKeysPanel() {
+  const saved = getLlmKey();
+  const [provider, setProvider] = useState(saved?.provider || "anthropic");
+  const [key, setKey] = useState("");
+  const [model, setModel] = useState(saved?.model || "");
+  const [status, setStatus] = useState(
+    saved ? `Using your ${providerLabel(saved.provider)} key for chat.` : ""
+  );
+  const meta = LLM_PROVIDERS.find((p) => p.id === provider) || LLM_PROVIDERS[0];
+
+  const save = () => {
+    if (!key.trim()) {
+      setStatus("Enter a key first.");
+      return;
+    }
+    setLlmKey({ provider, key: key.trim(), model: model.trim() });
+    setKey("");
+    setStatus(`Saved — chat now uses your ${meta.label} key.`);
+  };
+  const clear = () => {
+    clearLlmKey();
+    setModel("");
+    setStatus("Cleared. Chat falls back to the workspace key (internal & Pro only).");
+  };
+
+  const labelStyle = {
+    fontSize: 11.5,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    color: "var(--fg-muted)",
+    marginBottom: 4,
+    display: "block",
+  };
+  const inputStyle = {
+    width: "100%",
+    padding: "9px 11px",
+    borderRadius: 8,
+    border: "1px solid var(--border-subtle)",
+    background: "var(--bg-elevated)",
+    color: "var(--fg-primary)",
+    fontSize: 14,
+  };
+
+  return (
+    <div className="card" style={{ padding: 22, marginTop: 18 }}>
+      <h3 style={{ marginBottom: 4 }}>API keys</h3>
+      <p style={{ fontSize: 13.5, color: "var(--fg-muted)", marginBottom: 16 }}>
+        Bring your own LLM key for chat. It's stored only in this browser and sent directly with
+        your requests — never saved on our servers. Internal &amp; Pro users can chat on the
+        workspace key without one.
+      </p>
+
+      <div style={{ display: "grid", gap: 14, maxWidth: 440 }}>
+        <div>
+          <span style={labelStyle}>Provider</span>
+          <select onChange={(e) => setProvider(e.target.value)} style={inputStyle} value={provider}>
+            {LLM_PROVIDERS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <span style={labelStyle}>API key {saved ? "(a key is saved)" : ""}</span>
+          <input
+            onChange={(e) => setKey(e.target.value)}
+            placeholder={saved ? "•••••••• — enter a new key to replace" : meta.placeholder}
+            style={inputStyle}
+            type="password"
+            value={key}
+          />
+          <a
+            href={meta.keysUrl}
+            rel="noreferrer"
+            style={{
+              fontSize: 12.5,
+              color: "var(--accent)",
+              marginTop: 6,
+              display: "inline-block",
+            }}
+            target="_blank"
+          >
+            Get a {meta.label} key →
+          </a>
+        </div>
+
+        <div>
+          <span style={labelStyle}>Model (optional)</span>
+          <input
+            onChange={(e) => setModel(e.target.value)}
+            placeholder={meta.defaultModel}
+            style={inputStyle}
+            value={model}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <button className="btn btn-primary" onClick={save} type="button">
+            Save key
+          </button>
+          <button className="btn" onClick={clear} type="button">
+            Clear
+          </button>
+          {status ? (
+            <span style={{ fontSize: 12.5, color: "var(--fg-muted)" }}>{status}</span>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function initials(name) {
   return (
@@ -107,6 +227,8 @@ export function ProfileScreen({ me, authUser }) {
           <Field label="Sign-ins" value={loading ? "…" : String(me?.login_count ?? 0)} />
         </div>
       </div>
+
+      <ApiKeysPanel />
     </div>
   );
 }
