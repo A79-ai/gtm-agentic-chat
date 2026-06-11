@@ -25,11 +25,17 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const transcript = body?.transcript;
   if (!transcript || typeof transcript !== "object" || !Array.isArray(transcript.messages)) {
-    return Response.json({ error: "transcript.messages is required" }, { status: 400, headers: CORS });
+    return Response.json(
+      { error: "transcript.messages is required" },
+      { status: 400, headers: CORS }
+    );
   }
   const json = JSON.stringify(transcript);
   if (json.length > MAX_BYTES) {
-    return Response.json({ error: "transcript too large to share" }, { status: 413, headers: CORS });
+    return Response.json(
+      { error: "transcript too large to share" },
+      { status: 413, headers: CORS }
+    );
   }
   const run = await start(shareWorkflow, [json]);
   return Response.json({ id: run.runId }, { headers: CORS });

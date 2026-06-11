@@ -1,19 +1,19 @@
 import { DurableAgent } from "@workflow/ai/agent";
-import { getWritable, defineHook } from "workflow";
 import {
-  stepCountIs,
-  jsonSchema,
-  tool,
   convertToModelMessages,
+  jsonSchema,
   type ModelMessage,
+  stepCountIs,
   type ToolSet,
+  tool,
   type UIMessage,
   type UIMessageChunk,
 } from "ai";
+import { defineHook, getWritable } from "workflow";
+import { MAX_STEPS, SYSTEM_PROMPT, WEB_SEARCH } from "@/lib/config";
+import type { McpToolDef } from "@/lib/mcp";
 import { resolveModel } from "@/lib/model";
 import { buildServerTools } from "@/lib/serverTools";
-import { SYSTEM_PROMPT, WEB_SEARCH, MAX_STEPS } from "@/lib/config";
-import type { McpToolDef } from "@/lib/mcp";
 
 /**
  * One durable run per CONVERSATION (Vercel's reference pattern for chat on the
@@ -72,7 +72,7 @@ async function discoverToolsStep(server: ServerCfg): Promise<McpToolDef[]> {
 async function callMcpStep(
   server: ServerCfg,
   bareName: string,
-  args: Record<string, unknown>,
+  args: Record<string, unknown>
 ): Promise<{ ok: boolean; content: string }> {
   "use step";
   const { callServerTool } = await import("../lib/mcp");
@@ -104,8 +104,7 @@ function buildMcpTools(discovered: Discovered[]): ToolSet {
             value: (value ?? {}) as Record<string, unknown>,
           }),
         }),
-        execute: async (args: Record<string, unknown>) =>
-          callMcpStep(cfg, t.name, args),
+        execute: async (args: Record<string, unknown>) => callMcpStep(cfg, t.name, args),
       });
     }
   }
@@ -118,15 +117,14 @@ export async function conversationWorkflow(
   first: UIMessage,
   customServers: ServerCfg[] = [],
   systemPrompt?: string,
-  includeAmpup: boolean = true,
+  includeAmpup = true
 ) {
   "use workflow";
 
   const { model, provider } = resolveModel();
   const writable = getWritable<UIMessageChunk>();
   const history: ModelMessage[] = [];
-  const instructions =
-    systemPrompt && systemPrompt.trim() ? systemPrompt : SYSTEM_PROMPT;
+  const instructions = systemPrompt && systemPrompt.trim() ? systemPrompt : SYSTEM_PROMPT;
 
   // Server set is fixed at conversation start. Discover each server's tools once
   // and reuse across turns. The ampup server's token is re-minted per turn, so
@@ -144,15 +142,10 @@ export async function conversationWorkflow(
 
   // Rebuild the agent each turn so the ampup tool closures capture THIS turn's
   // (freshly re-minted) mcpToken. Custom-server cfgs are stable.
-  const processTurn = async (
-    message: UIMessage,
-    turnToken: string | undefined,
-  ) => {
+  const processTurn = async (message: UIMessage, turnToken: string | undefined) => {
     history.push(...(await convertToModelMessages([message])));
     const turnDiscovered = discovered.map((d) =>
-      d.slug === AMPUP_SLUG
-        ? { ...d, cfg: { slug: AMPUP_SLUG, token: turnToken ?? mcpToken } }
-        : d,
+      d.slug === AMPUP_SLUG ? { ...d, cfg: { slug: AMPUP_SLUG, token: turnToken ?? mcpToken } } : d
     );
     const agent = new DurableAgent({
       model,

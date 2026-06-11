@@ -17,10 +17,7 @@ export function OPTIONS() {
  * Public, unauthenticated fetch of a shared transcript by its share id (the
  * durable run id). Returns the redacted projection stored by POST /api/share.
  */
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const run = getRun(id);
   if (!(await run.exists)) {

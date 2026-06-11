@@ -33,14 +33,16 @@ function withTimeout<T>(p: Promise<T>, label: string): Promise<T> {
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(
       () => reject(new Error(`${label} timed out after ${MCP_TIMEOUT_MS}ms`)),
-      MCP_TIMEOUT_MS,
+      MCP_TIMEOUT_MS
     );
   });
   return Promise.race([p, timeout]).finally(() => clearTimeout(timer)) as Promise<T>;
 }
 
 function headersFor(server: McpServer): Record<string, string> {
-  if (!server.token) return {};
+  if (!server.token) {
+    return {};
+  }
   const header =
     server.authHeader && server.authHeader.trim() && server.authHeader !== "Authorization"
       ? server.authHeader.trim()
@@ -50,7 +52,9 @@ function headersFor(server: McpServer): Record<string, string> {
 }
 
 async function connect(server: McpServer): Promise<Client> {
-  if (!server.url) throw new Error(`MCP server "${server.slug}" has no url`);
+  if (!server.url) {
+    throw new Error(`MCP server "${server.slug}" has no url`);
+  }
   const transport = new StreamableHTTPClientTransport(new URL(server.url), {
     requestInit: { headers: headersFor(server) },
   });
@@ -81,13 +85,13 @@ export async function listServerTools(server: McpServer): Promise<McpToolDef[]> 
 export async function callServerTool(
   server: McpServer,
   name: string,
-  args: Record<string, unknown>,
+  args: Record<string, unknown>
 ): Promise<{ ok: boolean; content: string }> {
   const client = await connect(server);
   try {
     const res = await withTimeout(
       client.callTool({ name, arguments: args ?? {} }),
-      `MCP tool "${name}"`,
+      `MCP tool "${name}"`
     );
     const parts = (res.content ?? []) as Array<{ type: string; text?: string }>;
     const content = parts
@@ -104,7 +108,9 @@ export async function callServerTool(
 function ampupServer(apiKey?: string): McpServer {
   const url = process.env.AMPUP_MCP_URL;
   const key = apiKey || process.env.AMPUP_MCP_API_KEY;
-  if (!url || !key) throw new Error("AMPUP_MCP_URL / AMPUP_MCP_API_KEY not set");
+  if (!(url && key)) {
+    throw new Error("AMPUP_MCP_URL / AMPUP_MCP_API_KEY not set");
+  }
   return { slug: "ampup", url, token: key };
 }
 
@@ -117,7 +123,7 @@ export function listAmpupTools(apiKey?: string): Promise<McpToolDef[]> {
 export function callAmpupTool(
   name: string,
   args: Record<string, unknown>,
-  apiKey?: string,
+  apiKey?: string
 ): Promise<{ ok: boolean; content: string }> {
   return callServerTool(ampupServer(apiKey), name, args ?? {});
 }

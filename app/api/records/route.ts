@@ -25,11 +25,15 @@ function parse(content: string): unknown {
 }
 
 function itemsOf(parsed: unknown): Rec[] {
-  if (Array.isArray(parsed)) return parsed as Rec[];
+  if (Array.isArray(parsed)) {
+    return parsed as Rec[];
+  }
   if (parsed && typeof parsed === "object") {
     const o = parsed as Rec;
     for (const k of ["items", "tasks", "meetings", "contacts", "results"]) {
-      if (Array.isArray(o[k])) return o[k] as Rec[];
+      if (Array.isArray(o[k])) {
+        return o[k] as Rec[];
+      }
     }
   }
   return [];
@@ -38,9 +42,11 @@ function itemsOf(parsed: unknown): Rec[] {
 async function list(name: string, args: Rec, key?: string): Promise<Rec[]> {
   try {
     const res = await callAmpupTool(name, args, key);
-    if (!res.ok) return [];
+    if (!res.ok) {
+      return [];
+    }
     return itemsOf(parse(res.content)).map((r) =>
-      r && typeof r === "object" && "task" in r ? (r.task as Rec) : r,
+      r && typeof r === "object" && "task" in r ? (r.task as Rec) : r
     );
   } catch {
     return [];
@@ -49,9 +55,15 @@ async function list(name: string, args: Rec, key?: string): Promise<Rec[]> {
 
 function money(n: unknown): string {
   const v = typeof n === "number" ? n : Number(n);
-  if (!v || Number.isNaN(v)) return "";
-  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(v % 1_000_000 ? 1 : 0)}M`;
-  if (v >= 1_000) return `$${Math.round(v / 1_000)}K`;
+  if (!v || Number.isNaN(v)) {
+    return "";
+  }
+  if (v >= 1_000_000) {
+    return `$${(v / 1_000_000).toFixed(v % 1_000_000 ? 1 : 0)}M`;
+  }
+  if (v >= 1000) {
+    return `$${Math.round(v / 1000)}K`;
+  }
   return `$${v}`;
 }
 
@@ -70,7 +82,10 @@ export async function GET(req: Request) {
   }
   const key = headerKey ?? (multiTenant ? undefined : process.env.AMPUP_MCP_API_KEY);
   if (!key) {
-    return Response.json({ error: "AMPUP_MCP_API_KEY not configured" }, { status: 401, headers: CORS });
+    return Response.json(
+      { error: "AMPUP_MCP_API_KEY not configured" },
+      { status: 401, headers: CORS }
+    );
   }
 
   const [rawAccounts, rawDeals, rawMeetings, rawTasks] = await Promise.all([
@@ -78,14 +93,20 @@ export async function GET(req: Request) {
     list("list_opportunities", { limit: 200 }, key),
     // Scope to the signed-in user in multi-tenant (matches /api/list + /api/counts
     // so the bulk store doesn't carry other users' meetings).
-    list("list_meetings", { limit: 50, only_my_meetings: process.env.MULTI_TENANT === "true" }, key),
+    list(
+      "list_meetings",
+      { limit: 50, only_my_meetings: process.env.MULTI_TENANT === "true" },
+      key
+    ),
     list("list_tasks", { limit: 200 }, key),
   ]);
 
   const owners = new Map<string, Rec>();
   const noteOwner = (id: unknown, name: unknown) => {
     const oid = s(id);
-    if (!oid) return;
+    if (!oid) {
+      return;
+    }
     if (!owners.has(oid)) {
       owners.set(oid, {
         id: oid,
@@ -132,7 +153,9 @@ export async function GET(req: Request) {
       accountId: s(d.account_id),
       accountName: s(d.account_name),
       ownerId: s(d.owner_id),
-      contactIds: Array.isArray(d.contacts) ? (d.contacts as Rec[]).map((c) => s(c.id)).filter(Boolean) : [],
+      contactIds: Array.isArray(d.contacts)
+        ? (d.contacts as Rec[]).map((c) => s(c.id)).filter(Boolean)
+        : [],
       health: "",
       tasksOpen: d.tasks_open,
     };
@@ -145,20 +168,33 @@ export async function GET(req: Request) {
       type: "meeting",
       name: s(m.name) || s(m.title) || s(m.subject) || "Meeting",
       date: (s(m.scheduled_at) || s(m.date) || s(m.start_time)).slice(0, 10),
-      durationMin: typeof m.duration_minutes === "number" ? m.duration_minutes : typeof m.duration_min === "number" ? m.duration_min : "",
+      durationMin:
+        typeof m.duration_minutes === "number"
+          ? m.duration_minutes
+          : typeof m.duration_min === "number"
+            ? m.duration_min
+            : "",
       source: s(m.source) || s(m.provider),
       accountId: s(m.account_id),
       dealId: s(m.opportunity_id) || s(m.deal_id),
       status: s(m.status),
       attendeeContactIds: [],
       ownerId: s(m.owner_id),
-      summary: s(m.summary) || s(m.overview) || (m.deal && typeof m.deal === "object" ? `${s((m.deal as Rec).name)} · ${s((m.deal as Rec).stage)}` : ""),
+      summary:
+        s(m.summary) ||
+        s(m.overview) ||
+        (m.deal && typeof m.deal === "object"
+          ? `${s((m.deal as Rec).name)} · ${s((m.deal as Rec).stage)}`
+          : ""),
     };
   });
 
   // list_tasks carries no owner; `producer` records where the task came from.
   const tasks = rawTasks.map((t, i) => {
-    const deal = Array.isArray(t.associated_deal_ids) && t.associated_deal_ids.length ? s((t.associated_deal_ids as unknown[])[0]) : s(t.opportunity_id);
+    const deal =
+      Array.isArray(t.associated_deal_ids) && t.associated_deal_ids.length
+        ? s((t.associated_deal_ids as unknown[])[0])
+        : s(t.opportunity_id);
     return {
       id: s(t.id) || `task-${i}`,
       type: "task",
@@ -176,13 +212,24 @@ export async function GET(req: Request) {
   // Count OPEN deals per owner (exclude closed-won / closed-lost stages).
   const isOpenStage = (stage: string) => !/closed|won|lost/i.test(stage);
   for (const d of deals) {
-    if (!isOpenStage(d.stage)) continue;
+    if (!isOpenStage(d.stage)) {
+      continue;
+    }
     const o = owners.get(d.ownerId as string);
-    if (o) (o.openDeals as number)++;
+    if (o) {
+      (o.openDeals as number)++;
+    }
   }
 
   return Response.json(
-    { account: accounts, deal: deals, meeting: meetings, task: tasks, contact: [], owner: [...owners.values()] },
-    { headers: CORS },
+    {
+      account: accounts,
+      deal: deals,
+      meeting: meetings,
+      task: tasks,
+      contact: [],
+      owner: [...owners.values()],
+    },
+    { headers: CORS }
   );
 }

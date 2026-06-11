@@ -1,7 +1,7 @@
-import { start, getRun } from "workflow/api";
 import { createUIMessageStreamResponse, type UIMessage } from "ai";
-import { conversationWorkflow, turnHook } from "@/workflows/chat";
+import { getRun, start } from "workflow/api";
 import { isBlockedUrl } from "@/lib/ssrf";
+import { conversationWorkflow, turnHook } from "@/workflows/chat";
 
 export const maxDuration = 300;
 
@@ -12,7 +12,7 @@ if (process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID && process.env.MULTI_TENANT !== "tru
   console.warn(
     "[gtm] NEXT_PUBLIC_AUTH0_CLIENT_ID is set but MULTI_TENANT!=true — data routes " +
       "will fall back to the shared AMPUP_MCP_API_KEY (per-user scoping bypassed). " +
-      "Set MULTI_TENANT=true for multi-tenant deployments.",
+      "Set MULTI_TENANT=true for multi-tenant deployments."
   );
 }
 
@@ -20,8 +20,7 @@ const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 const CORS = {
   "Access-Control-Allow-Origin": ALLOW_ORIGIN,
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "content-type, x-ampup-mcp-key, authorization, x-workflow-run-id",
+  "Access-Control-Allow-Headers": "content-type, x-ampup-mcp-key, authorization, x-workflow-run-id",
   "Access-Control-Expose-Headers": "x-workflow-run-id",
 };
 
@@ -57,20 +56,30 @@ type CustomServer = {
 // Sanitize the client-supplied custom MCP servers: a clean slug, an http(s)
 // url, and nothing else (slug "ampup" is reserved for the built-in server).
 function normalizeServers(servers: IncomingServer[] | undefined): CustomServer[] {
-  if (!Array.isArray(servers)) return [];
+  if (!Array.isArray(servers)) {
+    return [];
+  }
   const seen = new Set<string>(["ampup"]);
   const out: CustomServer[] = [];
   for (const s of servers) {
     const url = (s?.url || "").trim();
-    if (!/^https?:\/\//i.test(url)) continue;
-    if (isBlockedUrl(url)) continue; // drop SSRF targets (private/reserved hosts)
+    if (!/^https?:\/\//i.test(url)) {
+      continue;
+    }
+    if (isBlockedUrl(url)) {
+      continue; // drop SSRF targets (private/reserved hosts)
+    }
     let slug = (s?.slug || s?.name || "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 40);
-    if (!slug) slug = `srv-${out.length + 1}`;
-    while (seen.has(slug)) slug = `${slug}-2`;
+    if (!slug) {
+      slug = `srv-${out.length + 1}`;
+    }
+    while (seen.has(slug)) {
+      slug = `${slug}-2`;
+    }
     seen.add(slug);
     out.push({
       slug,
@@ -109,16 +118,16 @@ export async function POST(req: Request) {
   if (multiTenant && !mcpToken) {
     return Response.json({ error: "unauthorized" }, { status: 401, headers: { ...CORS } });
   }
-  if (!mcpToken && !process.env.AMPUP_MCP_API_KEY) {
+  if (!(mcpToken || process.env.AMPUP_MCP_API_KEY)) {
     return Response.json(
       { error: "AMPUP_MCP_API_KEY is not configured" },
-      { status: 401, headers: { ...CORS } },
+      { status: 401, headers: { ...CORS } }
     );
   }
-  if (!conversationId || !message) {
+  if (!(conversationId && message)) {
     return Response.json(
       { error: "conversationId and message are required" },
-      { status: 400, headers: { ...CORS } },
+      { status: 400, headers: { ...CORS } }
     );
   }
 

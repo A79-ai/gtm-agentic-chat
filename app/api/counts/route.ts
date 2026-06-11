@@ -24,17 +24,23 @@ function keyOf(req: Request): string | undefined {
     undefined;
   // Multi-tenant: never fall back to the shared env key. Without a per-request
   // key the route 401s instead of serving one org's data to everyone.
-  if (process.env.MULTI_TENANT === "true") return headerKey;
+  if (process.env.MULTI_TENANT === "true") {
+    return headerKey;
+  }
   return headerKey ?? process.env.AMPUP_MCP_API_KEY ?? undefined;
 }
 
 async function countOf(type: string, key: string): Promise<number | null> {
   const spec = LIST_TOOL[type];
-  if (!spec) return null;
+  if (!spec) {
+    return null;
+  }
   try {
     const args: Rec = { limit: 1, offset: 0, ...(spec.args || {}) };
     const res = await callAmpupTool(spec.tool, args, key);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      return null;
+    }
     return pageOf(JSON.parse(res.content)).total;
   } catch {
     return null;
@@ -43,12 +49,18 @@ async function countOf(type: string, key: string): Promise<number | null> {
 
 export async function GET(req: Request) {
   const key = keyOf(req);
-  if (!key) return Response.json({ error: "no key" }, { status: 401, headers: CORS });
+  if (!key) {
+    return Response.json({ error: "no key" }, { status: 401, headers: CORS });
+  }
 
   const types = Object.keys(LIST_TOOL);
   const totals = await Promise.all(types.map((t) => countOf(t, key)));
   const counts: Record<string, number> = {};
-  types.forEach((t, i) => { if (typeof totals[i] === "number") counts[t] = totals[i] as number; });
+  types.forEach((t, i) => {
+    if (typeof totals[i] === "number") {
+      counts[t] = totals[i] as number;
+    }
+  });
 
   return Response.json({ counts }, { headers: CORS });
 }

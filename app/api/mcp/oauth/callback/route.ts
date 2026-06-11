@@ -1,8 +1,8 @@
 import {
-  exchangeAuthorization,
   discoverAuthorizationServerMetadata,
+  exchangeAuthorization,
 } from "@modelcontextprotocol/sdk/client/auth.js";
-import { OAUTH_COOKIE, verifyState, callbackUrl } from "@/lib/mcpOauth";
+import { callbackUrl, OAUTH_COOKIE, verifyState } from "@/lib/mcpOauth";
 
 // Finish the OAuth flow: validate the signed state cookie, exchange the code for
 // tokens, and hand the resulting server config back to the opener window via
@@ -48,9 +48,13 @@ export async function GET(req: Request) {
     name: string;
   }>(raw ? raw.slice(OAUTH_COOKIE.length + 1) : undefined);
 
-  if (oauthError) return page({ type: "mcp-oauth-error", error: oauthError });
-  if (!data) return page({ type: "mcp-oauth-error", error: "Session expired — please try again." });
-  if (!code || !state || state !== data.state) {
+  if (oauthError) {
+    return page({ type: "mcp-oauth-error", error: oauthError });
+  }
+  if (!data) {
+    return page({ type: "mcp-oauth-error", error: "Session expired — please try again." });
+  }
+  if (!(code && state) || state !== data.state) {
     return page({ type: "mcp-oauth-error", error: "Invalid authorization response." });
   }
 

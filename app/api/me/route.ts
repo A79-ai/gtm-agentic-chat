@@ -22,7 +22,7 @@ export async function GET(req: Request) {
   const key =
     req.headers.get("x-ampup-mcp-key") ??
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
-    (process.env.MULTI_TENANT === "true" ? "" : process.env.AMPUP_MCP_API_KEY ?? "");
+    (process.env.MULTI_TENANT === "true" ? "" : (process.env.AMPUP_MCP_API_KEY ?? ""));
   if (!key) {
     return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS });
   }
@@ -32,7 +32,10 @@ export async function GET(req: Request) {
       headers: { Authorization: `Bearer ${key}` },
     });
     if (!res.ok) {
-      return Response.json({ error: "upstream", status: res.status }, { status: res.status, headers: CORS });
+      return Response.json(
+        { error: "upstream", status: res.status },
+        { status: res.status, headers: CORS }
+      );
     }
     const u = (await res.json()) as Record<string, unknown>;
     // Return only what the UI needs (the row also carries internal fields).

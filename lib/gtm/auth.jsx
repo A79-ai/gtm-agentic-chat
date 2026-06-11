@@ -2,8 +2,9 @@
 // against the free-trial org and mints a short-lived per-user sk-a79 MCP key, so
 // no single shared key leaks one org's data to everyone. When unconfigured the
 // app falls back to the env-key single-org path (local dev) unchanged.
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 const AUTH0_DOMAIN = process.env.NEXT_PUBLIC_AUTH0_DOMAIN;
 const AUTH0_CLIENT_ID = process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID;
@@ -19,7 +20,13 @@ export { useAuth0 };
 let CURRENT_KEY;
 export const getMcpKey = () => CURRENT_KEY;
 
-const KeyCtx = createContext({ key: undefined, userId: undefined, orgId: undefined, loading: false, error: null });
+const KeyCtx = createContext({
+  key: undefined,
+  userId: undefined,
+  orgId: undefined,
+  loading: false,
+  error: null,
+});
 export const useMcpKeyContext = () => useContext(KeyCtx);
 
 // Build the per-user Ampersand groupRef. Free-trial orgs share one org_id, so
@@ -28,7 +35,9 @@ export const useMcpKeyContext = () => useContext(KeyCtx);
 // ids aren't known yet.
 export function ampersandGroupRef(orgId, userId, scope) {
   const base = orgId || "";
-  if (scope === "user" && base && userId) return `${base}:${userId}`;
+  if (scope === "user" && base && userId) {
+    return `${base}:${userId}`;
+  }
   return base;
 }
 
@@ -45,11 +54,15 @@ export function useMcpKey() {
   const inflightRef = useRef(null);
 
   useEffect(() => {
-    if (!AUTH0_ENABLED || !isAuthenticated) return;
+    if (!(AUTH0_ENABLED && isAuthenticated)) {
+      return;
+    }
     let alive = true;
 
     const mint = async () => {
-      if (inflightRef.current) return inflightRef.current;
+      if (inflightRef.current) {
+        return inflightRef.current;
+      }
       const run = (async () => {
         setLoading(true);
         setError(null);
@@ -59,18 +72,30 @@ export function useMcpKey() {
             method: "POST",
             headers: { Authorization: `Bearer ${accessToken}` },
           });
-          if (!res.ok) throw new Error(`wdk-session ${res.status}`);
+          if (!res.ok) {
+            throw new Error(`wdk-session ${res.status}`);
+          }
           const data = await res.json();
-          if (!alive) return;
+          if (!alive) {
+            return;
+          }
           CURRENT_KEY = data.token;
           expiryRef.current = data.expires_at ? Date.parse(data.expires_at) : 0;
           setKey(data.token);
-          if (data.user_id) setUserId(data.user_id);
-          if (data.org_id) setOrgId(data.org_id);
+          if (data.user_id) {
+            setUserId(data.user_id);
+          }
+          if (data.org_id) {
+            setOrgId(data.org_id);
+          }
         } catch (e) {
-          if (alive) setError(e);
+          if (alive) {
+            setError(e);
+          }
         } finally {
-          if (alive) setLoading(false);
+          if (alive) {
+            setLoading(false);
+          }
           inflightRef.current = null;
         }
       })();
@@ -81,7 +106,9 @@ export function useMcpKey() {
     mint();
     // Re-mint when within 60s of expiry.
     const timer = setInterval(() => {
-      if (expiryRef.current && Date.now() > expiryRef.current - 60_000) mint();
+      if (expiryRef.current && Date.now() > expiryRef.current - 60_000) {
+        mint();
+      }
     }, 30_000);
     return () => {
       alive = false;
@@ -89,7 +116,9 @@ export function useMcpKey() {
     };
   }, [isAuthenticated, getAccessTokenSilently]);
 
-  if (!AUTH0_ENABLED) return { key: undefined, userId: undefined, orgId: undefined, loading: false, error: null };
+  if (!AUTH0_ENABLED) {
+    return { key: undefined, userId: undefined, orgId: undefined, loading: false, error: null };
+  }
   return { key, userId, orgId, loading, error };
 }
 
@@ -103,9 +132,13 @@ export function McpKeyProvider({ children }) {
 // params so a reload/back-nav can't replay a now-consumed code, and restore the
 // intended path.
 function onRedirectCallback(appState) {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined") {
+    return;
+  }
   const url = new URL(window.location.href);
-  for (const p of ["code", "state", "error", "error_description"]) url.searchParams.delete(p);
+  for (const p of ["code", "state", "error", "error_description"]) {
+    url.searchParams.delete(p);
+  }
   const dest = (appState?.returnTo || url.pathname) + url.search + url.hash;
   window.history.replaceState({}, document.title, dest);
 }
@@ -113,19 +146,21 @@ function onRedirectCallback(appState) {
 // Wrap the app in the Auth0 provider when configured; otherwise render children
 // directly (single-org / local fallback unchanged).
 export function AuthGate({ children }) {
-  if (!AUTH0_ENABLED) return <>{children}</>;
+  if (!AUTH0_ENABLED) {
+    return <>{children}</>;
+  }
   return (
     <Auth0Provider
-      domain={AUTH0_DOMAIN}
-      clientId={AUTH0_CLIENT_ID}
       authorizationParams={{
-        redirect_uri: typeof window !== "undefined" ? window.location.origin : undefined,
+        redirect_uri: typeof window === "undefined" ? undefined : window.location.origin,
         organization: AUTH0_ORG,
         audience: AUTH0_AUDIENCE,
       }}
       cacheLocation="localstorage"
-      useRefreshTokens
+      clientId={AUTH0_CLIENT_ID}
+      domain={AUTH0_DOMAIN}
       onRedirectCallback={onRedirectCallback}
+      useRefreshTokens
     >
       {children}
     </Auth0Provider>
@@ -136,7 +171,9 @@ export function AuthGate({ children }) {
 // no /api/* request relies on the server env fallback when Auth0 is enabled.
 export function apiFetch(path, opts = {}) {
   const k = getMcpKey();
-  if (!k) return fetch(path, opts);
+  if (!k) {
+    return fetch(path, opts);
+  }
   return fetch(path, {
     ...opts,
     headers: { ...(opts.headers || {}), "x-ampup-mcp-key": k },

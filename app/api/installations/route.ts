@@ -45,7 +45,9 @@ function objectNamesFromConfig(config: unknown): string[] {
   const objs = (config as Rec | null)?.["content"] as Rec | undefined;
   const read = objs?.["read"] as Rec | undefined;
   const objects = read?.["objects"] as Rec | undefined;
-  if (!objects || typeof objects !== "object") return [];
+  if (!objects || typeof objects !== "object") {
+    return [];
+  }
   return Object.values(objects)
     .map((o) => s((o as Rec)?.["objectName"]))
     .filter(Boolean);
@@ -58,7 +60,9 @@ async function postJson(path: string, key: string, body: unknown): Promise<unkno
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      return null;
+    }
     return await res.json().catch(() => ({}));
   } catch {
     return null;
@@ -72,7 +76,7 @@ async function awaitInstallRow(
   key: string,
   installationId: string,
   groupRef: string,
-  provider: string,
+  provider: string
 ): Promise<Rec | null> {
   const want = provider.toLowerCase();
   for (let attempt = 0; attempt < 6; attempt++) {
@@ -82,14 +86,17 @@ async function awaitInstallRow(
       });
       const rows: Rec[] = res.ok ? ((await res.json()) as Rec[]) : [];
       const byId = rows.find((r) => s(r.id) === installationId);
-      if (byId) return byId;
+      if (byId) {
+        return byId;
+      }
       const byMatch = rows.find(
         (r) =>
           s(r.group_ref) === groupRef &&
-          (s(r.provider).toLowerCase() === want ||
-            s(r.integration_name).toLowerCase() === want),
+          (s(r.provider).toLowerCase() === want || s(r.integration_name).toLowerCase() === want)
       );
-      if (byMatch) return byMatch;
+      if (byMatch) {
+        return byMatch;
+      }
     } catch {
       // ignore and retry
     }
@@ -104,11 +111,13 @@ async function triggerHistoricalRead(
   integration: string,
   objectName: string,
   groupRef: string,
-  days: number,
+  days: number
 ): Promise<boolean> {
   const project = process.env.AMPERSAND_PROJECT_ID || "";
   const apiKey = process.env.AMPERSAND_API_KEY || "";
-  if (!project || !apiKey) return false;
+  if (!(project && apiKey)) {
+    return false;
+  }
   const since = new Date(Date.now() - days * 86_400_000).toISOString();
   try {
     const res = await fetch(
@@ -117,7 +126,7 @@ async function triggerHistoricalRead(
         method: "POST",
         headers: { "X-Api-Key": apiKey, "Content-Type": "application/json" },
         body: JSON.stringify({ groupRef, mode: "async", sinceTimestamp: since }),
-      },
+      }
     );
     return res.ok;
   } catch {
@@ -129,7 +138,7 @@ export async function POST(req: Request) {
   const key =
     req.headers.get("x-ampup-mcp-key") ??
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
-    (process.env.MULTI_TENANT === "true" ? "" : process.env.AMPUP_MCP_API_KEY ?? "");
+    (process.env.MULTI_TENANT === "true" ? "" : (process.env.AMPUP_MCP_API_KEY ?? ""));
   if (!key) {
     return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS });
   }
@@ -155,8 +164,8 @@ export async function POST(req: Request) {
   // Historical (Ampersand read) doesn't depend on our install row — fire it now.
   const historical = await Promise.all(
     objectNames.map((o) =>
-      triggerHistoricalRead(integration, o, groupRef, HISTORICAL_DAYS(integration)),
-    ),
+      triggerHistoricalRead(integration, o, groupRef, HISTORICAL_DAYS(integration))
+    )
   ).then((rs) => rs.some(Boolean));
 
   // Both the upsert and the seed need the mirrored install row to exist.
@@ -193,6 +202,6 @@ export async function POST(req: Request) {
 
   return Response.json(
     { ok: true, seeded, upserted, historical, objects: objectNames, installRowFound: !!row },
-    { headers: CORS },
+    { headers: CORS }
   );
 }

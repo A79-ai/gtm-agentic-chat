@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   if (isBlockedUrl(url)) {
     return Response.json(
       { ok: false, error: "That URL points at a private or reserved address." },
-      { status: 400 },
+      { status: 400 }
     );
   }
   try {
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   } catch (err) {
     return Response.json(
       { ok: false, error: err instanceof Error ? err.message : "Could not connect" },
-      { status: 200 },
+      { status: 200 }
     );
   }
 }

@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 
 // Lightweight "Sign in with Google" (OIDC authorization-code flow) for the
 // signup surface. No database and no auth library: Google returns a verified
@@ -23,13 +23,15 @@ const DEV_SESSION_SECRET = crypto.randomBytes(32).toString("hex");
 
 function sessionSecret(): string {
   const s = process.env.AUTH_SESSION_SECRET || process.env.OAUTH_STATE_SECRET;
-  if (s) return s;
+  if (s) {
+    return s;
+  }
   // Fail closed in production: never sign session cookies with a guessable,
   // publicly-known constant (this is an open template).
   if (process.env.NODE_ENV === "production") {
     throw new Error(
       "AUTH_SESSION_SECRET must be set when Google sign-in is enabled in production " +
-        "(generate with `openssl rand -hex 32`).",
+        "(generate with `openssl rand -hex 32`)."
     );
   }
   return DEV_SESSION_SECRET;
@@ -37,8 +39,7 @@ function sessionSecret(): string {
 
 const b64url = (buf: Buffer) =>
   buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-const fromB64url = (s: string) =>
-  Buffer.from(s.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+const fromB64url = (s: string) => Buffer.from(s.replace(/-/g, "+").replace(/_/g, "/"), "base64");
 
 export function sign(payload: Record<string, unknown>): string {
   const body = b64url(Buffer.from(JSON.stringify(payload)));
@@ -47,11 +48,17 @@ export function sign(payload: Record<string, unknown>): string {
 }
 
 export function verify<T = Record<string, unknown>>(token: string | undefined): T | null {
-  if (!token || !token.includes(".")) return null;
+  if (!(token && token.includes("."))) {
+    return null;
+  }
   const [body, sig] = token.split(".");
   const expected = b64url(crypto.createHmac("sha256", sessionSecret()).update(body).digest());
-  if (sig.length !== expected.length) return null;
-  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+  if (sig.length !== expected.length) {
+    return null;
+  }
+  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
+    return null;
+  }
   try {
     return JSON.parse(fromB64url(body).toString());
   } catch {
@@ -94,9 +101,13 @@ export async function exchangeCode(origin: string, code: string): Promise<Google
       grant_type: "authorization_code",
     }),
   });
-  if (!res.ok) throw new Error(`Google token exchange failed (${res.status})`);
+  if (!res.ok) {
+    throw new Error(`Google token exchange failed (${res.status})`);
+  }
   const data = (await res.json()) as { id_token?: string };
-  if (!data.id_token) throw new Error("No id_token from Google");
+  if (!data.id_token) {
+    throw new Error("No id_token from Google");
+  }
   const payloadPart = data.id_token.split(".")[1];
   const claims = JSON.parse(fromB64url(payloadPart).toString()) as {
     email?: string;
@@ -104,7 +115,9 @@ export async function exchangeCode(origin: string, code: string): Promise<Google
     picture?: string;
     email_verified?: boolean;
   };
-  if (!claims.email) throw new Error("Google did not return an email");
+  if (!claims.email) {
+    throw new Error("Google did not return an email");
+  }
   return { email: claims.email, name: claims.name, picture: claims.picture };
 }
 

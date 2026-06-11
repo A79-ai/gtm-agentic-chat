@@ -1,5 +1,5 @@
-import { getStripe, customerStatus } from "@/lib/stripe";
-import { verify, readCookie, SESSION_COOKIE, type GoogleUser } from "@/lib/googleAuth";
+import { type GoogleUser, readCookie, SESSION_COOKIE, verify } from "@/lib/googleAuth";
+import { customerStatus, getStripe } from "@/lib/stripe";
 
 export const maxDuration = 15;
 
@@ -10,10 +10,14 @@ export const maxDuration = 15;
 // customer's billing state by guessing their email.
 export async function GET(req: Request) {
   const stripe = getStripe();
-  if (!stripe) return Response.json({ configured: false, state: "none" });
+  if (!stripe) {
+    return Response.json({ configured: false, state: "none" });
+  }
 
   const user = verify<GoogleUser>(readCookie(req, SESSION_COOKIE));
-  if (!user?.email) return Response.json({ configured: true, state: "none" });
+  if (!user?.email) {
+    return Response.json({ configured: true, state: "none" });
+  }
 
   try {
     const status = await customerStatus(stripe, user.email);

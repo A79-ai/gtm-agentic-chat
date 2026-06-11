@@ -17,7 +17,14 @@ type Rec = Record<string, unknown>;
 const s = (v: unknown): string => (v == null ? "" : String(v));
 const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 const strs = (v: unknown, n: number): string[] =>
-  arr(v).map((x) => (typeof x === "string" ? x : s((x as Rec)?.text) || s((x as Rec)?.title) || s((x as Rec)?.name) || JSON.stringify(x))).filter(Boolean).slice(0, n);
+  arr(v)
+    .map((x) =>
+      typeof x === "string"
+        ? x
+        : s((x as Rec)?.text) || s((x as Rec)?.title) || s((x as Rec)?.name) || JSON.stringify(x)
+    )
+    .filter(Boolean)
+    .slice(0, n);
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -28,14 +35,18 @@ export async function GET(req: Request) {
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   const multiTenant = process.env.MULTI_TENANT === "true";
   // Multi-tenant: require a per-request key (no shared env fallback).
-  const key = headerKey ?? (multiTenant ? "" : process.env.AMPUP_MCP_API_KEY ?? "");
-  if (!key || !id) return Response.json({ error: "id + key required" }, { status: 400, headers: CORS });
+  const key = headerKey ?? (multiTenant ? "" : (process.env.AMPUP_MCP_API_KEY ?? ""));
+  if (!(key && id)) {
+    return Response.json({ error: "id + key required" }, { status: 400, headers: CORS });
+  }
 
   const tool = type === "post" ? "get_post_meeting_brief" : "get_pre_meeting_brief";
   let b: Rec = {};
   try {
     const res = await callAmpupTool(tool, { meeting_id: id }, key);
-    if (res.ok) b = JSON.parse(res.content);
+    if (res.ok) {
+      b = JSON.parse(res.content);
+    }
   } catch {
     return Response.json({ empty: true }, { headers: CORS });
   }
@@ -50,7 +61,7 @@ export async function GET(req: Request) {
       keyPoints: strs(summary.key_discussion_points, 4),
       emailSubject: s((b.email_to_customer as Rec)?.subject),
     };
-    const empty = !out.result && !out.summary && !out.outcome && out.keyPoints.length === 0;
+    const empty = !(out.result || out.summary || out.outcome) && out.keyPoints.length === 0;
     return Response.json({ empty, ...out }, { headers: CORS });
   }
 
@@ -62,6 +73,12 @@ export async function GET(req: Request) {
     outstandingQuestions: strs((b.the_deal as Rec)?.outstanding_questions, 3),
     risks: strs((b.the_deal as Rec)?.risks_and_blockers, 3),
   };
-  const empty = !out.stage && !out.nextMilestone && !out.confirmedNeeds.length && !out.outstandingQuestions.length && !out.risks.length;
+  const empty = !(
+    out.stage ||
+    out.nextMilestone ||
+    out.confirmedNeeds.length ||
+    out.outstandingQuestions.length ||
+    out.risks.length
+  );
   return Response.json({ empty, ...out }, { headers: CORS });
 }

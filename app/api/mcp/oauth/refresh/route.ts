@@ -1,6 +1,6 @@
 import {
-  refreshAuthorization,
   discoverAuthorizationServerMetadata,
+  refreshAuthorization,
 } from "@modelcontextprotocol/sdk/client/auth.js";
 
 // Refresh an OAuth access token for a connected MCP server. The client stores
@@ -18,8 +18,11 @@ export async function POST(req: Request) {
   } catch {
     return Response.json({ ok: false, error: "invalid JSON" }, { status: 400 });
   }
-  if (!body.asUrl || !body.refreshToken || !body.clientInformation) {
-    return Response.json({ ok: false, error: "asUrl, refreshToken, clientInformation required" }, { status: 400 });
+  if (!(body.asUrl && body.refreshToken && body.clientInformation)) {
+    return Response.json(
+      { ok: false, error: "asUrl, refreshToken, clientInformation required" },
+      { status: 400 }
+    );
   }
   try {
     const metadata = await discoverAuthorizationServerMetadata(body.asUrl);
@@ -38,7 +41,7 @@ export async function POST(req: Request) {
   } catch (err) {
     return Response.json(
       { ok: false, error: err instanceof Error ? err.message : "refresh failed" },
-      { status: 200 },
+      { status: 200 }
     );
   }
 }

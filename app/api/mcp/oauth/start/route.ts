@@ -1,12 +1,12 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { startAuthorization } from "@modelcontextprotocol/sdk/client/auth.js";
 import {
+  callbackUrl,
+  discoverServer,
   OAUTH_COOKIE,
   OAUTH_COOKIE_MAX_AGE,
-  signState,
-  discoverServer,
   registerOAuthClient,
-  callbackUrl,
+  signState,
 } from "@/lib/mcpOauth";
 import { isBlockedUrl } from "@/lib/ssrf";
 
@@ -24,7 +24,7 @@ export async function GET(req: Request) {
   if (isBlockedUrl(mcpUrl)) {
     return Response.json(
       { error: "That URL points at a private or reserved address." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -64,7 +64,7 @@ export async function GET(req: Request) {
     const msg = err instanceof Error ? err.message : "OAuth start failed";
     return Response.json(
       { error: `Could not start OAuth for this server: ${msg}` },
-      { status: 502 },
+      { status: 502 }
     );
   }
 }

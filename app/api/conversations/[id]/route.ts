@@ -20,13 +20,17 @@ function keyOf(req: Request): string {
   const headerKey =
     req.headers.get("x-ampup-mcp-key") ??
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (process.env.MULTI_TENANT === "true") return headerKey ?? "";
+  if (process.env.MULTI_TENANT === "true") {
+    return headerKey ?? "";
+  }
   return headerKey ?? process.env.AMPUP_MCP_API_KEY ?? "";
 }
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const key = keyOf(req);
-  if (!key) return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS });
+  if (!key) {
+    return Response.json({ error: "unauthorized" }, { status: 401, headers: CORS });
+  }
   const { id } = await params;
   try {
     const res = await fetch(`${AMPUP_API_BASE}/api/v1/conversations/${id}`, {

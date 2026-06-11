@@ -23,26 +23,51 @@ function keyOf(req: Request): string | undefined {
     undefined;
   // Multi-tenant: never fall back to the shared env key. Without a per-request
   // key the route 401s instead of serving one org's data to everyone.
-  if (process.env.MULTI_TENANT === "true") return headerKey;
+  if (process.env.MULTI_TENANT === "true") {
+    return headerKey;
+  }
   return headerKey ?? process.env.AMPUP_MCP_API_KEY ?? undefined;
 }
 
 export async function GET(req: Request) {
   const key = keyOf(req);
-  if (!key) return Response.json({ error: "no key" }, { status: 401, headers: CORS });
+  if (!key) {
+    return Response.json({ error: "no key" }, { status: 401, headers: CORS });
+  }
   const q = (new URL(req.url).searchParams.get("q") || "").trim();
-  if (!q) return Response.json({ groups: [] }, { headers: CORS });
+  if (!q) {
+    return Response.json({ groups: [] }, { headers: CORS });
+  }
 
-  let groups: Array<{ type: string; total: number; items: Array<{ id: string; type: string; name: string; subtitle: string }> }> = [];
+  let groups: Array<{
+    type: string;
+    total: number;
+    items: Array<{ id: string; type: string; name: string; subtitle: string }>;
+  }> = [];
   try {
-    const res = await callAmpupTool("search_entities", { query: q, entity_types: ENTITY_TYPES, limit_per_type: 8 }, key);
+    const res = await callAmpupTool(
+      "search_entities",
+      { query: q, entity_types: ENTITY_TYPES, limit_per_type: 8 },
+      key
+    );
     if (res.ok) {
-      const parsed = JSON.parse(res.content) as { groups?: Array<{ entity_type: string; total_count?: number; items?: Array<{ id: string; text?: string; subtitle?: string }> }> };
+      const parsed = JSON.parse(res.content) as {
+        groups?: Array<{
+          entity_type: string;
+          total_count?: number;
+          items?: Array<{ id: string; text?: string; subtitle?: string }>;
+        }>;
+      };
       groups = (parsed.groups || [])
         .map((g) => ({
           type: g.entity_type,
           total: g.total_count ?? (g.items || []).length,
-          items: (g.items || []).map((it) => ({ id: String(it.id), type: g.entity_type, name: String(it.text || "Untitled"), subtitle: String(it.subtitle || "") })),
+          items: (g.items || []).map((it) => ({
+            id: String(it.id),
+            type: g.entity_type,
+            name: String(it.text || "Untitled"),
+            subtitle: String(it.subtitle || ""),
+          })),
         }))
         .filter((g) => g.items.length);
     }

@@ -1,5 +1,5 @@
-import { getRun } from "workflow/api";
 import { createUIMessageStreamResponse } from "ai";
+import { getRun } from "workflow/api";
 
 export const maxDuration = 60;
 
@@ -20,10 +20,7 @@ export function OPTIONS() {
  * existing chunk handling. The run is long-lived (open for the next turn), so we
  * read up to the current tail and stop rather than block on the open stream.
  */
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ runId: string }> },
-) {
+export async function GET(req: Request, { params }: { params: Promise<{ runId: string }> }) {
   // In multi-tenant mode conversations are per-user. Require a minted per-user
   // key so a leaked/guessed runId alone can't replay someone else's transcript.
   // (runIds are high-entropy, but the URL must not be the only thing guarding a

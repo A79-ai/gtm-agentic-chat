@@ -9,7 +9,7 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   const stripe = getStripe();
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!stripe || !secret) {
+  if (!(stripe && secret)) {
     return Response.json({ error: "Stripe webhook is not configured" }, { status: 501 });
   }
 

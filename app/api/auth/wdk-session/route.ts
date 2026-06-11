@@ -30,7 +30,10 @@ export async function POST(req: Request) {
 
   if (!res.ok) {
     const error = await res.text().catch(() => "");
-    return Response.json({ error: error.slice(0, 300) || res.statusText }, { status: res.status, headers: CORS });
+    return Response.json(
+      { error: error.slice(0, 300) || res.statusText },
+      { status: res.status, headers: CORS }
+    );
   }
 
   const data = await res.json();

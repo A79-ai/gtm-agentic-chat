@@ -1,7 +1,7 @@
 // Server-side paginated list for one entity type. Calls the org's MCP list
 // tool with limit/offset/search and returns a normalized page + accurate total.
 import { callAmpupTool } from "@/lib/mcp";
-import { NORMALIZE, LIST_TOOL, pageOf, unwrap, type Rec } from "@/lib/recordMap";
+import { LIST_TOOL, NORMALIZE, pageOf, type Rec, unwrap } from "@/lib/recordMap";
 
 export const maxDuration = 60;
 
@@ -22,26 +22,37 @@ function keyOf(req: Request): string | undefined {
     undefined;
   // Multi-tenant: never fall back to the shared env key. Without a per-request
   // key the route 401s instead of serving one org's data to everyone.
-  if (process.env.MULTI_TENANT === "true") return headerKey;
+  if (process.env.MULTI_TENANT === "true") {
+    return headerKey;
+  }
   return headerKey ?? process.env.AMPUP_MCP_API_KEY ?? undefined;
 }
 
 export async function GET(req: Request) {
   const key = keyOf(req);
-  if (!key) return Response.json({ error: "no key" }, { status: 401, headers: CORS });
+  if (!key) {
+    return Response.json({ error: "no key" }, { status: 401, headers: CORS });
+  }
 
   const url = new URL(req.url);
   const type = url.searchParams.get("type") || "";
-  const page = Math.max(0, parseInt(url.searchParams.get("page") || "0", 10) || 0);
-  const size = Math.min(100, Math.max(1, parseInt(url.searchParams.get("size") || "50", 10) || 50));
+  const page = Math.max(0, Number.parseInt(url.searchParams.get("page") || "0", 10) || 0);
+  const size = Math.min(
+    100,
+    Math.max(1, Number.parseInt(url.searchParams.get("size") || "50", 10) || 50)
+  );
   const search = url.searchParams.get("search") || "";
 
   const spec = LIST_TOOL[type];
   const norm = NORMALIZE[type];
-  if (!spec || !norm) return Response.json({ error: "unsupported type" }, { status: 400, headers: CORS });
+  if (!(spec && norm)) {
+    return Response.json({ error: "unsupported type" }, { status: 400, headers: CORS });
+  }
 
   const args: Rec = { limit: size, offset: page * size, ...(spec.args || {}) };
-  if (search) args.search = search;
+  if (search) {
+    args.search = search;
+  }
 
   let items: Rec[] = [];
   let total: number | null = null;
