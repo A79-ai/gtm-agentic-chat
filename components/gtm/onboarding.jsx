@@ -6,7 +6,7 @@ import { ampersandGroupRef, seedInstallation, useMcpKeyContext } from "@/lib/gtm
 import { getAmpersand, getConnectors } from "@/lib/gtm/data";
 import { Icons, LogoMark, Logos } from "./icons";
 
-const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
+const CalendarConnect = React.lazy(() => import("./CalendarConnect"));
 
 const ROLES = ["Account Executive", "SDR / BDR", "RevOps", "Sales Manager", "Founder", "Other"];
 const TEAM_SIZES = ["Just me", "2–10", "11–50", "51–200", "200+"];
@@ -185,16 +185,25 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
             ))}
           </div>
           {cal === "connected" ? (
-            <div className="gcal-account">
-              <span className="gcal-gm">
-                <Logos.Google />
-              </span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <div className="gcal-acc-nm">{f.name || "You"}</div>
-                <div className="gcal-acc-em">{f.email || "you@company.com"}</div>
-              </span>
-              <span className="gcal-syncing">Syncing events…</span>
-            </div>
+            <>
+              <div className="gcal-account">
+                <span className="gcal-gm">
+                  <Logos.Google />
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <div className="gcal-acc-nm">{f.name || "You"}</div>
+                  <div className="gcal-acc-em">{f.email || "you@company.com"}</div>
+                </span>
+                <span className="gcal-syncing">Syncing events…</span>
+              </div>
+              <div className="gcal-sync-note">
+                <Icons.Clock size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+                <span>
+                  Your calendar syncs in the background — events keep refreshing about every 10
+                  minutes. You can finish setup now; there's nothing to wait for.
+                </span>
+              </div>
+            </>
           ) : cal === "connecting" ? (
             <div className="gcal-amp">
               <Suspense
@@ -204,11 +213,12 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
                   </div>
                 }
               >
-                <AmpersandConnect
+                <CalendarConnect
                   apiKey={amp.apiKey}
                   consumerRef={calConsumerRef}
                   groupRef={calGroupRef}
                   integration={googleIntegration()}
+                  module="calendar"
                   onDone={() => setCal("connected")}
                   onInstalled={(id, config) =>
                     seedInstallation(id, config, {
@@ -219,6 +229,7 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
                   }
                   onToast={() => {}}
                   project={amp.projectId}
+                  provider="google"
                 />
               </Suspense>
             </div>
