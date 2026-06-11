@@ -17,6 +17,7 @@ import {
   SUGGESTIONS,
   subtitleOf,
 } from "@/lib/gtm/data";
+import { getLlmKey } from "@/lib/gtm/llmKey";
 import { enabledMcpServers, refreshOauthServers } from "@/lib/gtm/mcpServers";
 import { Icons, LogoMark } from "./icons";
 import { LoadingIndicator } from "./LoadingIndicator";
@@ -791,10 +792,24 @@ export function ChatScreen({
           // Thread the per-user MCP key so the chat backend uses the caller's key,
           // not the shared env fallback (multi-tenant). No-op in single-org dev.
           const k = getMcpKey();
-          const opts = k
-            ? { ...options, headers: { ...(options?.headers || {}), "x-ampup-mcp-key": k } }
-            : options;
-          const res = await fetch(url, opts);
+          // Bring-your-own LLM key: the operator's key only powers internal/Pro
+          // chats; everyone else sends their own key here (stored locally).
+          const llm = getLlmKey();
+          const headers = { ...(options?.headers || {}) };
+          if (k) {
+            headers["x-ampup-mcp-key"] = k;
+          }
+          if (llm) {
+            headers["x-llm-provider"] = llm.provider;
+            headers["x-llm-key"] = llm.key;
+            if (llm.model) {
+              headers["x-llm-model"] = llm.model;
+            }
+          }
+          const res = await fetch(url, { ...options, headers });
+          if (res.status === 402) {
+            throw new Error("Add your own LLM API key in Settings → API keys to start chatting.");
+          }
           const id = res.headers.get("x-workflow-run-id");
           if (id) {
             runIdRef.current = id;

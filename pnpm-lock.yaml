@@ -14,6 +14,9 @@ importers:
       '@ai-sdk/google':
         specifier: 3.0.80
         version: 3.0.80(zod@3.25.76)
+      '@ai-sdk/openai':
+        specifier: ^3.0.0
+        version: 3.0.68(zod@3.25.76)
       '@ai-sdk/react':
         specifier: ^3.0.0
         version: 3.0.199(react@19.2.7)(zod@3.25.76)
@@ -5434,6 +5437,12 @@ snapshots:
       '@ai-sdk/provider-utils': 4.0.27(zod@4.3.6)
       zod: 4.3.6
     optional: true
+
+  '@ai-sdk/openai@3.0.68(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.10
+      '@ai-sdk/provider-utils': 4.0.27(zod@3.25.76)
+      zod: 3.25.76
 
   '@ai-sdk/openai@3.0.68(zod@4.3.6)':
     dependencies:

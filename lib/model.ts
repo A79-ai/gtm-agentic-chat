@@ -1,13 +1,17 @@
-// Resolve the chat model + its provider from env. Two supported paths:
-//   1. ANTHROPIC_API_KEY set -> call Anthropic directly (you pay Anthropic).
-//   2. AI_GATEWAY_API_KEY set -> route through the Vercel AI Gateway (model
-//      passed as a plain "provider/model" string; the gateway resolves it).
-// Anthropic wins when both are present.
+// Resolve the chat model + its provider. Two sources, in priority order:
+//   1. A per-user "bring your own key" (opts) — Anthropic / OpenAI / Google
+//      direct, or a user-supplied Vercel AI Gateway key. Used so the operator's
+//      key isn't spent on every visitor's chat (see app/api/chat/route.ts).
+//   2. The operator's env key (single-org dev, or internal/Pro users):
+//      ANTHROPIC_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY direct, else the Vercel
+//      AI Gateway via a plain "provider/model" string. Anthropic wins if set.
 //
 // DurableAgent wants the model as a string (gateway) or a factory function
 // (() => Promise<model>) so the workflow can reconstruct it on replay.
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
+import { anthropic, createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI, google } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
+import { createGateway } from "ai";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ModelFactory = () => Promise<any>;
@@ -17,7 +21,45 @@ export type ResolvedModel = {
   provider: string;
 };
 
-export function resolveModel(): ResolvedModel {
+// A user's own LLM key, threaded from the client (never the operator's).
+export type LlmOpts = {
+  provider?: string;
+  key?: string;
+  model?: string;
+};
+
+export function resolveModel(opts?: LlmOpts): ResolvedModel {
+  // 1. Bring-your-own key: build the chosen provider from the user's key.
+  if (opts?.key && opts.provider) {
+    const apiKey = opts.key;
+    const m = opts.model?.trim() || undefined;
+    switch (opts.provider) {
+      case "anthropic":
+        return {
+          model: async () => createAnthropic({ apiKey })(m ?? "claude-sonnet-4-6"),
+          provider: "anthropic",
+        };
+      case "openai":
+        return {
+          model: async () => createOpenAI({ apiKey })(m ?? "gpt-4o"),
+          provider: "openai",
+        };
+      case "google":
+        return {
+          model: async () => createGoogleGenerativeAI({ apiKey })(m ?? "gemini-2.5-pro"),
+          provider: "google",
+        };
+      case "gateway": {
+        const id = m ?? "anthropic/claude-sonnet-4.6";
+        const gw = createGateway({ apiKey });
+        return { model: async () => gw(id), provider: id.split("/")[0] };
+      }
+      default:
+        break;
+    }
+  }
+
+  // 2. Operator (env) path — unchanged.
   const explicit = process.env.CHAT_MODEL;
   const bare = explicit && !explicit.includes("/") ? explicit : undefined;
 
