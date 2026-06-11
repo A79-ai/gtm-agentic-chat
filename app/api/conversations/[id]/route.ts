@@ -1,7 +1,10 @@
 // Delete one conversation by its AmpUp id. AmpUp's verify_conversation_access
 // 404s unless the caller owns the row (or it's org-public / linked-entity
-// accessible), so a user can only delete their own conversations.
-const AMPUP_API_BASE = process.env.AMPUP_API_BASE || "https://free-trial.staging.a79dev.com";
+// accessible), so a user can only delete their own conversations. Defaults to
+// the operator's own host (AMPUP_MCP_URL minus /mcp) so a public clone never
+// targets a foreign backend.
+const AMPUP_API_BASE =
+  process.env.AMPUP_API_BASE || (process.env.AMPUP_MCP_URL || "").replace(/\/mcp\/?$/, "");
 const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 const CORS = {
   "Access-Control-Allow-Origin": ALLOW_ORIGIN,
