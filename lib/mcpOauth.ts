@@ -14,13 +14,13 @@ import type {
 // these wrap them for our serverless routes and sign the transient state cookie.
 
 export const OAUTH_COOKIE = "mcp_oauth_state";
-export const OAUTH_COOKIE_MAX_AGE = 600; // 10 min — long enough for a consent screen
+export const OAUTH_COOKIE_MAX_AGE = 600; // 10 min, long enough for a consent screen
 
 const CLIENT_NAME = "GTM Agentic Chat";
 
 // Random per-process secret used ONLY in non-production when no secret is set,
 // so the OAuth-connect flow works in dev without a known constant. Never falls
-// back to AMPUP_MCP_API_KEY — a signing key and a data key shouldn't be coupled.
+// back to AMPUP_MCP_API_KEY: a signing key and a data key shouldn't be coupled.
 const DEV_STATE_SECRET = crypto.randomBytes(32).toString("hex");
 
 function stateSecret(): string {
@@ -85,7 +85,7 @@ export async function discoverServer(mcpUrl: string): Promise<DiscoveredServer> 
       resource = String(prm.resource);
     }
   } catch {
-    // No protected-resource doc — fall back to the MCP origin as the AS.
+    // No protected-resource doc, so fall back to the MCP origin as the AS.
     asUrl = new URL(mcpUrl).origin;
   }
   const metadata = await discoverAuthorizationServerMetadata(asUrl);

@@ -1,5 +1,5 @@
 // Conversation persistence, proxied to the AmpUp conversations API so it's the
-// server-side source of truth (cross-device) and — crucially — org/user-safe:
+// server-side source of truth (cross-device) and, crucially, org/user-safe:
 // AmpUp derives org_id/user_id from the authenticated key and scopes every row
 // to the owner. We never trust client-supplied identity. The transcript rides
 // in `extra_metadata` so reopening is self-contained. Defaults to the operator's
@@ -118,8 +118,8 @@ export async function POST(req: Request) {
   const last = messages[messages.length - 1];
   const name = (firstUser ? partsText(firstUser) : "New chat").slice(0, 80) || "New chat";
   // NB: intentionally do NOT set the top-level `run_id`. AmpUp's create runs
-  // save_messages_for_run(run_id) — a WDK readback that fails unless the backend
-  // can reach this run — and we don't need it: the transcript is stored inline
+  // save_messages_for_run(run_id), a WDK readback that fails unless the backend
+  // can reach this run, and we don't need it: the transcript is stored inline
   // in extra_metadata, and the run id is kept there (vercel_run_id) for resume.
   const payload = {
     name,

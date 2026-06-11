@@ -1,4 +1,4 @@
-// Shared CRM record normalization — maps raw MCP list-tool items to the flat
+// Shared CRM record normalization: maps raw MCP list-tool items to the flat
 // shapes the UI renders. Used by /api/records (bulk load) and /api/list
 // (server-side pagination) so the two never drift.
 export type Rec = Record<string, unknown>;
@@ -55,7 +55,7 @@ export function taskSource(producer: unknown): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-// List tools may wrap the row (e.g. { task: {...} }) — unwrap it.
+// List tools may wrap the row (e.g. { task: {...} }), so unwrap it.
 export function unwrap(r: Rec): Rec {
   return r && typeof r === "object" && "task" in r ? (r.task as Rec) : r;
 }
@@ -150,7 +150,7 @@ export const NORMALIZE: Record<string, (r: Rec, i: number) => Rec> = {
 // Multi-tenant (shared free-trial org): scope meetings to the signed-in user so
 // the badge count and the list both reflect only their own meetings. With
 // `only_my_meetings:false` the backend returns an org-wide `total` (every user's
-// meetings) while the list items stay FGA-scoped to the caller — that mismatch
+// meetings) while the list items stay FGA-scoped to the caller, and that mismatch
 // is the "138 in the badge, 0 in the list" bug. Single-org/legacy keeps the
 // org-wide view (one admin identity, no per-user scoping).
 const SCOPE_MEETINGS_TO_USER = process.env.MULTI_TENANT === "true";

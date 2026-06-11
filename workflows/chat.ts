@@ -19,7 +19,7 @@ import { buildServerTools } from "@/lib/serverTools";
  * One durable run per CONVERSATION (Vercel's reference pattern for chat on the
  * Workflow DevKit). The first turn starts the run; follow-ups are delivered by
  * `turnHook.resume("conv:<id>")` and append to the SAME durable stream, so the
- * run's stream IS the transcript — replaying it rehydrates the chat on reopen.
+ * run's stream IS the transcript: replaying it rehydrates the chat on reopen.
  *
  * Tools are discovered at runtime from one or more MCP servers (tools/list). The
  * built-in "ampup" server comes from env (one org per deploy); the user can add

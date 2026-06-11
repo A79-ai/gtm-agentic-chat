@@ -1,4 +1,4 @@
-// "Create your workspace" — captures identity and starts the free trial. This
+// "Create your workspace": captures identity and starts the free trial. This
 // is intentionally NOT a login/password form: the template has no auth backend
 // (the per-deploy MCP key is the only credential), so a password field would be
 // theater. Real auth (Clerk/Auth0) is a deferred, separately-flagged concern.
@@ -48,7 +48,7 @@ export function Signup({ initial, onFinish }) {
             </div>
             <h2 className="ob-aside-title">
               {billingOn
-                ? `Spin up your GTM agent — free for ${trialDays} days.`
+                ? `Spin up your GTM agent, free for ${trialDays} days.`
                 : "Spin up your GTM agent workspace."}
             </h2>
             <div className="ob-steps" style={{ gap: 12 }}>

@@ -5,7 +5,7 @@ export const maxDuration = 30;
 // Stripe webhook. Entitlement is read live by email on load, so this endpoint
 // exists mainly to verify signatures and acknowledge subscription lifecycle
 // events (a hook for future provisioning / Slack notifications). Stripe needs
-// the RAW request body for signature verification — do not parse it as JSON.
+// the RAW request body for signature verification; do not parse it as JSON.
 export async function POST(req: Request) {
   const stripe = getStripe();
   const secret = process.env.STRIPE_WEBHOOK_SECRET;

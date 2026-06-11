@@ -181,7 +181,7 @@ export function apiFetch(path, opts = {}) {
 }
 
 // Seed a freshly-connected integration's meetings on install success (backfill
-// on connect). Fire-and-forget — the connect flow must never wait on or fail
+// on connect). Fire-and-forget: the connect flow must never wait on or fail
 // because of this. `config` is the Ampersand install config (carries the
 // subscribed read objects); `groupRef` is the install's group ref.
 export function seedInstallation(installationId, config, { integration, groupRef, provider }) {

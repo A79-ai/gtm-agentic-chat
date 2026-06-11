@@ -1,4 +1,4 @@
-// Simplified side-nav — compact icon rail (Home · Records · Connectors),
+// Simplified side-nav: compact icon rail (Home · Records · Connectors),
 // a consolidated Records flyout, and a Profile menu that absorbs the
 // secondary actions (notetaker, tweaks, replay onboarding, restart, sign out).
 import React, { useEffect, useRef, useState } from "react";

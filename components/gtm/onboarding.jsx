@@ -1,4 +1,4 @@
-// First-run onboarding wizard — collect details, pick focus, and connect
+// First-run onboarding wizard: collect details, pick focus, and connect
 // Google Calendar via the real Ampersand widget. Full-screen overlay shown on
 // first run (and re-openable from the profile menu).
 import React, { Suspense, useState } from "react";
@@ -58,7 +58,7 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
 
   const amp = getAmpersand();
   // Google Calendar is a user-scoped install in the (shared) free-trial org, so
-  // connect at `org_id:user_id` — a fresh user gets a clean OAuth connect rather
+  // connect at `org_id:user_id` so a fresh user gets a clean OAuth connect rather
   // than the org's shared installation. Falls back to the org ref otherwise.
   const { userId, orgId } = useMcpKeyContext();
   const calGroupRef = userId && orgId ? ampersandGroupRef(orgId, userId, "user") : amp.groupRef;
@@ -133,7 +133,7 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
       <div className="ob-form">
         <div className="fld-wrap">
           <span className="fld-hint" style={{ marginTop: 0 }}>
-            Pick a few — you can change this anytime.
+            Pick a few. You can change this anytime.
           </span>
           <div className="goal-grid">
             {GOALS.map(([g, ic]) => (
@@ -199,7 +199,7 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
               <div className="gcal-sync-note">
                 <Icons.Clock size={13} style={{ flexShrink: 0, marginTop: 1 }} />
                 <span>
-                  Your calendar syncs in the background — events keep refreshing about every 10
+                  Your calendar syncs in the background. Events keep refreshing about every 10
                   minutes. You can finish setup now; there's nothing to wait for.
                 </span>
               </div>
@@ -240,7 +240,7 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
                 if (amp.configured && amp.apiKey) {
                   setCal("connecting");
                 } else {
-                  setCal("connected"); // no Ampersand configured — let them proceed
+                  setCal("connected"); // no Ampersand configured, let them proceed
                 }
               }}
             >

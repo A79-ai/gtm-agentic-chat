@@ -1,4 +1,4 @@
-// Chat workspace — attach any entity · real durable backend (AI SDK transport)
+// Chat workspace: attach any entity · real durable backend (AI SDK transport)
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
@@ -23,7 +23,7 @@ import { LoadingIndicator } from "./LoadingIndicator";
 import { EntityIcon, RefChip } from "./ui";
 
 // Agents can scope to MCP servers two ways: by explicit catalog slug
-// (mcpServerIds) or by category (mcpCategories — e.g. "Call recording", "CRM"),
+// (mcpServerIds) or by category (mcpCategories, e.g. "Call recording", "CRM"),
 // which matches WHATEVER provider in that category the user has connected, so
 // the agent isn't pinned to a specific vendor. The built-in AmpUp CRM (via
 // includeAmpup) already covers the "CRM" category for the missing-tools prompt.
@@ -39,7 +39,7 @@ const catalogSlugsForCategories = (categories) => {
 };
 
 // An agent constrains the chat's server set only if it lists explicit servers
-// OR categories. An empty list is NOT a constraint — a user-built agent that
+// OR categories. An empty list is NOT a constraint: a user-built agent that
 // ticked no servers should behave like a plain chat (use everything connected),
 // not silently scope to zero servers.
 const agentIsScoped = (agent) =>
@@ -58,7 +58,7 @@ const scopeServersForAgent = (agent, connected) => {
 };
 
 // Text-ish files (under the size cap) are read in the browser and inlined
-// straight into the prompt — usable instantly, no upload round-trip. Binary /
+// straight into the prompt, usable instantly, no upload round-trip. Binary /
 // rich formats (or anything larger) fall back to the AmpUp DataSource +
 // read_file path. The cap bounds per-turn token cost, since inlined content
 // rides the context while the file stays attached.
@@ -88,8 +88,8 @@ const toolName = (type) =>
     .replace(/^mcp__[a-z0-9-]+__/, "")
     .replace(/_/g, " ");
 // Cheap transcript signature (message count + last message text length) so the
-// save effect can skip when nothing changed — e.g. a pure reopen, or no-op
-// re-renders — and only persist once per settled turn.
+// save effect can skip when nothing changed (e.g. a pure reopen, or no-op
+// re-renders) and only persist once per settled turn.
 const convoSig = (msgs) => `${msgs.length}:${textOf(msgs[msgs.length - 1] || {}).length}`;
 
 function TraceRow({ part }) {
@@ -166,7 +166,7 @@ function AgentMessage({ msg, turnBusy, isLast, onToast, onRegenerate }) {
   );
 }
 
-// Cross-entity attach picker — searches the org's CRM via /api/search
+// Cross-entity attach picker: searches the org's CRM via /api/search
 // (search_entities), so it finds records beyond the locally-loaded page.
 function AttachPicker({ attached, onPick, onClose }) {
   const [q, setQ] = useState("");
@@ -304,7 +304,7 @@ function Composer({
       }
     }
   };
-  // Create the file input on demand and click it within the user gesture — the
+  // Create the file input on demand and click it within the user gesture. The
   // most reliable cross-browser way to open the OS file picker (no hidden input,
   // no label/SVG quirks, works in Safari).
   const openFilePicker = () => {
@@ -359,7 +359,7 @@ function Composer({
           placeholder={
             attached.length || files.length
               ? "Ask about the attached records and files or type to chat…"
-              : "Ask anything — attach a record with @ or a file with the clip"
+              : "Ask anything. Attach a record with @ or a file with the clip"
           }
           ref={ref}
           rows={1}
@@ -400,7 +400,7 @@ function Composer({
         </div>
       </div>
       <div style={{ textAlign: "center", fontSize: 11.5, color: "var(--fg-muted)", marginTop: 8 }}>
-        Agents can make mistakes — verify data before sending to a customer.
+        Agents can make mistakes. Verify data before sending to a customer.
       </div>
     </div>
   );
@@ -454,10 +454,10 @@ function ContextCard({ rec, onOpenRecord, onRemove }) {
           let val = rec[key];
           if (kind === "ref") {
             const r = byId(val);
-            val = r ? r.name : "—";
+            val = r ? r.name : "-";
           }
           if (kind === "min") {
-            val = val ? `${val} min` : "—";
+            val = val ? `${val} min` : "-";
           }
           return (
             <div key={label}>
@@ -474,7 +474,7 @@ function ContextCard({ rec, onOpenRecord, onRemove }) {
                   textOverflow: "ellipsis",
                 }}
               >
-                {val == null || val === "" ? "—" : String(val)}
+                {val == null || val === "" ? "-" : String(val)}
               </div>
             </div>
           );
@@ -574,13 +574,13 @@ function contextPreamble(records, files = []) {
       `The user has attached these CRM records. Ground your answer in them and use tools to fetch more detail as needed:\n${lines}`
     );
   }
-  // Inlined files carry their full text — embed it directly so the agent
+  // Inlined files carry their full text, embed it directly so the agent
   // answers without any tool call.
   const inline = files.filter((f) => f.text);
   if (inline.length) {
     const docs = inline.map((f) => `### ${f.fileName}\n${f.text}`).join("\n\n");
     blocks.push(
-      `The user attached these files; their full contents are included below — use them directly to answer:\n\n${docs}`
+      `The user attached these files; their full contents are included below. Use them directly to answer:\n\n${docs}`
     );
   }
   // DataSource-only files (binary / large): the agent reads them on demand.
@@ -618,7 +618,7 @@ function timeAgo(ts) {
 
 // Left slide-over listing past conversations; reopening rehydrates the full
 // transcript. Source of truth is the server (AmpUp) when signed in, else
-// localStorage — see lib/gtm/conversations.
+// localStorage. See lib/gtm/conversations.
 function HistoryDrawer({ open, onClose, onSelect, activeId }) {
   const [items, setItems] = useState([]);
   const refresh = () =>
@@ -764,7 +764,7 @@ export function ChatScreen({
         out.push(MCP_CATALOG.find((c) => c.slug === id) || { slug: id, name: id });
       }
     }
-    // Categories with no connected provider — prompt generically ("a call
+    // Categories with no connected provider: prompt generically ("a call
     // recorder") rather than naming a vendor. Skip categories AmpUp already
     // covers when its built-in CRM is on.
     for (const cat of Array.isArray(agent.mcpCategories) ? agent.mcpCategories : []) {
@@ -835,7 +835,7 @@ export function ChatScreen({
 
   const { messages, sendMessage, status, setMessages, regenerate } = useChat({ transport });
   // The durable run keeps its stream open across turns (preventClose), so the
-  // transport `status` never settles back to "ready" — it stays "streaming"
+  // transport `status` never settles back to "ready", it stays "streaming"
   // forever, which would leave the composer disabled and block every follow-up.
   // Derive turn-completion from message stability instead: a turn is busy from
   // send until the assistant's deltas stop arriving.
@@ -890,7 +890,7 @@ export function ChatScreen({
   }, [messages]);
   // Stall watchdog. A turn that fails server-side before producing an assistant
   // message (e.g. a model error) leaves `status` stuck on "streaming" (the
-  // durable stream stays open) with no assistant message to settle on — so the
+  // durable stream stays open) with no assistant message to settle on, so the
   // spinner would run forever. Tool calls are server-bounded (≤45s), and a live
   // turn streams deltas continuously, so any window with NO message activity
   // this long is a genuine stall: settle it and surface an error. The `messages`
@@ -901,7 +901,7 @@ export function ChatScreen({
     }
     const t = setTimeout(() => {
       setTurnBusy(false);
-      onToast?.("That request stalled before completing — please try again.", "error");
+      onToast?.("That request stalled before completing. Please try again.", "error");
     }, 90_000);
     return () => clearTimeout(t);
   }, [turnBusy, messages]);
@@ -925,12 +925,12 @@ export function ChatScreen({
   }, []);
   // Persist the transcript so it shows in History (server-backed + cross-device
   // when signed in, else localStorage). The durable run keeps its stream open
-  // across turns (preventClose), so `status` never settles to "ready" — instead
+  // across turns (preventClose), so `status` never settles to "ready", instead
   // debounce on message stability: once deltas stop arriving, save the final
   // transcript and remember the AmpUp row id so later saves update it in place.
   useEffect(() => {
     if (turnBusy) {
-      return; // wait for the turn to settle — one save per turn, not per chunk
+      return; // wait for the turn to settle: one save per turn, not per chunk
     }
     if (!messages.some((m) => m.role === "user")) {
       return;
@@ -1006,7 +1006,7 @@ export function ChatScreen({
       "";
 
     // Inline path: read the text in the browser so it's usable INSTANTLY (its
-    // content rides the prompt context — no upload round-trip, no read_file).
+    // content rides the prompt context, no upload round-trip, no read_file).
     // The DataSource is still created in the BACKGROUND for persistence / CRM
     // linking, then backfilled onto the entry; if it fails, inline still works.
     if (isInlineable(file)) {
@@ -1068,7 +1068,7 @@ export function ChatScreen({
         };
         setFiles((fs) => [...fs.filter((x) => x.datasourceId !== entry.datasourceId), entry]);
         addUpload(entry);
-        onToast(`Uploaded ${file.name} — the agent can read it now`, "success");
+        onToast(`Uploaded ${file.name}, the agent can read it now`, "success");
       } else {
         onToast(`Upload failed: ${res.error || "error"}`, "error");
       }
@@ -1085,7 +1085,7 @@ export function ChatScreen({
       .map((m) => ({ role: m.role, text: textOf(m).trim() }))
       .filter((m) => (m.role === "user" || m.role === "assistant") && m.text);
     if (projection.length === 0) {
-      onToast("Nothing to share yet — send a message first", "info");
+      onToast("Nothing to share yet, send a message first", "info");
       return;
     }
     try {
@@ -1223,7 +1223,7 @@ export function ChatScreen({
               </strong>{" "}
               It uses {missingTools.map((t) => t.name).join(", ")}
               {agent.includeAmpup === false ? "" : " alongside your AmpUp CRM"}. You can still chat
-              now — it'll use what's connected.
+              now, it'll use what's connected.
             </div>
             <button
               className="btn btn-sm btn-primary"
@@ -1286,7 +1286,7 @@ export function ChatScreen({
                 >
                   {agent
                     ? agent.desc ||
-                      "Ask anything to get started — I reason across your connected sources."
+                      "Ask anything to get started. I reason across your connected sources."
                     : attached.length
                       ? "Ask anything about the attached records. I reason across your connected CRM, calls and notes."
                       : "Attach a record below, or ask about your pipeline. I reason across your connected sources."}

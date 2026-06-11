@@ -110,7 +110,7 @@ export function Welcome({ onLogin, onSignup, onGoogle }) {
       <ThemeToggle onToggle={() => setTheme(dark ? "light" : "dark")} theme={theme} />
 
       <div className="wl-grid">
-        {/* LEFT — auth */}
+        {/* LEFT: auth */}
         <div
           style={{
             padding: "clamp(40px, 5vw, 64px)",
@@ -189,7 +189,7 @@ export function Welcome({ onLogin, onSignup, onGoogle }) {
                 fontFamily: FONT,
               }}
             >
-              Get started — it’s free <Icons.ArrowRight size={18} stroke={2} />
+              Get started, it’s free <Icons.ArrowRight size={18} stroke={2} />
             </button>
 
             <div
@@ -258,7 +258,7 @@ export function Welcome({ onLogin, onSignup, onGoogle }) {
           </div>
         </div>
 
-        {/* RIGHT — carousel */}
+        {/* RIGHT: carousel */}
         <div
           className="wl-right"
           style={{

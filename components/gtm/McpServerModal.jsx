@@ -157,7 +157,7 @@ export function McpServerModal({ server, onSave, onClose }) {
             >
               {test.ok ? (
                 <>
-                  Connected — {test.toolCount} tool{test.toolCount === 1 ? "" : "s"} found
+                  Connected: {test.toolCount} tool{test.toolCount === 1 ? "" : "s"} found
                   {test.sample?.length
                     ? `: ${test.sample.join(", ")}${test.toolCount > test.sample.length ? "…" : ""}`
                     : ""}
@@ -170,7 +170,7 @@ export function McpServerModal({ server, onSave, onClose }) {
           )}
           <div style={{ fontSize: 11.5, color: "var(--fg-muted)", lineHeight: 1.5 }}>
             Supports API-key / bearer-token auth (interactive OAuth isn’t supported yet). The token
-            is stored in your browser and sent securely with each chat request — it never enters the
+            is stored in your browser and sent securely with each chat request. It never enters the
             app build.
           </div>
         </div>

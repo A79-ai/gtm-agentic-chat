@@ -23,7 +23,7 @@ export type McpServer = {
 // each durable step self-contained / replayable.
 
 // Bound every MCP round-trip. Without this a hung server (no response, never
-// erroring) keeps a tool call "in progress" until the function's 300s limit —
+// erroring) keeps a tool call "in progress" until the function's 300s limit,
 // which the client reads as a turn that loads forever. A timeout converts the
 // hang into a terminal error the agent can respond to.
 const MCP_TIMEOUT_MS = Number(process.env.MCP_TIMEOUT_MS) || 45_000;

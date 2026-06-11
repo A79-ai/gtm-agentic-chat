@@ -102,7 +102,7 @@ export async function GET(req: Request) {
     connectedKeys.has(s(item.ampersand_provider).toLowerCase());
 
   // Prefer org config; fall back to deploy env (the product bakes these as
-  // VITE_AMPERSAND_* — the org API doesn't expose them).
+  // VITE_AMPERSAND_*, since the org API doesn't expose them).
   const projectId =
     configValue(configsRaw, "sales_agent", "ampersand_project_id") ||
     process.env.AMPERSAND_PROJECT_ID ||

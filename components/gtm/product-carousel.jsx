@@ -1,4 +1,4 @@
-// Auto-playing product carousel — cycles through AmpUp agent screens (gif-like
+// Auto-playing product carousel: cycles through AmpUp agent screens (gif-like
 // loop). The window is always the real (light) AmpUp UI; theme only tints the
 // caption + dots. Ported from the Claude Design "AmpUp Homepage" handoff.
 import React from "react";
@@ -141,7 +141,7 @@ function FrameRisk() {
 // ---- FRAME 2 · Account Brief Generator ----
 function FrameBrief() {
   const signals = [
-    "Series C ($90M) closed 3 weeks ago — expansion budget likely",
+    "Series C ($90M) closed 3 weeks ago, expansion budget likely",
     "New VP Sales started; prior stack included a competitor",
     "Two champions opened your pricing page 5× last week",
   ];
@@ -291,7 +291,7 @@ function FrameFollowup() {
       </div>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 13, lineHeight: 1.5, color: "#2B2A28", marginBottom: 10 }}>
-          Drafted from your call with <strong>Acme Corp</strong> — 24 min. Ready to send.
+          Drafted from your call with <strong>Acme Corp</strong> (24 min). Ready to send.
         </div>
         <div
           style={{
@@ -310,11 +310,11 @@ function FrameFollowup() {
             }}
           >
             To: <span style={{ color: "#181D27" }}>priya@acme.com</span> · Subject:{" "}
-            <span style={{ color: "#181D27" }}>Great chatting — next steps</span>
+            <span style={{ color: "#181D27" }}>Great chatting, next steps</span>
           </div>
           <div style={{ padding: "12px 14px", fontSize: 12.5, lineHeight: 1.5, color: "#2B2A28" }}>
-            Hi Priya — thanks for the time today. Recapping what we agreed on, plus a couple of
-            items to keep us moving…
+            Hi Priya, thanks for the time today. Recapping what we agreed on, plus a couple of items
+            to keep us moving…
             <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 7 }}>
               {todos.map((t, i) => (
                 <div
@@ -624,7 +624,7 @@ export function ProductCarousel({ theme = "dark", width = 600 }) {
               {active.badge}
             </Pill>
           </div>
-          {/* body — only the active frame renders; keyed remount replays the fade */}
+          {/* body: only the active frame renders; keyed remount replays the fade */}
           <div
             style={{
               position: "relative",

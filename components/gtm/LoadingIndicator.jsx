@@ -1,4 +1,4 @@
-// AmpUp loading indicator — animated A-mark rocket + cycling shimmer word.
+// AmpUp loading indicator: animated A-mark rocket + cycling shimmer word.
 // Ported from the product (LoadingIndicator/LogoSpinner), trimmed to the chip.
 import { useEffect, useState } from "react";
 import "./loading.css";

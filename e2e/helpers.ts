@@ -15,7 +15,7 @@ export async function isMultiTenant(page: Page): Promise<boolean> {
 // signup + onboarding overlays via env (NEXT_PUBLIC_SIGNUP_ENABLED /
 // NEXT_PUBLIC_ONBOARDING_ENABLED = false); we also clear any leftover first-run
 // localStorage so a reused profile can't resurface an overlay that intercepts
-// clicks. (Don't seed a signup account — its email triggers a billing-status
+// clicks. (Don't seed a signup account; its email triggers a billing-status
 // refetch loop that never settles.)
 export async function enterApp(page: Page): Promise<void> {
   await page.addInitScript(() => {
@@ -23,7 +23,7 @@ export async function enterApp(page: Page): Promise<void> {
       localStorage.setItem("ampup-onboarded:local", "1");
       localStorage.setItem("ampup-onboarded", "1");
     } catch {
-      // localStorage unavailable (private mode) — env flags still gate overlays.
+      // localStorage unavailable (private mode); env flags still gate overlays.
     }
   });
 }

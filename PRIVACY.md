@@ -27,8 +27,8 @@ comfortable connecting.
 
 | Destination | What is sent | When |
 |---|---|---|
-| **LLM provider** — Anthropic API (`ANTHROPIC_API_KEY`) **or** the Vercel AI Gateway (`AI_GATEWAY_API_KEY`) | Your chat messages, the system prompt, attached record/file context, and tool results — i.e. whatever the model needs to answer | Every chat turn |
-| **AmpUp MCP** — your org's `AMPUP_MCP_URL` (`*.a79dev.com`) | CRM / meeting / task tool calls and their arguments, authenticated with your AmpUp key | When the agent reads or writes your CRM data |
+| **LLM provider**: Anthropic API (`ANTHROPIC_API_KEY`) **or** the Vercel AI Gateway (`AI_GATEWAY_API_KEY`) | Your chat messages, the system prompt, attached record/file context, and tool results (whatever the model needs to answer) | Every chat turn |
+| **AmpUp MCP**: your org's `AMPUP_MCP_URL` (`*.a79dev.com`) | CRM / meeting / task tool calls and their arguments, authenticated with your AmpUp key | When the agent reads or writes your CRM data |
 | **Connected MCP servers** (optional, user-added) | Tool calls to any third-party MCP server *you* connect, using the URL + token you provide | Only for servers you explicitly connect |
 | **Ampersand** (optional) | OAuth connect flow for third-party connectors; uses the public Ampersand UI key | Only when you use the Connectors "Connect" flow |
 | **Auth0** (optional, multi-tenant) | Login; mints a short-lived per-user key | Only when Auth0 env vars are set |
@@ -38,11 +38,11 @@ comfortable connecting.
 ## What is stored
 
 - **Conversation / run state** is managed by the **Workflow DevKit durable
-  runtime inside your own deployment** — the stream *is* the transcript. There is
+  runtime inside your own deployment**: the stream *is* the transcript. There is
   no separate analytics or transcript database, and nothing is shipped to the
   template authors.
 - **Browser `localStorage`** holds your connected MCP servers (and their tokens),
-  your custom agents, and onboarding flags — on your device only.
+  your custom agents, and onboarding flags, on your device only.
 - **No telemetry.** This template does not phone home.
 
 ## Your responsibilities as the operator

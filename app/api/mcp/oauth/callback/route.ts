@@ -52,7 +52,7 @@ export async function GET(req: Request) {
     return page({ type: "mcp-oauth-error", error: oauthError });
   }
   if (!data) {
-    return page({ type: "mcp-oauth-error", error: "Session expired — please try again." });
+    return page({ type: "mcp-oauth-error", error: "Session expired. Please try again." });
   }
   if (!(code && state) || state !== data.state) {
     return page({ type: "mcp-oauth-error", error: "Invalid authorization response." });

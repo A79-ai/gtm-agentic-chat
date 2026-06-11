@@ -1,4 +1,4 @@
-// Pre / post meeting brief — a compact projection of the MCP brief tools.
+// Pre / post meeting brief: a compact projection of the MCP brief tools.
 import { callAmpupTool } from "@/lib/mcp";
 
 export const maxDuration = 40;

@@ -1,4 +1,4 @@
-// Files — lists files uploaded from this client (chat composer). There is no
+// Files: lists files uploaded from this client (chat composer). There is no
 // global datasource-list MCP tool, so this surface is scoped to local session
 // uploads; each row carries the datasource_id the agent reads with read_file.
 import { useEffect, useState } from "react";

@@ -1,4 +1,4 @@
-// Shared UI primitives — entity icons, badges, chips, avatars
+// Shared UI primitives: entity icons, badges, chips, avatars
 import React from "react";
 import { CONNECTORS, ENTITIES, healthTone, initials as initialsOf } from "@/lib/gtm/data";
 import { Icons, Logos } from "./icons";

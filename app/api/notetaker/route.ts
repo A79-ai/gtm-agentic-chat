@@ -1,4 +1,4 @@
-// AmpUp Notetaker settings — read/write the org's notetaker config.
+// AmpUp Notetaker settings: read/write the org's notetaker config.
 export const maxDuration = 30;
 
 const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN || "*";

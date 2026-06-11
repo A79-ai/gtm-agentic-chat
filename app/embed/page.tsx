@@ -6,7 +6,7 @@
 // `frame-ancestors` header set in next.config.ts (EMBED_ALLOWED_ORIGINS).
 //
 // Auth: same per-user `sk-a79` flow as the main app, but sign-in uses
-// `loginWithPopup()` — a first-party popup runs Auth0 Universal Login at the top
+// `loginWithPopup()`: a first-party popup runs Auth0 Universal Login at the top
 // level, sidestepping the iframe clickjacking block (Auth0 sends
 // `frame-ancestors 'none'`) and the third-party-cookie loss that breaks the
 // redirect/silent flow inside a cross-site iframe. The provider already uses
@@ -81,7 +81,7 @@ function EmbedGate() {
       try {
         await loginWithPopup();
       } catch {
-        // Popup blocked or closed — fall back to a full redirect (works when the
+        // Popup blocked or closed, so fall back to a full redirect (works when the
         // embed is the top-level page rather than framed).
         loginWithRedirect();
       }
@@ -100,7 +100,7 @@ export default function EmbedPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   // Widget handshake: announce ready to the embedding host and accept theme
-  // from it. Origin-scoped both ways — outbound uses the referrer origin (the
+  // from it. Origin-scoped both ways: outbound uses the referrer origin (the
   // framing page), inbound is checked against it. No '*'.
   useEffect(() => {
     if (typeof window === "undefined" || window.parent === window) {

@@ -13,11 +13,11 @@ function initials(name) {
 }
 function fmtDate(v) {
   if (!v) {
-    return "—";
+    return "-";
   }
   const d = new Date(v);
   return Number.isNaN(d.getTime())
-    ? "—"
+    ? "-"
     : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
@@ -35,7 +35,7 @@ function Field({ label, value }) {
         {label}
       </span>
       <span style={{ fontSize: 14, color: "var(--fg-primary)", wordBreak: "break-word" }}>
-        {value || "—"}
+        {value || "-"}
       </span>
     </div>
   );
