@@ -4,7 +4,7 @@
     "slug": "explorium",
     "category": "Prospecting",
     "domain": "explorium.ai",
-    "desc": "Find & enrich companies and contacts — firmographics and technographics.",
+    "desc": "Find & enrich companies and contacts: firmographics and technographics.",
     "url": "https://vibeprospecting.explorium.ai/mcp",
     "auth": "apikey",
     "docsUrl": "https://www.explorium.ai/"

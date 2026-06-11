@@ -1,5 +1,5 @@
 /*
- * AmpUp GTM chat — embeddable widget loader.
+ * AmpUp GTM chat: embeddable widget loader.
  *
  * Drop one tag on any site:
  *   <script src="https://YOUR-APP.vercel.app/widget.js" data-theme="dark" async></script>
@@ -7,7 +7,7 @@
  * It injects a floating launcher (in a Shadow DOM so the host page's CSS can't
  * touch it) and, on first open, lazily mounts an <iframe> pointed at the app's
  * chrome-less /embed route. Host <-> widget talk over postMessage with an exact
- * origin check both ways. Fails silently — never throws into the host page.
+ * origin check both ways. Fails silently, never throws into the host page.
  *
  * The embedding site's origin must be allowlisted on the app via
  * EMBED_ALLOWED_ORIGINS (the /embed CSP frame-ancestors). Same-origin embeds
@@ -21,7 +21,7 @@
     var script =
       document.currentScript ||
       (function () {
-        // Wix/Squarespace sandboxes can null currentScript — match by src.
+        // Wix/Squarespace sandboxes can null currentScript; match by src.
         var s = document.getElementsByTagName("script");
         for (var i = s.length - 1; i >= 0; i--) {
           if (s[i].src && s[i].src.indexOf("widget.js") !== -1) return s[i];
@@ -93,7 +93,7 @@
       setOpen(!isOpen);
     });
 
-    // Messages FROM the embed — verify exact origin AND that it's our iframe.
+    // Messages FROM the embed: verify exact origin AND that it's our iframe.
     window.addEventListener("message", function (e) {
       if (e.origin !== ORIGIN) return;
       if (!iframe || e.source !== iframe.contentWindow) return;

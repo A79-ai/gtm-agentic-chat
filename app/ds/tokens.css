@@ -1,6 +1,6 @@
 /* ============================================================================
-   AmpUp Design System — Colors, Typography & Base Styles
-   v1.1 — April 2026
+   AmpUp Design System: Colors, Typography & Base Styles
+   v1.1, April 2026
    N-scale neutrals · G-scale Signal Gold · Electric Teal · Mint
    ============================================================================ */
 
@@ -13,31 +13,31 @@
   --font-mono:    "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* ============================================================
-     FOUNDATION — Neutral N-scale (warm undertone, no cool blue)
+     FOUNDATION: Neutral N-scale (warm undertone, no cool blue)
      ============================================================ */
-  --n-000: #FFFFFF;  /* White — light card surface */
-  --n-050: #FDFCF7;  /* Warm White — light page bg */
-  --n-100: #E4E3DE;  /* Ash — headings on dark / subtle dividers light */
-  --n-150: #C9C8C4;  /* Stone — input borders / strong borders light */
-  --n-200: #B1B0AD;  /* Slate — body text on dark */
-  --n-400: #7F7E7C;  /* Flint — muted/secondary text (both modes) */
-  --n-600: #4C4C4A;  /* Iron — strong borders dark */
-  --n-700: #333231;  /* Basalt — subtle dividers / secondary text light */
-  --n-800: #232323;  /* Obsidian — card surface dark */
-  --n-900: #191919;  /* Void — page background dark */
+  --n-000: #FFFFFF;  /* White: light card surface */
+  --n-050: #FDFCF7;  /* Warm White: light page bg */
+  --n-100: #E4E3DE;  /* Ash: headings on dark / subtle dividers light */
+  --n-150: #C9C8C4;  /* Stone: input borders / strong borders light */
+  --n-200: #B1B0AD;  /* Slate: body text on dark */
+  --n-400: #7F7E7C;  /* Flint: muted/secondary text (both modes) */
+  --n-600: #4C4C4A;  /* Iron: strong borders dark */
+  --n-700: #333231;  /* Basalt: subtle dividers / secondary text light */
+  --n-800: #232323;  /* Obsidian: card surface dark */
+  --n-900: #191919;  /* Void: page background dark */
 
   /* ============================================================
-     PRIMARY — Signal Gold G-scale (~5% of screen, intentional)
+     PRIMARY: Signal Gold G-scale (~5% of screen, intentional)
      ============================================================ */
-  --g-100: #FFF4D6;  /* Highlight — badge bg, subtle gold tints */
-  --g-300: #FFD166;  /* Soft Gold — dark mode stroke / rail active text */
-  --g-500: #FFB712;  /* BRAND GOLD — primary CTA, star, "Up" in logo */
-  --g-700: #CC8A00;  /* Dark Gold — light mode stroke, pressed states */
-  --g-900: #7A5200;  /* Deep Amber — label text on gold backgrounds */
+  --g-100: #FFF4D6;  /* Highlight: badge bg, subtle gold tints */
+  --g-300: #FFD166;  /* Soft Gold: dark mode stroke / rail active text */
+  --g-500: #FFB712;  /* BRAND GOLD: primary CTA, star, "Up" in logo */
+  --g-700: #CC8A00;  /* Dark Gold: light mode stroke, pressed states */
+  --g-900: #7A5200;  /* Deep Amber: label text on gold backgrounds */
   --g-glow: rgba(255, 183, 18, 0.12);
 
   /* ============================================================
-     SECONDARY — Electric Teal
+     SECONDARY: Electric Teal
      ============================================================ */
   --teal-bright:   #6EE5F0;
   --teal-vibrant:  #4DD9E8;
@@ -49,7 +49,7 @@
   --teal-glow-subtle: rgba(77, 217, 232, 0.15);
 
   /* ============================================================
-     TERTIARY — Mint (positive signals, win rates, success)
+     TERTIARY: Mint (positive signals, win rates, success)
      ============================================================ */
   --mint-bright:   #7FF5CA;
   --mint-vibrant:  #5EEDB8;
@@ -61,7 +61,7 @@
   --mint-glow-subtle: rgba(94, 237, 184, 0.15);
 
   /* ============================================================
-     SEMANTIC — Light Mode (Warm Cream) — DEFAULT
+     SEMANTIC: Light Mode (Warm Cream), DEFAULT
      ============================================================ */
   --bg-page:        var(--n-050);  /* Warm White page background */
   --bg-surface:     var(--n-000);  /* card / surface */
@@ -79,15 +79,15 @@
   --fg-emphasis:    var(--g-700);  /* gold emphasis on light */
   --fg-success:     var(--mint-deep);
   --fg-info:        var(--teal-deep);
-  --fg-danger:      #BE123C;       /* destructive — preserved */
+  --fg-danger:      #BE123C;       /* destructive: preserved */
 
-  --border-default: var(--n-150);  /* Stone — input/strong border light */
-  --border-subtle:  var(--n-100);  /* Ash — subtle divider light */
+  --border-default: var(--n-150);  /* Stone: input/strong border light */
+  --border-subtle:  var(--n-100);  /* Ash: subtle divider light */
   --border-strong:  var(--n-700);
   --border-focus:   var(--g-500);
 
   /* ============================================================
-     LEFT NAV RAIL — always dark regardless of mode
+     LEFT NAV RAIL: always dark regardless of mode
      ============================================================ */
   --rail-bg:           var(--n-900);
   --rail-elevated:     var(--n-800);
@@ -144,7 +144,7 @@
 }
 
 /* ============================================================
-   DARK MODE — Warm Charcoal (primary/default experience)
+   DARK MODE: Warm Charcoal (primary/default experience)
    ============================================================ */
 .dark, [data-theme="dark"] {
   --bg-page:     var(--n-900);  /* Void */
@@ -153,7 +153,7 @@
   --bg-elevated: var(--n-800);
   --bg-muted:    var(--n-800);
 
-  --fg-primary:   var(--n-100);  /* Ash — headings + body */
+  --fg-primary:   var(--n-100);  /* Ash: headings + body */
   --fg-body:      var(--n-200);  /* Slate */
   --fg-secondary: var(--n-200);
   --fg-muted:     var(--n-400);  /* Flint */
@@ -179,7 +179,7 @@ html, body {
   text-rendering: optimizeLegibility;
 }
 
-/* H1 / H2 — PT Serif */
+/* H1 / H2: PT Serif */
 h1, .h1 {
   font-family: var(--font-hero);
   font-size: var(--text-6xl);   /* 60px (range 48-72) */
@@ -197,7 +197,7 @@ h2, .h2 {
   margin: 0;
 }
 
-/* H3 and below — Neue Montreal / DM Sans */
+/* H3 and below: Neue Montreal / DM Sans */
 h3, .h3 {
   font-family: var(--font-sans);
   font-size: var(--text-2xl);   /* 24px (range 24-28) */

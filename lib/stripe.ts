@@ -1,4 +1,4 @@
-// Server-only Stripe helpers. NEVER import this from client components — it
+// Server-only Stripe helpers. NEVER import this from client components; it
 // reads STRIPE_SECRET_KEY. Returns null when unconfigured so routes can degrade
 // to a clean "not configured" response and demo mode stays the default.
 import Stripe from "stripe";
@@ -20,7 +20,7 @@ export function getStripe(): Stripe | null {
 // request origin first, so a cloned/self-deployed template "just works" on
 // whatever host serves it (localhost, a Vercel alias, a preview URL) without
 // requiring NEXT_PUBLIC_SITE_URL to be set per deploy. A stale/dev
-// NEXT_PUBLIC_SITE_URL must NOT win here — that previously sent prod checkouts
+// NEXT_PUBLIC_SITE_URL must NOT win here; that previously sent prod checkouts
 // back to localhost. It's honored only as a fallback when no host is present.
 export function siteUrl(req: Request): string {
   const strip = (u: string) => u.replace(/\/+$/, "");
@@ -60,7 +60,7 @@ type Status =
 
 // Read the live entitlement for an email straight from Stripe (source of truth).
 // A trialing subscription still means the customer is ON the plan (they completed
-// checkout) — it's "subscribed", just inside its trial window. Only the absence
+// checkout): it's "subscribed", just inside its trial window. Only the absence
 // of a subscription is "none".
 export async function customerStatus(stripe: Stripe, email: string): Promise<Status> {
   const customers = await stripe.customers.list({ email, limit: 1 });

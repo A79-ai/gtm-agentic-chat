@@ -4,7 +4,7 @@
 // Mirrors the product's onboarding: POST /sales-agents/api/v1/onboarding/profile
 // fires DEMO_CONTENT_GENERATE for free-trial orgs, which seeds PER-USER
 // (owner-stamped) accounts, deals, and full meetings (transcript + pre/post
-// briefs + analysis) plus 3 practice scripts — all scoped to the calling user.
+// briefs + analysis) plus 3 practice scripts, all scoped to the calling user.
 //
 // The backend profile endpoint requires industry / company_products /
 // company_size / user_role. The wizard only collects company + role + size, so
@@ -74,7 +74,7 @@ function mapSize(...candidates: (string | undefined)[]): string {
   return "11-50";
 }
 
-// Personal mailbox providers — a poor company signal, so skip the lookup.
+// Personal mailbox providers are a poor company signal, so skip the lookup.
 const PERSONAL = new Set([
   "gmail.com",
   "googlemail.com",
@@ -118,7 +118,7 @@ export async function POST(req: Request) {
   const auth = { Authorization: `Bearer ${key}` };
 
   // Idempotency backstop: if the profile step already advanced, the seed was
-  // already triggered for this user — don't re-fire the paid LLM job.
+  // already triggered for this user, so don't re-fire the paid LLM job.
   try {
     const st = await fetch(`${apiBase()}/sales-agents/api/v1/onboarding/status`, { headers: auth });
     if (st.ok) {

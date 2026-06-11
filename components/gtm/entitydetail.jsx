@@ -1,4 +1,4 @@
-// EntityDetail — generic record detail + "Chat with this entity"
+// EntityDetail: generic record detail + "Chat with this entity"
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/gtm/auth";
 import { byId, ENTITIES, FIELDS, related, subtitleOf } from "@/lib/gtm/data";
@@ -10,19 +10,19 @@ function FieldVal({ rec, spec, onOpen }) {
   const v = rec[key];
   switch (kind) {
     case "badge":
-      return v ? <TBadge value={v} /> : <span style={{ color: "var(--fg-muted)" }}>—</span>;
+      return v ? <TBadge value={v} /> : <span style={{ color: "var(--fg-muted)" }}>-</span>;
     case "ref": {
       const r = byId(v);
       return r ? (
         <RefChip onOpen={onOpen} record={r} />
       ) : (
-        <span style={{ color: "var(--fg-muted)" }}>—</span>
+        <span style={{ color: "var(--fg-muted)" }}>-</span>
       );
     }
     case "min":
-      return <span className="val">{v ? `${v} min` : "—"}</span>;
+      return <span className="val">{v ? `${v} min` : "-"}</span>;
     default:
-      return <span className="val">{v == null || v === "" ? "—" : String(v)}</span>;
+      return <span className="val">{v == null || v === "" ? "-" : String(v)}</span>;
   }
 }
 

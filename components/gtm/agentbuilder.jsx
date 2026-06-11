@@ -1,4 +1,4 @@
-// Agent builder — define a chat persona: a system prompt, a scoped set of MCP
+// Agent builder: define a chat persona, a system prompt, a scoped set of MCP
 // servers, and (optional) attached files. Saved to the local agent registry.
 import { useRef, useState } from "react";
 import { deleteAgent, isSystemAgent, saveAgent } from "@/lib/gtm/agents";
@@ -408,7 +408,7 @@ export function AgentBuilder({ agent, onSave, onClose, onDeleted, onOpenConnecto
               )}
               {uploads.length === 0 ? (
                 <div style={{ fontSize: 12, color: "var(--fg-muted)" }}>
-                  No files yet — upload one to ground this agent in your own documents.
+                  No files yet. Upload one to ground this agent in your own documents.
                 </div>
               ) : (
                 <div

@@ -17,8 +17,8 @@ import {
 import "@amp-labs/react/styles";
 import { useEffect, useRef } from "react";
 
-// Once OAuth lands, create the read installation with every field auto-selected
-// — no field picker, matching the amp.yaml `inheritFieldsAndMapping` read config.
+// Once OAuth lands, create the read installation with every field auto-selected,
+// no field picker, matching the amp.yaml `inheritFieldsAndMapping` read config.
 function HeadlessInstall({
   provider,
   module,
@@ -58,13 +58,13 @@ function HeadlessInstall({
     createInstallation({
       config: { read: { objects } },
       onSuccess: (inst) => {
-        onToast?.("Connected — syncing your calendar", "success");
+        onToast?.("Connected, syncing your calendar", "success");
         onInstalled?.(inst.id, inst.config);
         onDone?.();
       },
       onError: () => {
         creating.current = false; // allow a retry
-        onToast?.("Couldn't finish connecting — please try again", "error");
+        onToast?.("Couldn't finish connecting. Please try again", "error");
       },
     });
   }, [connection, installation, instFetching, manifestLoading]);

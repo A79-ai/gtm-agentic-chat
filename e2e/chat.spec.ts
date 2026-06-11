@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { enterApp, isMultiTenant } from "./helpers";
 
-// Chat — runs against the single-org bench. Drives a real turn through the
+// Chat: runs against the single-org bench. Drives a real turn through the
 // durable Workflow runtime end to end: open a chat, send a prompt, and assert
 // the assistant streams a non-empty answer back (no hang, no error). Uses a
 // deterministic echo prompt so the assertion doesn't depend on model phrasing.

@@ -1,4 +1,4 @@
-// Cross-entity typeahead for the chat attach picker — wraps the org's MCP
+// Cross-entity typeahead for the chat attach picker. Wraps the org's MCP
 // search_entities tool and returns groups of {id, type, name, subtitle}.
 import { callAmpupTool } from "@/lib/mcp";
 

@@ -1,4 +1,4 @@
-// Home — launchpad: hero, connected sources, browse records, agents
+// Home launchpad: hero, connected sources, browse records, agents
 import React, { useState } from "react";
 import { countOf, ENTITIES, ENTITY_ORDER, recordsOf } from "@/lib/gtm/data";
 import { Icons, LogoMark, Logos } from "./icons";

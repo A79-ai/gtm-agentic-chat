@@ -77,7 +77,7 @@ export function NotetakerScreen({ onToast }) {
       .catch(() => ({ ok: false, error: "Network error" }));
     setTesting(false);
     if (r.ok) {
-      onToast("Notetaker is joining your meeting — give it a few seconds", "success");
+      onToast("Notetaker is joining your meeting, give it a few seconds", "success");
       setTestUrl("");
     } else {
       onToast(r.error || "Couldn't send the notetaker", "error");

@@ -1,4 +1,4 @@
-// Send the AmpUp Notetaker to a meeting NOW — a "test the notetaker" action for
+// Send the AmpUp Notetaker to a meeting NOW: a "test the notetaker" action for
 // the settings page. Proxies to the backend recall endpoint, which dispatches a
 // real Recall bot to join the given meeting URL.
 const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN || "*";

@@ -1,4 +1,4 @@
-// Plans & billing — driven by lib/gtm/config plans + live trial/subscription
+// Plans & billing: driven by lib/gtm/config plans + live trial/subscription
 // status. In demo mode "Upgrade" marks the workspace subscribed locally; with
 // provider=stripe it redirects to hosted Checkout (see lib/gtm/billing).
 import { useState } from "react";
@@ -13,7 +13,7 @@ function StatusStrip({ status, onManage }) {
         <Icons.CheckCircle size={16} />
         {status.trialing ? (
           <span>
-            You’re on <strong>Pro</strong> —{" "}
+            You’re on <strong>Pro</strong>,{" "}
             <strong>
               {status.daysLeft} day{status.daysLeft === 1 ? "" : "s"}
             </strong>{" "}
@@ -59,7 +59,7 @@ function StatusStrip({ status, onManage }) {
   if (status.state === "expired") {
     return (
       <div className="trial-strip warn">
-        <Icons.Bell size={16} /> Your free trial has ended — upgrade to keep your agent running.
+        <Icons.Bell size={16} /> Your free trial has ended. Upgrade to keep your agent running.
       </div>
     );
   }
@@ -79,7 +79,7 @@ export function PlansScreen({ onToast }) {
         "Hi AmpUp team,",
         "",
         "I'd like to talk about the Enterprise plan.",
-        ...(signoff ? ["", `— ${signoff}`] : []),
+        ...(signoff ? ["", "Thanks,", signoff] : []),
       ].join("\n");
       window.location.href = `mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent("AmpUp Enterprise inquiry")}&body=${encodeURIComponent(body)}`;
       onToast("Opening your email to contact sales…", "info");
@@ -97,11 +97,11 @@ export function PlansScreen({ onToast }) {
     const r = await startCheckout(p.id);
     if (r === "subscribed") {
       setStatus(billingStatus());
-      onToast("You’re on Pro now — thank you! 🎉", "success");
+      onToast("You’re on Pro now. Thank you! 🎉", "success");
     } else if (r === "redirect") {
       /* navigating to hosted checkout */
     } else {
-      onToast("Couldn’t start checkout — check your billing configuration.", "error");
+      onToast("Couldn’t start checkout. Check your billing configuration.", "error");
     }
   };
 
@@ -130,7 +130,7 @@ export function PlansScreen({ onToast }) {
           <h2 style={{ marginBottom: 8 }}>Simple, usage-ready pricing</h2>
           <p style={{ fontSize: 14.5, color: "var(--fg-muted)", maxWidth: 520, margin: "0 auto" }}>
             Start free for {CONFIG.billing.trialDays} days. Keep going for{" "}
-            {priceLabel(plans.find((p) => p.id === "pro")?.price)}/month — or talk to us for
+            {priceLabel(plans.find((p) => p.id === "pro")?.price)}/month, or talk to us for
             enterprise.
           </p>
         </div>
@@ -229,7 +229,7 @@ export function PlansScreen({ onToast }) {
         <p style={{ textAlign: "center", fontSize: 12, color: "var(--fg-muted)", marginTop: 20 }}>
           {CONFIG.billing.provider === "stripe"
             ? "Billed securely via Stripe. Cancel anytime."
-            : "Demo billing — no real charges. Configure a provider to go live."}
+            : "Demo billing. No real charges. Configure a provider to go live."}
         </p>
       </div>
     </div>

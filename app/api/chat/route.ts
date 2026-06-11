@@ -7,10 +7,10 @@ export const maxDuration = 300;
 
 // Deployment-config sanity check (logged once per cold start): if Auth0 is
 // configured client-side but MULTI_TENANT isn't on, the data routes silently
-// fall back to the shared AMPUP_MCP_API_KEY — i.e. per-user scoping is bypassed.
+// fall back to the shared AMPUP_MCP_API_KEY, i.e. per-user scoping is bypassed.
 if (process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID && process.env.MULTI_TENANT !== "true") {
   console.warn(
-    "[gtm] NEXT_PUBLIC_AUTH0_CLIENT_ID is set but MULTI_TENANT!=true — data routes " +
+    "[gtm] NEXT_PUBLIC_AUTH0_CLIENT_ID is set but MULTI_TENANT!=true; data routes " +
       "will fall back to the shared AMPUP_MCP_API_KEY (per-user scoping bypassed). " +
       "Set MULTI_TENANT=true for multi-tenant deployments."
   );

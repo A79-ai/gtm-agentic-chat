@@ -1,4 +1,4 @@
-// Icons — Lucide-style UI glyphs + AmpUp mark + connector logos
+// Icons: Lucide-style UI glyphs + AmpUp mark + connector logos
 import React from "react";
 
 const L =
@@ -168,7 +168,7 @@ export const Icons = {
   LogOut: L(["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "m16 17 5-5-5-5", "M21 12H9"]),
 };
 
-// AmpUp spark "A" mark — legs use currentColor, sparkle gold
+// AmpUp spark "A" mark: legs use currentColor, sparkle gold
 export function LogoMark({ size = 24 }) {
   const h = size,
     w = size * (43 / 45);
@@ -190,7 +190,7 @@ export function LogoMark({ size = 24 }) {
   );
 }
 
-// AmpUp full lockup — "Amp" + "Up" wordmark with spark "A". Legs/letters use
+// AmpUp full lockup: "Amp" + "Up" wordmark with spark "A". Legs/letters use
 // `ink`; the sparkle and "Up" stay brand gold. Themed for light/dark panels.
 export function Logo({ ink = "#FDFCF7", height = 26, style }) {
   const w = (132 / 45) * height;

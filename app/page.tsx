@@ -72,7 +72,7 @@ function Gated() {
   }
 
   // A failed callback (expired/replayed code, "invalid state", consent denied)
-  // leaves us unauthenticated — either with an `error`, or rarely with the
+  // leaves us unauthenticated: either with an `error`, or rarely with the
   // `?code` still in the URL and no error. Surface a clear retry instead of
   // silently dropping to the marketing splash (which looks like login did
   // nothing). Retrying starts a fresh transaction, which clears it.
@@ -136,7 +136,7 @@ export default function Page() {
     return null;
   }
   // Public, read-only share link: render the transcript without the app, auth or
-  // DataProvider — a recipient has no MCP key.
+  // DataProvider, since a recipient has no MCP key.
   if (shareId) {
     return <ShareView shareId={shareId} />;
   }

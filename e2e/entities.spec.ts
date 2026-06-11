@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { enterApp, isMultiTenant } from "./helpers";
 
-// Entity list-pages — runs against the single-org bench. For each entity type it
+// Entity list-pages: runs against the single-org bench. For each entity type it
 // loads /records/<type> and asserts the list renders against live data without
 // the "count says N but list shows 0" regression the app has hit before: when
 // the workspace count is non-zero, real rows must render (not the empty state).
@@ -26,7 +26,7 @@ test.describe("entity list-pages", () => {
         page.getByRole("heading", { name: new RegExp(`^${plural}$`, "i") })
       ).toBeVisible();
 
-      // Wait for the list to settle — a row or the empty state, never stuck on
+      // Wait for the list to settle: a row or the empty state, never stuck on
       // the loading spinner.
       const firstRow = page.locator(".erow, .ecard-list > *").first();
       const emptyState = page.getByText(new RegExp(`no ${plural} synced yet`, "i"));

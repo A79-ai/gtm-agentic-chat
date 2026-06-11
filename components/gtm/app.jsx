@@ -1,4 +1,4 @@
-// App shell — router, rail / bottom-nav + records sheet, theme, tweaks
+// App shell: router, rail / bottom-nav + records sheet, theme, tweaks
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { duplicateAgent, listAgents } from "@/lib/gtm/agents";
 import { AUTH0_ENABLED, apiFetch } from "@/lib/gtm/auth";
@@ -317,7 +317,7 @@ function Toast({ toast }) {
 export function App({ authUser, onAuth0Logout } = {}) {
   const { ready, refresh } = useDataStatus(); // re-render the tree when records/connectors load
 
-  // Onboarding completion is remembered PER signed-in user — the app is
+  // Onboarding completion is remembered PER signed-in user; the app is
   // multi-tenant (a shared free-trial org), so a returning user skips
   // onboarding on every later login, while a different user on the same
   // browser still gets their own first run. Keyed off the stable Auth0 id.
@@ -384,7 +384,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
         picture: authUser.picture,
       }
     : profile;
-  // Signed-in user's role + workspace info — drives the profile page and the
+  // Signed-in user's role + workspace info: drives the profile page and the
   // role badge in the profile menu. Fetched once (the per-user key is already
   // minted by the time <App/> mounts under AuthedApp).
   const [me, setMe] = useState(null);
@@ -431,7 +431,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
     };
   }, []);
   // Pre-fill the onboarding "About you" step from the signed-in Auth0 profile.
-  // Auth0's `name` is often just the email for database users — fall back to
+  // Auth0's `name` is often just the email for database users, fall back to
   // given/family name in that case so we don't drop the email into the name box.
   const onboardingInitial = (() => {
     if (!authUser) {
@@ -482,9 +482,9 @@ export function App({ authUser, onAuth0Logout } = {}) {
     const params = new URLSearchParams(window.location.search);
     const b = params.get("billing");
     if (b === "success") {
-      showToast("Subscription active — welcome to Pro! 🎉", "success");
+      showToast("Subscription active. Welcome to Pro! 🎉", "success");
     } else if (b === "cancelled") {
-      showToast("Checkout cancelled — no charge made.", "info");
+      showToast("Checkout cancelled. No charge made.", "info");
     }
     if (b) {
       window.history.replaceState({ route }, "", window.location.pathname);
@@ -518,7 +518,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
   };
   const openAgent = (agent, seed) => {
     if (agent?.enterprise) {
-      showToast(`${agent.name} is an Enterprise agent — contact sales to enable it.`, "info");
+      showToast(`${agent.name} is an Enterprise agent. Contact sales to enable it.`, "info");
       return;
     }
     setChatSeed((seed || []).filter(Boolean));
@@ -530,7 +530,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
 
   // Sync the initial history entry with the starting route (so the first Back
   // works), and restore route state on Back/Forward. The popstate handler only
-  // calls setRoute — never pushState — to avoid navigation loops.
+  // calls setRoute (never pushState) to avoid navigation loops.
   useEffect(() => {
     window.history.replaceState({ route }, "", pathForRoute(route) + window.location.search);
     const onPop = (e) => setRoute(e.state?.route || routeForPath(window.location.pathname));
@@ -584,7 +584,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
         if (s === "google" && !newGoogle) {
           showToast("Signed in with Google", "success");
         } else if (s === "error") {
-          showToast("Google sign-in didn’t complete — try again", "error");
+          showToast("Google sign-in didn’t complete, try again", "error");
         }
         if (s) {
           window.history.replaceState({ route }, "", window.location.pathname);
@@ -620,7 +620,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
 
   // Fire the backend free-trial demo seed (per-user accounts/deals/meetings) so
   // a brand-new trial workspace isn't empty and the chat has data to work with.
-  // Once per user (the LLM seed is paid) — guarded here AND server-side via the
+  // Once per user (the LLM seed is paid), guarded here AND server-side via the
   // onboarding status check; "Restart onboarding" reuses the same guard, so it
   // never re-fires. Multi-tenant only: the legacy single-org path has no
   // per-user key to scope the seed to.
@@ -651,7 +651,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
           return;
         }
         showToast(
-          "Setting up a sample workspace — deals and meetings will appear shortly",
+          "Setting up a sample workspace, deals and meetings will appear shortly",
           "success"
         );
         // The backend seed (LLM-generated accounts/deals/meetings) lands
@@ -678,7 +678,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
     } else if (action === "restart") {
       restartDemo();
     } else if (action === "signout") {
-      // End the auth session. Under Auth0 we must call logout() — the session
+      // End the auth session. Under Auth0 we must call logout(); the session
       // lives in localStorage and would otherwise silently re-authenticate on
       // reload. Auth0 logout redirects to origin, landing on the sign-in screen
       // (so no manual reload here). We intentionally KEEP the per-user

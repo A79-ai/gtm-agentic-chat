@@ -1,5 +1,5 @@
 /* ============================================================
-   AmpUp GTM Agent — app shell styles (on top of DS tokens)
+   AmpUp GTM Agent: app shell styles (on top of DS tokens)
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -174,7 +174,7 @@ body {
 }
 .ctx-scroll { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
 
-/* trial banner (app shell) + status strip (plans page) — intentionally soft */
+/* trial banner (app shell) + status strip (plans page): intentionally soft */
 .trial-banner { display: flex; align-items: center; gap: 10px; padding: 9px 16px; background: var(--accent-soft); color: var(--accent-text); border-bottom: 1px solid var(--border-subtle); font-size: 13px; flex-shrink: 0; }
 .trial-banner > .btn { margin-left: auto; }
 .trial-banner svg { flex-shrink: 0; }
@@ -290,7 +290,7 @@ body {
 .spin { animation: spin .8s linear infinite; }
 
 /* ============================================================
-   Responsive — tablet & mobile
+   Responsive: tablet & mobile
    ============================================================ */
 @media (max-width: 1100px) {
   .ctx-panel { width: 320px; }
@@ -413,7 +413,7 @@ body {
 .sheet-item .ct { font-size: 13px; color: var(--fg-muted); }
 
 /* ============================================================
-   Simplified nav — New-chat CTA, profile avatar,
+   Simplified nav: New-chat CTA, profile avatar,
    Records flyout, Profile menu (ported from prototype flows.css)
    ============================================================ */
 @keyframes popIn { from { transform: translateY(6px); } to { transform: none; } }
@@ -460,7 +460,7 @@ body {
 .botnav button.fab { background: var(--accent); color: #1a1200; width: 46px; height: 46px; border-radius: 50%; margin-top: -14px; box-shadow: var(--shadow-md); padding: 0; }
 
 /* ============================================================
-   Linear-style list — selectable rows + bulk action bar
+   Linear-style list: selectable rows + bulk action bar
    ============================================================ */
 .row-checkbtn { display: flex; align-items: center; justify-content: center; border: none; background: transparent; cursor: pointer; padding: 0; }
 .row-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--border-default); display: flex; align-items: center; justify-content: center; color: #1a1200; background: var(--bg-surface); transition: background var(--dur-fast), border-color var(--dur-fast); }
@@ -535,7 +535,7 @@ select.create-input { cursor: pointer; appearance: none; background-image: linea
 .file-chip-x { display: inline-flex; border: none; background: transparent; color: var(--fg-muted); cursor: pointer; padding: 0; }
 .file-chip-x:hover { color: var(--fg-primary); }
 
-/* Connected connector — clickable "manage/disconnect" affordance */
+/* Connected connector: clickable "manage/disconnect" affordance */
 .conn-manage { background: var(--mint-glow-subtle); color: var(--fg-success); border: 1px solid transparent; cursor: pointer; }
 .conn-manage:hover { border-color: var(--fg-success); }
 
@@ -633,7 +633,7 @@ select.create-input { cursor: pointer; appearance: none; background-image: linea
 .msg-agent .bubble tbody tr:nth-child(even) td { background: color-mix(in oklab, var(--bg-muted) 30%, transparent); }
 
 /* ============================================================
-   Embed — chrome-less chat surface (/embed route, iframe/widget)
+   Embed: chrome-less chat surface (/embed route, iframe/widget)
    ============================================================ */
 .embed-app .main { padding-bottom: 0; }
 .embed-signin { height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--bg-page); }

@@ -18,7 +18,7 @@ export function googleConfigured(): boolean {
 
 // Random per-process secret used ONLY in non-production when no secret is set
 // (so dev works out of the box without shipping a known constant). Cookies
-// signed with it don't survive a restart — fine for local dev.
+// signed with it don't survive a restart, which is fine for local dev.
 const DEV_SESSION_SECRET = crypto.randomBytes(32).toString("hex");
 
 function sessionSecret(): string {

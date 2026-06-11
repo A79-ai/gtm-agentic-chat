@@ -132,7 +132,7 @@ function McpServerCard({ s, onToggle, onEdit, onRemove }) {
 // A recommended GTM MCP server from the catalog. API-key servers prefill the
 // Add modal; OAuth servers with a hosted endpoint that supports dynamic client
 // registration can connect via the OAuth popup; the rest (no endpoint, or no
-// DCR like HubSpot) stay "OAuth — soon" + Docs.
+// DCR like HubSpot) stay "OAuth: soon" + Docs.
 function McpCatalogCard({ i, onAdd, onConnect }) {
   const oauth = i.auth === "oauth";
   const oauthConnectable = oauth && !!i.url && !i.noDcr;
@@ -172,9 +172,9 @@ function McpCatalogCard({ i, onAdd, onConnect }) {
               border: "1px solid var(--border-subtle)",
               cursor: "default",
             }}
-            title="This server needs a pre-registered OAuth app — use Docs to set it up"
+            title="This server needs a pre-registered OAuth app. Use Docs to set it up"
           >
-            <Icons.Spark size={13} /> OAuth — soon
+            <Icons.Spark size={13} /> OAuth: soon
           </span>
         ) : (
           <button className="btn btn-sm btn-outline" onClick={() => onAdd(i)}>
@@ -419,7 +419,7 @@ export function ConnectorsScreen({ connectors, onToast }) {
       setConnecting({ connector: c, mode: "connect" });
     } else {
       onToast(
-        "Ampersand isn't configured for this org yet — set sales_agent.ampersand_project_id / ampersand_api_key.",
+        "Ampersand isn't configured for this org yet. Set sales_agent.ampersand_project_id / ampersand_api_key.",
         "info"
       );
     }
@@ -432,7 +432,7 @@ export function ConnectorsScreen({ connectors, onToast }) {
     }
   };
   const onContact = (c) =>
-    onToast(`${c.name} is an Enterprise connector — contact sales to enable it.`, "info");
+    onToast(`${c.name} is an Enterprise connector. Contact sales to enable it.`, "info");
 
   // One unified, searchable list: Ampersand integrations, your custom MCP
   // servers, then recommended MCP servers. Custom + recommended are tab-category

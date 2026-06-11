@@ -1,9 +1,9 @@
 # Editable config
 
 These JSON files are the easy-to-edit source for the app's built-in lists. Edit
-them and rebuild (`pnpm build`) — no component code changes needed.
+them and rebuild (`pnpm build`); no component code changes needed.
 
-## `mcp-catalog.json` — recommended MCP servers
+## `mcp-catalog.json`: recommended MCP servers
 
 The "Recommended for GTM" cards on the Connectors page. Add an object per server:
 
@@ -15,10 +15,10 @@ The "Recommended for GTM" cards on the Connectors page. Add an object per server
 | `desc` | one-line description on the card |
 | `url` | hosted MCP endpoint. Leave `""` for discovery-only (no Add/Connect) |
 | `auth` | `apikey` → one-click **Add** (paste a key) · `oauth` → **Connect** (OAuth popup) |
-| `noDcr` | set `true` for OAuth servers that need a pre-registered app (no dynamic client registration) → shown as "OAuth — soon" |
+| `noDcr` | set `true` for OAuth servers that need a pre-registered app (no dynamic client registration) → shown as "OAuth, soon" |
 | `docsUrl` | "Docs" link |
 
-## `agents.json` — built-in system agents
+## `agents.json`: built-in system agents
 
 The personas on the Home screen. Add an object per agent:
 
@@ -34,7 +34,7 @@ The personas on the Home screen. Add an object per agent:
 | `tools` | connector ids shown as logos on the card (display only) |
 | `starter` | `true` shows a "Starter" badge |
 
-## Runtime (per-browser) data — NOT config files
+## Runtime (per-browser) data: NOT config files
 
 These are created by users at runtime and live in the browser's `localStorage`
 (one set per deployment + browser), so they aren't static files:

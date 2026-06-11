@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { isMultiTenant } from "./helpers";
 
-// Login experience — runs against a multi-tenant deployment (e.g. prod). It
+// Login experience: runs against a multi-tenant deployment (e.g. prod). It
 // needs no credentials: it asserts the Welcome screen renders and that the CTAs
 // hand off to Auth0 Universal Login. On the single-org bench (no login) it
 // skips. Point E2E_BASE_URL at the deployed app to exercise it.

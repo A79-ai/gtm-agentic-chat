@@ -19,7 +19,7 @@ const MAX_BYTES = 256 * 1024; // generous for a text transcript; reject runaway 
 /**
  * Persist a redacted, read-only chat transcript and return a public share id.
  * The body is the client-built projection (user text + final assistant text,
- * no tool trace) — see chat.jsx. We store it verbatim in a durable run.
+ * no tool trace). See chat.jsx. We store it verbatim in a durable run.
  */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);

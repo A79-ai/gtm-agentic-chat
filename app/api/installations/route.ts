@@ -1,7 +1,7 @@
 // Install-success handler: seed a freshly-connected integration's meetings.
 //
 // The Ampersand `InstallIntegration` widget connects OAuth and starts the
-// managed every-1-min read, but that only delivers events going *forward* —
+// managed every-1-min read, but that only delivers events going *forward*:
 // a new user's existing/upcoming calendar is never loaded. The AmpUp product
 // fixes this at install time (upsert the installation + trigger backfill); the
 // template previously discarded the install event entirely, so trial users saw
@@ -69,7 +69,7 @@ async function postJson(path: string, key: string, body: unknown): Promise<unkno
   }
 }
 
-// Wait for the Ampersand webhook to mirror the new install row before seeding —
+// Wait for the Ampersand webhook to mirror the new install row before seeding,
 // /backfills silently no-ops if the row isn't there yet. Returns the full row
 // (we need its integration_id for the upsert below).
 async function awaitInstallRow(
@@ -105,7 +105,7 @@ async function awaitInstallRow(
   return null;
 }
 
-// Ampersand's own historical read (past window) — uses the BACKEND key, which
+// Ampersand's own historical read (past window) uses the BACKEND key, which
 // must never reach the client, so this runs server-side only.
 async function triggerHistoricalRead(
   integration: string,
@@ -161,7 +161,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "missing groupRef" }, { status: 400, headers: CORS });
   }
 
-  // Historical (Ampersand read) doesn't depend on our install row — fire it now.
+  // Historical (Ampersand read) doesn't depend on our install row, so fire it now.
   const historical = await Promise.all(
     objectNames.map((o) =>
       triggerHistoricalRead(integration, o, groupRef, HISTORICAL_DAYS(integration))

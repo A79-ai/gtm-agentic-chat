@@ -1,7 +1,7 @@
 // Accurate per-type record totals for the home grid, Records flyout and sheet.
 // Calls each MCP list tool with limit:1 and returns the `total` it reports, so
 // the counts match the real list pages (e.g. 2486 tasks) instead of the capped
-// /api/records store (50/200…). Owner has no list tool — derived client-side.
+// /api/records store (50/200…). Owner has no list tool, so derived client-side.
 import { callAmpupTool } from "@/lib/mcp";
 import { LIST_TOOL, pageOf, type Rec } from "@/lib/recordMap";
 

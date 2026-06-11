@@ -4,7 +4,7 @@
 //
 // This is a hostname / IP-literal blocklist (private, loopback, link-local,
 // CGNAT, cloud metadata). It deliberately does NOT resolve DNS, so a *public*
-// hostname that resolves to a private IP is not caught here — an acceptable
+// hostname that resolves to a private IP is not caught here, an acceptable
 // baseline for a "connect your own server" feature. Add DNS resolution if you
 // need defense-in-depth against DNS-rebinding.
 

@@ -2,8 +2,8 @@
 
 ## Reporting a vulnerability
 
-If you discover a security issue in this template, please report it privately —
-do **not** open a public GitHub issue.
+If you discover a security issue in this template, please report it privately.
+Do **not** open a public GitHub issue.
 
 - Email **security@a79.ai** (or **support@a79.ai**) with a description, the
   affected file(s)/route(s), and steps to reproduce.

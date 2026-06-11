@@ -5,7 +5,7 @@ export const maxDuration = 30;
 
 // Open the Stripe-hosted Customer Portal so the user can manage / cancel their
 // subscription. The customer is resolved from the SIGNED-IN user's verified
-// session email — never a client-supplied email, which would let anyone open
+// session email, never a client-supplied email, which would let anyone open
 // (and cancel/modify) another customer's subscription.
 export async function POST(req: Request) {
   const stripe = getStripe();

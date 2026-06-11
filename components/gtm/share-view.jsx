@@ -1,7 +1,7 @@
 // Public, read-only view of a shared conversation. Rendered by app/page.tsx when
 // the URL carries ?share=<id>, BEFORE the authenticated app / DataProvider mount,
 // so a recipient with no MCP key can read the transcript. Composer and tool trace
-// are intentionally absent — only user prompts and final assistant text are shown.
+// are intentionally absent: only user prompts and final assistant text are shown.
 import { useEffect, useState } from "react";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { Icons, LogoMark } from "./icons";
@@ -93,7 +93,7 @@ export function ShareView({ shareId }) {
           )}
           {!(state.loading || state.error) && messages.length > 0 && (
             <div className="share-foot">
-              Shared from AmpUp — agents can make mistakes, verify before acting.
+              Shared from AmpUp. Agents can make mistakes, verify before acting.
             </div>
           )}
         </div>

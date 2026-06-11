@@ -1,4 +1,4 @@
-// CRM data model — static metadata + a live record store fed by /api/records.
+// CRM data model: static metadata + a live record store fed by /api/records.
 // Components read the synchronous DATA singleton; <DataProvider> populates the
 // store on mount and forces a re-render so reads pick up real records.
 import { createContext, useContext, useEffect, useState } from "react";
@@ -153,7 +153,7 @@ export const AGENTS = [
     tag: "Research",
     lastRun: "3h ago",
     starter: false,
-    desc: "Build a one-page brief on any account — org chart, signals, whitespace and warm paths in.",
+    desc: "Build a one-page brief on any account: org chart, signals, whitespace and warm paths in.",
     tools: ["hubspot", "devrev"],
   },
   {
@@ -175,7 +175,7 @@ export const AGENTS = [
     tag: "Calls",
     lastRun: "Yesterday",
     starter: false,
-    desc: "Walk into every call ready — agenda, attendee context and the last three touchpoints.",
+    desc: "Walk into every call ready: agenda, attendee context and the last three touchpoints.",
     tools: ["granola", "hubspot"],
   },
 ];

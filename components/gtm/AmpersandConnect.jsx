@@ -22,7 +22,7 @@ export default function AmpersandConnect({
         groupRef={groupRef || "default-group"}
         integration={integration}
         onInstallSuccess={(installationId, config) => {
-          onToast?.("Connected — syncing your data", "success");
+          onToast?.("Connected, syncing your data", "success");
           // Seed the just-connected integration's meetings (backfill on connect).
           // The managed read only delivers events going forward; without this a
           // freshly-connected user sees an empty list. Best-effort, never blocks.

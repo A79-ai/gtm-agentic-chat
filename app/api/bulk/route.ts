@@ -1,4 +1,4 @@
-// Bulk mutations for the list selection bar — maps (type, action) to the
+// Bulk mutations for the list selection bar: maps (type, action) to the
 // org's MCP write tools and applies them across the selected record ids.
 import { callAmpupTool } from "@/lib/mcp";
 

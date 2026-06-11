@@ -1,4 +1,4 @@
-// EntityList — generic, Linear-style list page: dense selectable rows,
+// EntityList: generic, Linear-style list page: dense selectable rows,
 // multi-select (click / shift-range / select-all), a floating bulk-action bar,
 // and customizable columns. One component drives every entity type via the
 // COLUMNS config.
@@ -36,9 +36,9 @@ const BULK_ACTIONS = {
 function pickOptions(kind) {
   if (kind === "priority") {
     return [
-      ["P0", "P0 — urgent"],
-      ["P1", "P1 — high"],
-      ["P2", "P2 — normal"],
+      ["P0", "P0: urgent"],
+      ["P1", "P1: high"],
+      ["P2", "P2: normal"],
     ];
   }
   if (kind === "stage") {
@@ -112,7 +112,7 @@ const CREATE_FIELDS = {
       label: "Deal name",
       kind: "text",
       required: true,
-      placeholder: "Acme — Platform expansion",
+      placeholder: "Acme: Platform expansion",
     },
     { key: "account_id", label: "Account", kind: "entity", searchType: "account", required: true },
     { key: "amount", label: "Amount ($)", kind: "number", required: true, placeholder: "50000" },
@@ -153,9 +153,9 @@ const CREATE_FIELDS = {
       kind: "select",
       default: "P1",
       options: [
-        ["P0", "P0 — urgent"],
-        ["P1", "P1 — high"],
-        ["P2", "P2 — normal"],
+        ["P0", "P0: urgent"],
+        ["P1", "P1: high"],
+        ["P2", "P2: normal"],
       ],
     },
     { key: "due_date", label: "Due date", kind: "date" },
@@ -447,10 +447,10 @@ function Cell({ rec, col, onOpen }) {
     case "title":
       return <div className="cell title">{v}</div>;
     case "badge":
-      return <div className="cell">{v ? <TBadge value={v} /> : "—"}</div>;
+      return <div className="cell">{v ? <TBadge value={v} /> : "-"}</div>;
     case "ref": {
       const r = byId(v);
-      return <div className="cell">{r ? <RefChip onOpen={onOpen} record={r} /> : "—"}</div>;
+      return <div className="cell">{r ? <RefChip onOpen={onOpen} record={r} /> : "-"}</div>;
     }
     case "avatar": {
       const r = byId(v);
@@ -462,7 +462,7 @@ function Cell({ rec, col, onOpen }) {
               <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
             </>
           ) : (
-            "—"
+            "-"
           )}
         </div>
       );
@@ -476,12 +476,12 @@ function Cell({ rec, col, onOpen }) {
       );
     case "source":
       return (
-        <div className="cell">{(CONNECTORS.find((c) => c.id === v) || {}).name || v || "—"}</div>
+        <div className="cell">{(CONNECTORS.find((c) => c.id === v) || {}).name || v || "-"}</div>
       );
     case "min":
-      return <div className="cell">{v ? `${v} min` : "—"}</div>;
+      return <div className="cell">{v ? `${v} min` : "-"}</div>;
     default:
-      return <div className="cell">{v == null || v === "" ? "—" : String(v)}</div>;
+      return <div className="cell">{v == null || v === "" ? "-" : String(v)}</div>;
   }
 }
 
@@ -567,7 +567,7 @@ function SelectionBar({ count, label, plural, actions, pending, onAction, onChat
 export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
   const meta = ENTITIES[type];
   const cols = COLUMNS[type];
-  const isOwner = type === "owner"; // no list tool — derive from the loaded store
+  const isOwner = type === "owner"; // no list tool, derive from the loaded store
   const SIZE = 50;
 
   const [q, setQ] = useState("");
@@ -719,7 +719,7 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
       }).then((r) => r.json());
       if (res.ok) {
         onToast &&
-          onToast(`${action.label} — ${res.done} ${meta.plural.toLowerCase()} updated`, "success");
+          onToast(`${action.label}: ${res.done} ${meta.plural.toLowerCase()} updated`, "success");
       } else {
         onToast &&
           onToast(
