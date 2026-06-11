@@ -21,7 +21,15 @@ AmpUp MCP endpoint** — this app is a thin, durable chat client in front of it.
 
 ## Demos
 
-**Embeddable chat widget** — one `<script src="/widget.js">` tag drops the chat onto any site (Shadow-DOM launcher → chrome-less `/embed` iframe), grounded in your CRM:
+**Deal Coach, grounded in your CRM** — pick an agent, it pulls the deal + signals and surfaces the risks and the next best action:
+
+![Deal Coach grounded in a deal](./public/features/deal-coach.gif)
+
+**Fully responsive on mobile** — the same workspace and chat on a phone:
+
+![Responsive mobile chat](./public/features/mobile-responsive.gif)
+
+**Embeddable chat widget** — one `<script src="/widget.js">` tag drops the chat onto any site (Shadow-DOM launcher → chrome-less `/embed` iframe):
 
 <video src="https://github.com/A79-ai/gtm-agentic-chat/raw/main/public/features/embed-chat-demo.mp4" controls muted width="100%"></video>
 
