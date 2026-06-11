@@ -9,6 +9,7 @@ import {
   refreshBillingStatus,
   resetBilling,
   saveAccount,
+  setAuthEmail,
   startTrial,
 } from "@/lib/gtm/billing";
 import { CONFIG } from "@/lib/gtm/config";
@@ -463,6 +464,13 @@ export function App({ authUser, onAuth0Logout } = {}) {
   };
   const toggleTheme = () => t.setThemePref(themeResolved === "dark" ? "light" : "dark");
   const [, setBillingTick] = useState(0);
+
+  // Record the signed-in email so the Pro allowlist (internal domains / granted
+  // emails) applies immediately, even before onboarding saves an account.
+  useEffect(() => {
+    setAuthEmail(authUser?.email || "");
+    setBillingTick((n) => n + 1);
+  }, [authUser?.email]);
 
   // Stripe provider: pull live entitlement (by signup email) on load and after a
   // checkout return, then re-render so the trial banner reflects Stripe truth.
