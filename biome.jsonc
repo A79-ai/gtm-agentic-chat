@@ -77,6 +77,12 @@
         // The Workflow DevKit requires `"use workflow"`/`"use step"` functions to
         // be async even when they never await, so this rule fights the framework.
         "useAwait": "off"
+      },
+      "nursery": {
+        // useSortedClasses' autofix strips the separating space in conditional
+        // className concatenations (`"x" + (c ? " mod" : "")`), reintroducing the
+        // compound-class bug. Nursery/unstable; off until upstream fix.
+        "useSortedClasses": "off"
       }
     }
   }

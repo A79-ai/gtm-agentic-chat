@@ -168,7 +168,7 @@ export function SideNav({
   };
 
   const Btn = ({ active, title, onClick, icon }) => (
-    <button className={"rail-btn" + (active ? "active" : "")} onClick={onClick} title={title}>
+    <button className={"rail-btn" + (active ? " active" : "")} onClick={onClick} title={title}>
       {React.createElement(icon, { size: 21 })}
     </button>
   );
@@ -211,7 +211,7 @@ export function SideNav({
           {React.createElement(themeResolved === "dark" ? Icons.Sun : Icons.Moon, { size: 20 })}
         </button>
         <button
-          className={"rail-avatar" + (flyout === "profile" ? "active" : "")}
+          className={"rail-avatar" + (flyout === "profile" ? " active" : "")}
           onClick={(ev) => openFly("profile", ev)}
           title="Profile"
         >

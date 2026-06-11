@@ -215,7 +215,7 @@ export function PlansScreen({ onToast }) {
                   ))}
                 </div>
                 <button
-                  className={"btn" + (p.highlight ? "btn-primary" : "btn-outline")}
+                  className={"btn " + (p.highlight ? "btn-primary" : "btn-outline")}
                   disabled={cta.disabled}
                   onClick={() => onPick(p)}
                   style={{ width: "100%" }}

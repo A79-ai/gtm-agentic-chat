@@ -434,7 +434,7 @@ function CreateModal({ type, onClose, onCreated, onToast }) {
 
 function Check({ on, indeterminate }) {
   return (
-    <span className={"row-check" + (on ? "on" : "") + (indeterminate ? "mixed" : "")}>
+    <span className={"row-check" + (on ? " on" : "") + (indeterminate ? " mixed" : "")}>
       {on ? <Icons.Check size={12} /> : indeterminate ? <span className="dash" /> : null}
     </span>
   );
@@ -520,7 +520,7 @@ function MobileCard({ rec, selected, selecting, onToggle, onOpen }) {
           : null;
   return (
     <div
-      className={"card ecard card-hover" + (selected ? "selected" : "")}
+      className={"card ecard card-hover" + (selected ? " selected" : "")}
       onClick={() => (selecting ? onToggle() : onOpen(rec))}
     >
       <button
@@ -834,7 +834,7 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
             ))}
           </div>
         ) : (
-          <div className={"etable" + (selCount > 0 ? "selecting" : "")}>
+          <div className={"etable" + (selCount > 0 ? " selecting" : "")}>
             <div className="ehead" style={{ gridTemplateColumns: grid }}>
               <button
                 className="row-checkbtn"
@@ -852,7 +852,7 @@ export function EntityList({ type, onOpen, onChat, onToast, onRefresh }) {
               const on = sel.has(r.id);
               return (
                 <div
-                  className={"erow" + (on ? "selected" : "")}
+                  className={"erow" + (on ? " selected" : "")}
                   key={r.id}
                   onClick={() => onOpen(r)}
                   style={{ gridTemplateColumns: grid }}

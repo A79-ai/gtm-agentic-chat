@@ -96,7 +96,7 @@ const convoSig = (msgs) => `${msgs.length}:${textOf(msgs[msgs.length - 1] || {})
 function TraceRow({ part }) {
   const done = part.state === "output-available" || part.state === "output-error";
   return (
-    <div className={"trace-row" + (done ? "done" : "")}>
+    <div className={"trace-row" + (done ? " done" : "")}>
       {done ? (
         <Icons.Check size={13} style={{ color: "var(--mint-base)", flexShrink: 0, marginTop: 2 }} />
       ) : (
@@ -329,7 +329,7 @@ function Composer({
   };
   return (
     <div className="composer-wrap" style={{ position: "relative" }}>
-      <div className={"composer" + (focus ? "focus" : "")}>
+      <div className={"composer" + (focus ? " focus" : "")}>
         {(attached.length > 0 || files.length > 0) && (
           <div className="chip-tray">
             {attached.map((r) => (
@@ -520,8 +520,8 @@ function ContextCard({ rec, onOpenRecord, onRemove }) {
 function ContextPanel({ attached, onOpenRecord, onAttach, onRemove, open, onClose, collapsed }) {
   return (
     <>
-      <div className={"ctx-backdrop" + (open ? "open" : "")} onClick={onClose} />
-      <aside className={"ctx-panel" + (open ? "open" : "") + (collapsed ? "collapsed" : "")}>
+      <div className={"ctx-backdrop" + (open ? " open" : "")} onClick={onClose} />
+      <aside className={"ctx-panel" + (open ? " open" : "") + (collapsed ? " collapsed" : "")}>
         <div
           style={{
             padding: "14px 16px",
@@ -674,7 +674,7 @@ function HistoryDrawer({ open, onClose, onSelect, activeId }) {
           ) : (
             items.map((c) => (
               <div
-                className={"hist-item" + (c.id === activeId ? "active" : "")}
+                className={"hist-item" + (c.id === activeId ? " active" : "")}
                 key={c.id}
                 onClick={() => onSelect(c)}
               >

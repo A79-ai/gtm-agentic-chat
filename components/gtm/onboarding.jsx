@@ -103,7 +103,7 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
           <div className="chip-grid">
             {ROLES.map((r) => (
               <button
-                className={"choice-chip" + (f.role === r ? "on" : "")}
+                className={"choice-chip" + (f.role === r ? " on" : "")}
                 key={r}
                 onClick={() => set("role", r)}
               >
@@ -117,7 +117,7 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
           <div className="chip-grid">
             {TEAM_SIZES.map((s) => (
               <button
-                className={"choice-chip" + (f.size === s ? "on" : "")}
+                className={"choice-chip" + (f.size === s ? " on" : "")}
                 key={s}
                 onClick={() => set("size", s)}
               >
@@ -138,7 +138,7 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
           <div className="goal-grid">
             {GOALS.map(([g, ic]) => (
               <button
-                className={"goal-card" + (f.goals.includes(g) ? "on" : "")}
+                className={"goal-card" + (f.goals.includes(g) ? " on" : "")}
                 key={g}
                 onClick={() => toggleGoal(g)}
               >
@@ -272,7 +272,7 @@ export function Onboarding({ initial, onFinish, onCancel, collectIdentity = true
             <div className="ob-steps">
               {steps.map((s, i) => (
                 <div
-                  className={"ob-step" + (i === step ? "active" : "") + (i < step ? "done" : "")}
+                  className={"ob-step" + (i === step ? " active" : "") + (i < step ? " done" : "")}
                   key={s}
                 >
                   <span className="ob-step-dot">
