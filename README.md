@@ -1,25 +1,43 @@
-# GTM Agentic Chat
+# GTM Agentic Starter Kit
 
-A self-deployable, agentic chat app over your **CRM, meetings/notetaker, and
-knowledge base** — powered by the [AmpUp](https://a79.ai) MCP server and the
-[Vercel AI SDK](https://sdk.vercel.ai) + [Workflow DevKit](https://workflow.dev).
+**An open, self-deployable agentic chat for go-to-market teams — over your own CRM, meetings/notetaker, and knowledge base.**
 
-You bring an AmpUp API key (which scopes the app to your org's data) and an LLM
-key. The app discovers your org's tools at runtime and lets you chat over your
-live data — "list my open opportunities", "summarize my last meeting with Acme",
-"what tasks are due this week".
+Pick an agent ("Deal Coach", "Outreach Writer", "Competitive Intel"), and it works your live data: _"summarize my last call with Acme and draft the follow-up", "which renewals are at risk this quarter", "score these inbound leads against our ICP"._ The connectors, data sync, and access control all live **behind your [AmpUp](https://a79.ai) MCP endpoint** — this app is a thin, durable chat client in front of it.
 
-The connectors, data sync, access control, and hydration all live **behind your
-AmpUp MCP endpoint** — this app is a thin, durable chat client in front of it.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/a79-ai/gtm-agentic-chat)
+&nbsp;[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](./LICENSE)
+&nbsp;![Built with Next.js + Vercel AI SDK](https://img.shields.io/badge/built%20with-Next.js%20%2B%20Vercel%20AI%20SDK-black)
 
 ![Home — agents over your live CRM, calls and notes](./public/screenshots/01-home.png)
+
+---
+
+## Who it's for
+
+|  |  |
+|---|---|
+| 🚀 **Founders & GTM teams** | Deploy your own GTM copilot in one click — no infra to run. Bring an AmpUp key + an LLM key and you have agents over your real pipeline, calls, and notes. Self-hosted in **your** Vercel account, with **your** data. |
+| 🛠️ **GTM Engineers** | A hackable starting point, not a black box. Agents are plain JSON, connectors are an MCP catalog, and the durable chat loop is ~one file. Fork it, add your own agents and MCP servers, and ship. |
+
+---
+
+## What you get
+
+- **10 ready-made GTM agents** — each scoped to the right tools with a tuned prompt:
+  Deal Coach · Pipeline Risk Scanner · Call Digest · Meeting Prep · Outreach Writer · ICP Lead Scorer · Account Researcher · Competitive Intel · Renewal & Expansion · Customer Health Watch.
+- **Connect your stack** — a catalog of **14 MCP servers** out of the box (HubSpot, Apollo, Clay, Explorium, Fireflies, Fathom, Granola, Exa, Tavily, Firecrawl, Stripe, Linear, Notion, Sentry) plus your AmpUp CRM. Add any MCP server with OAuth/DCR.
+- **Grounded chat over your CRM** — accounts, deals, meetings, and tasks as first-class records; attach any of them as context for a turn.
+- **Notetaker** — send a recorder bot to a live Meet/Zoom/Teams call right from settings.
+- **Embeddable widget** — one `<script>` tag drops the chat onto any site.
+- **Mobile-ready** — the same workspace and chat on a phone.
+- **Durable runtime** — every turn (and tool call) is a replayable step on the [Vercel Workflow DevKit](https://workflow.dev); the stream _is_ the transcript.
 
 |  |  |
 |---|---|
 | ![Chat grounded in a deal — risks, signals and the next best action](./public/screenshots/02-chat.png) | ![Your pipeline at a glance](./public/screenshots/03-deals.png) |
 | ![Connect your stack — CRM, call recorders, and any MCP server](./public/screenshots/04-connectors.png) | ![Responsive on mobile](./public/screenshots/05-mobile.png) |
 
-## Demos
+## See it in action
 
 **Deal Coach, grounded in your CRM** — pick an agent, it pulls the deal + signals and surfaces the risks and the next best action:
 
@@ -31,8 +49,6 @@ AmpUp MCP endpoint** — this app is a thin, durable chat client in front of it.
 
 **Embeddable chat widget** — one `<script src="/widget.js">` tag drops the chat onto any site (Shadow-DOM launcher → chrome-less `/embed` iframe):
 
-<video src="https://github.com/A79-ai/gtm-agentic-chat/raw/main/public/features/embed-chat-demo.mp4" controls muted width="100%"></video>
-
 [▶ Watch the embed demo](./public/features/embed-chat-demo.mp4)
 
 ## Deploy
@@ -43,7 +59,7 @@ AmpUp MCP endpoint** — this app is a thin, durable chat client in front of it.
 > viewing a private fork, clone it and deploy with the Vercel CLI
 > (`vercel deploy`) instead.
 
-Set these environment variables (Vercel will prompt for the required ones):
+The default deploy is **single-org**: one AmpUp key scopes everything to your org. Set these environment variables (Vercel will prompt for the required ones):
 
 | Variable | Required | What it is |
 |---|---|---|
@@ -58,23 +74,29 @@ Set these environment variables (Vercel will prompt for the required ones):
 
 Pick **one** LLM path — `ANTHROPIC_API_KEY` wins if both are set.
 
+## Make it yours
+
+This is a starter kit — the GTM-specific parts are data, not code:
+
+- **`config/agents.json`** — the homepage agents. Each is `{ name, icon, tag, desc, systemPrompt, mcpServerIds, includeAmpup, starterQuestions }`. Add an entry and it shows up in the gallery; scope it to catalog slugs (or `mcpCategories`) and write its prompt.
+- **`config/mcp-catalog.json`** — the recommended connector catalog (14 servers). Add a server with its hosted MCP URL; the `slug` is the canonical id your agents target.
+- **`components/gtm/`** — the UI (home, connectors, records, chat). `app/ds/` is the design system (light/dark).
+- **`workflows/chat.ts`** — the durable agent loop. Tools are discovered from your MCP at runtime — no tool list is baked into the build.
+
 ## How it works
 
-- **`app/page.tsx` + `components/gtm/`** — the AmpUp GTM Agent UI: a dark left
-  rail, Home (agents gallery + connected sources), Connectors, CRM entity
-  list/detail, and the grounded Chat workspace (attach picker + context panel),
-  with light/dark theme. Styled by the design system in `app/ds/`.
+- **`app/page.tsx` + `components/gtm/`** — the GTM Agent UI: a dark left rail, Home
+  (agents gallery + connected sources), Connectors, CRM entity list/detail, and the
+  grounded Chat workspace (attach picker + context panel), with light/dark theme.
 - **`app/api/records/route.ts`** — MCP-backed listing of accounts / deals /
   meetings / tasks, mapped to the entity schema the UI reads (`lib/gtm/data.jsx`).
-- The Chat surface still streams Markdown (Streamdown) and threads the durable
-  run id across turns; sends are augmented with attached-record context.
 - **`app/api/chat/route.ts`** — starts one durable workflow run per conversation
   (first turn) and resumes it for follow-ups.
-- **`workflows/chat.ts`** — the durable agent loop. Runs on the Vercel Workflow
-  DevKit, so each turn (and each tool call) is a durable, replayable step.
+- **`workflows/chat.ts`** — the durable agent loop on the Vercel Workflow DevKit,
+  so each turn (and each tool call) is a durable, replayable step.
 - **`lib/mcp.ts`** — connects to your `AMPUP_MCP_URL` over streamable HTTP.
-  `listAmpupTools` discovers your org's tools at runtime (`tools/list`); each
-  tool call is forwarded with your key. No tool list is baked into the build.
+  `listAmpupTools` discovers your org's tools at runtime (`tools/list`); each tool
+  call is forwarded with your key. No tool list is baked into the build.
 - **`lib/model.ts`** — resolves the LLM from env (direct Anthropic or AI Gateway).
 
 ## Local development
@@ -99,16 +121,14 @@ pnpm test        # Playwright e2e
 ```
 
 CI (`.github/workflows/`) runs `check` + `typecheck` + `build` on every PR, plus
-the e2e suite.
-
-The e2e suite (`e2e/`) covers three flows and self-gates by target:
+the e2e suite, which covers three flows and self-gates by target:
 
 - **chat** and **entity list-pages** run against a local single-org bench — `pnpm
   test` boots `next dev` from `.env.e2e` (copy `.env.e2e.example`: an AmpUp MCP
   URL + key for one org, overlays disabled) and drives the durable chat runtime
   and the `/records/*` lists against live data.
-- **login** runs against a deployed multi-tenant app — point it at the deploy and
-  it asserts the Welcome CTAs hand off to Auth0 (no credentials needed):
+- **login** runs against a deployed app — point it at the deploy and it asserts the
+  Welcome CTAs hand off to Auth0 (no credentials needed):
 
   ```bash
   E2E_BASE_URL=https://your-app.vercel.app pnpm test
@@ -119,29 +139,34 @@ In CI the bench specs run when the `E2E_AMPUP_MCP_URL` / `E2E_AMPUP_MCP_API_KEY`
 `E2E_DEPLOY_URL` repo variable points at your deployment (both skip cleanly when
 unset).
 
+## Multi-tenant mode (advanced)
+
+The default is one org per deployment (the env key scopes everything). The template
+also ships a **multi-tenant** path: with `MULTI_TENANT=true` + Auth0 configured,
+each visitor logs in, mints a **per-user** AmpUp key, and sees only their own data —
+no shared env key fallback. This is how the hosted version at
+[chat.ampup.ai](https://chat.ampup.ai) runs. It needs an Auth0 tenant and an AmpUp
+org that issues per-user session keys; see `lib/gtm/auth.jsx` for the backbone.
+
 ## Notes / limits
 
-- **One org per deployment.** The MCP key in env scopes everything to one org.
-  To serve multiple orgs/users, front `/api/chat` with your own auth and pass a
-  per-request `x-ampup-mcp-key` header.
 - **Cold starts (observed, cause unconfirmed).** Right after a deploy, a request
   occasionally truncated before the agent finished; retrying succeeded, and
   steady-state requests were reliable. If you see a turn cut short, retry.
-- Conversation history lives in the durable run (the stream *is* the transcript);
-  there's no separate database. Cold-reopen replay at `/api/conversation/[runId]`
-  is gated behind the per-user key in multi-tenant mode — keep `MULTI_TENANT=true`
-  when conversations are user-specific.
+- Conversation history lives in the durable run (the stream *is* the transcript).
+  In multi-tenant mode, conversations are persisted per-user via AmpUp and the
+  cold-reopen replay at `/api/conversation/[runId]` is gated behind the per-user key.
 
 ## Privacy, security & license
 
 - **[PRIVACY.md](./PRIVACY.md)** — exactly where your data goes. This is a
   self-hosted client: it runs in **your** Vercel account with **your**
-  credentials, and the template authors receive none of your data. Your chat
-  data flows only to your chosen LLM provider (Anthropic or the Vercel AI
-  Gateway) and to your AmpUp MCP endpoint; there is no telemetry and no
-  transcript database.
+  credentials, and the template authors receive none of your data. Your chat data
+  flows only to your chosen LLM provider (Anthropic or the Vercel AI Gateway) and
+  to your AmpUp MCP endpoint; there is no telemetry and no transcript database.
 - **[SECURITY.md](./SECURITY.md)** — how to report a vulnerability
   (`security@a79.ai`) and an operator hardening checklist (set
   `AUTH_SESSION_SECRET` / `OAUTH_STATE_SECRET`, restrict `ALLOWED_ORIGIN`, use
   `MULTI_TENANT=true` for more than one user).
 - **License:** [MIT](./LICENSE).
+```
