@@ -2,7 +2,7 @@
 
 **An open, self-deployable agentic chat for go-to-market teams, over your own CRM, meetings/notetaker, and knowledge base.**
 
-Pick an agent ("Deal Coach", "Outreach Writer", "Competitive Intel"), and it works your live data: _"summarize my last call with Acme and draft the follow-up", "which renewals are at risk this quarter", "score these inbound leads against our ICP"._ Use it as a **starting point to build sales intelligence on your own data**: fork it, add your agents, and ship. It comes with batteries included: **enterprise connectors** for Salesforce, HubSpot, and Gong, plus **auth and scale** handled for you via [AmpUp](https://a79.ai).
+Pick an agent ("Deal Coach", "Outreach Writer", "Competitive Intel"), and it works your live data: _"summarize my last call with Acme and draft the follow-up", "which renewals are at risk this quarter", "score these inbound leads against our ICP"._ Use it as a **starting point to build sales intelligence on your own data**: fork it, add your agents, and ship. It comes with batteries included: **enterprise connectors** for [Salesforce](https://www.salesforce.com), [HubSpot](https://www.hubspot.com), and [Gong](https://www.gong.io), plus **auth and scale** handled for you via [AmpUp](https://a79.ai).
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/a79-ai/gtm-agentic-chat)
 &nbsp;[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](./LICENSE)
@@ -17,7 +17,7 @@ Pick an agent ("Deal Coach", "Outreach Writer", "Competitive Intel"), and it wor
 |  |  |
 |---|---|
 | 🚀 **Founders & GTM teams** | Deploy your own GTM copilot in one click, no infra to run. Bring an AmpUp key + an LLM key and you have agents over your real pipeline, calls, and notes. Self-hosted in **your** Vercel account, with **your** data. |
-| 🛠️ **GTM Engineers** | A hackable starting point, not a black box. Agents are plain JSON, connectors are an MCP catalog, and the durable chat loop is ~one file. Fork it, add your own agents and MCP servers, and ship. |
+| 🛠️ **GTM Engineers** | A hackable starting point, not a black box. Agents are plain JSON, connectors are an [MCP](https://modelcontextprotocol.io) catalog, and the durable chat loop is ~one file. Fork it, add your own agents and MCP servers, and ship. |
 | 📊 **Sales & Marketing Ops** | Stand up a copilot over your pipeline without waiting on eng. Connect your CRM and call recorder, point agents at your ICP and renewal data, and ship answers to the team in an afternoon. |
 
 ---
@@ -26,7 +26,7 @@ Pick an agent ("Deal Coach", "Outreach Writer", "Competitive Intel"), and it wor
 
 - **10 ready-made GTM agents**, each scoped to the right tools with a tuned prompt:
   Deal Coach · Pipeline Risk Scanner · Call Digest · Meeting Prep · Outreach Writer · ICP Lead Scorer · Account Researcher · Competitive Intel · Renewal & Expansion · Customer Health Watch.
-- **Connect your stack**: a catalog of **14 MCP servers** out of the box (HubSpot, Apollo, Clay, Explorium, Fireflies, Fathom, Granola, Exa, Tavily, Firecrawl, Stripe, Linear, Notion, Sentry) plus your AmpUp CRM. Add any MCP server with OAuth/DCR.
+- **Connect your stack**: a catalog of **14 MCP servers** out of the box ([HubSpot](https://www.hubspot.com), [Apollo](https://www.apollo.io), [Clay](https://www.clay.com), [Explorium](https://www.explorium.ai), [Fireflies](https://fireflies.ai), [Fathom](https://fathom.video), [Granola](https://www.granola.ai), [Exa](https://exa.ai), [Tavily](https://tavily.com), [Firecrawl](https://www.firecrawl.dev), [Stripe](https://stripe.com), [Linear](https://linear.app), [Notion](https://www.notion.so), [Sentry](https://sentry.io)) plus your AmpUp CRM. Add any MCP server with [OAuth/DCR](https://datatracker.ietf.org/doc/html/rfc7591).
 - **Grounded chat over your CRM**: accounts, deals, meetings, and tasks as first-class records; attach any of them as context for a turn.
 - **Notetaker**: send a recorder bot to a live Meet/Zoom/Teams call right from settings.
 - **Embeddable widget**: one `<script>` tag drops the chat onto any site.
@@ -57,7 +57,7 @@ Pick an agent ("Deal Coach", "Outreach Writer", "Competitive Intel"), and it wor
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/a79-ai/gtm-agentic-chat)
 
 > The one-click Deploy button requires the repo to be **public**. If you're
-> viewing a private fork, clone it and deploy with the Vercel CLI
+> viewing a private fork, clone it and deploy with the [Vercel CLI](https://vercel.com/docs/cli)
 > (`vercel deploy`) instead.
 
 The default deploy is **single-org**: one AmpUp key scopes everything to your org. Set these environment variables (Vercel will prompt for the required ones):
@@ -79,26 +79,26 @@ Pick **one** LLM path. `ANTHROPIC_API_KEY` wins if both are set.
 
 This is a starter kit; the GTM-specific parts are data, not code:
 
-- **`config/agents.json`**: the homepage agents. Each is `{ name, icon, tag, desc, systemPrompt, mcpServerIds, includeAmpup, starterQuestions }`. Add an entry and it shows up in the gallery; scope it to catalog slugs (or `mcpCategories`) and write its prompt.
-- **`config/mcp-catalog.json`**: the recommended connector catalog (14 servers). Add a server with its hosted MCP URL; the `slug` is the canonical id your agents target.
-- **`components/gtm/`**: the UI (home, connectors, records, chat). `app/ds/` is the design system (light/dark).
-- **`workflows/chat.ts`**: the durable agent loop. Tools are discovered from your MCP at runtime; no tool list is baked into the build.
+- **[`config/agents.json`](./config/agents.json)**: the homepage agents. Each is `{ name, icon, tag, desc, systemPrompt, mcpServerIds, includeAmpup, starterQuestions }`. Add an entry and it shows up in the gallery; scope it to catalog slugs (or `mcpCategories`) and write its prompt.
+- **[`config/mcp-catalog.json`](./config/mcp-catalog.json)**: the recommended connector catalog (14 servers). Add a server with its hosted MCP URL; the `slug` is the canonical id your agents target.
+- **[`components/gtm/`](./components/gtm)**: the UI (home, connectors, records, chat). [`app/ds/`](./app/ds) is the design system (light/dark).
+- **[`workflows/chat.ts`](./workflows/chat.ts)**: the durable agent loop. Tools are discovered from your MCP at runtime; no tool list is baked into the build.
 
 ## How it works
 
-- **`app/page.tsx` + `components/gtm/`**: the GTM Agent UI: a dark left rail, Home
+- **[`app/page.tsx`](./app/page.tsx) + [`components/gtm/`](./components/gtm)**: the GTM Agent UI: a dark left rail, Home
   (agents gallery + connected sources), Connectors, CRM entity list/detail, and the
   grounded Chat workspace (attach picker + context panel), with light/dark theme.
-- **`app/api/records/route.ts`**: MCP-backed listing of accounts / deals /
-  meetings / tasks, mapped to the entity schema the UI reads (`lib/gtm/data.jsx`).
-- **`app/api/chat/route.ts`**: starts one durable workflow run per conversation
+- **[`app/api/records/route.ts`](./app/api/records/route.ts)**: MCP-backed listing of accounts / deals /
+  meetings / tasks, mapped to the entity schema the UI reads ([`lib/gtm/data.jsx`](./lib/gtm/data.jsx)).
+- **[`app/api/chat/route.ts`](./app/api/chat/route.ts)**: starts one durable workflow run per conversation
   (first turn) and resumes it for follow-ups.
-- **`workflows/chat.ts`**: the durable agent loop on the Vercel Workflow DevKit,
+- **[`workflows/chat.ts`](./workflows/chat.ts)**: the durable agent loop on the [Vercel Workflow DevKit](https://workflow.dev),
   so each turn (and each tool call) is a durable, replayable step.
-- **`lib/mcp.ts`**: connects to your `AMPUP_MCP_URL` over streamable HTTP.
+- **[`lib/mcp.ts`](./lib/mcp.ts)**: connects to your `AMPUP_MCP_URL` over streamable HTTP.
   `listAmpupTools` discovers your org's tools at runtime (`tools/list`); each tool
   call is forwarded with your key. No tool list is baked into the build.
-- **`lib/model.ts`**: resolves the LLM from env (direct Anthropic or AI Gateway).
+- **[`lib/model.ts`](./lib/model.ts)**: resolves the LLM from env (direct [Anthropic](https://www.anthropic.com) or [AI Gateway](https://vercel.com/docs/ai-gateway)).
 
 ## Local development
 
@@ -108,8 +108,9 @@ pnpm install
 pnpm dev                     # http://localhost:3000
 ```
 
-The durable workflow runtime runs locally via the Workflow DevKit
-(`pnpm workflow:web` for the workflow dashboard).
+The durable workflow runtime runs locally via the [Workflow DevKit](https://workflow.dev)
+(`pnpm workflow:web` for the workflow dashboard). Built with [Next.js](https://nextjs.org),
+the [Vercel AI SDK](https://ai-sdk.dev), and [pnpm](https://pnpm.io).
 
 ## Quality & tests
 
@@ -120,6 +121,8 @@ pnpm typecheck   # tsc --noEmit
 pnpm build       # next build
 pnpm test        # Playwright e2e
 ```
+
+Linting and formatting use [Biome](https://biomejs.dev) (the [ultracite](https://www.ultracite.ai) preset); end-to-end tests use [Playwright](https://playwright.dev).
 
 CI (`.github/workflows/`) runs `check` + `typecheck` + `build` on every PR, plus
 the e2e suite, which covers three flows and self-gates by target:
@@ -143,7 +146,7 @@ unset).
 ## Multi-tenant mode (advanced)
 
 The default is one org per deployment (the env key scopes everything). The template
-also ships a **multi-tenant** path: with `MULTI_TENANT=true` + Auth0 configured,
+also ships a **multi-tenant** path: with `MULTI_TENANT=true` + [Auth0](https://auth0.com) configured,
 each visitor logs in, mints a **per-user** AmpUp key, and sees only their own data,
 with no shared env key fallback. This is how the hosted version at
 [chat.ampup.ai](https://chat.ampup.ai) runs. It needs an Auth0 tenant and an AmpUp
@@ -160,7 +163,7 @@ org that issues per-user session keys; see `lib/gtm/auth.jsx` for the backbone.
 
 ## How it compares
 
-Tools like **Lightfield** and **Monaco** are polished, SaaS-only platforms that *replace* your CRM and host your data in their cloud. This kit takes the opposite bet: open source, deployed to **your** Vercel, running agents **over the CRM and tools you already own**. The full breakdown, with honest trade-offs, is in **[COMPARISON.md](./COMPARISON.md)**.
+Tools like [**Lightfield**](https://lightfield.app) and [**Monaco**](https://www.monaco.com) are polished, SaaS-only platforms that *replace* your CRM and host your data in their cloud. This kit takes the opposite bet: open source, deployed to **your** Vercel, running agents **over the CRM and tools you already own**. The full breakdown, with honest trade-offs, is in **[COMPARISON.md](./COMPARISON.md)**.
 
 ## Privacy, security & license
 
@@ -174,4 +177,3 @@ Tools like **Lightfield** and **Monaco** are polished, SaaS-only platforms that 
   `AUTH_SESSION_SECRET` / `OAUTH_STATE_SECRET`, restrict `ALLOWED_ORIGIN`, use
   `MULTI_TENANT=true` for more than one user).
 - **License:** [MIT](./LICENSE).
-```
