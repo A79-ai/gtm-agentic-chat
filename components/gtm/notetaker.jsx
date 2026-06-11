@@ -23,6 +23,8 @@ export function NotetakerScreen({ onToast }) {
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState("disabled");
   const [name, setName] = useState("AmpUp Notetaker");
+  const [testUrl, setTestUrl] = useState("");
+  const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -58,6 +60,28 @@ export function NotetakerScreen({ onToast }) {
       r.ok ? "Notetaker settings saved" : "Couldn't save settings",
       r.ok ? "success" : "error"
     );
+  };
+
+  const sendTest = async () => {
+    const url = testUrl.trim();
+    if (!url) {
+      return;
+    }
+    setTesting(true);
+    const r = await apiFetch("/api/notetaker/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ meeting_url: url, bot_name: name }),
+    })
+      .then((x) => x.json())
+      .catch(() => ({ ok: false, error: "Network error" }));
+    setTesting(false);
+    if (r.ok) {
+      onToast("Notetaker is joining your meeting — give it a few seconds", "success");
+      setTestUrl("");
+    } else {
+      onToast(r.error || "Couldn't send the notetaker", "error");
+    }
   };
 
   return (
@@ -177,6 +201,54 @@ export function NotetakerScreen({ onToast }) {
                 <Icons.Check size={15} /> {saving ? "Saving…" : "Save settings"}
               </button>
             </div>
+          </div>
+        )}
+
+        {!loading && (
+          <div
+            className="card"
+            style={{
+              padding: 22,
+              marginTop: 16,
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+            }}
+          >
+            <div>
+              <div className="eyebrow" style={{ marginBottom: 4 }}>
+                Test the notetaker
+              </div>
+              <p style={{ fontSize: 12.5, color: "var(--fg-muted)" }}>
+                Paste a live meeting link and we'll send the notetaker to join it now, so you can
+                see it work end-to-end.
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <div className="search-box" style={{ flex: 1, minWidth: 220 }}>
+                <Icons.Calendar size={16} style={{ color: "var(--fg-muted)", flexShrink: 0 }} />
+                <input
+                  onChange={(e) => setTestUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !testing && testUrl.trim()) {
+                      sendTest();
+                    }
+                  }}
+                  placeholder="https://meet.google.com/abc-defg-hij"
+                  value={testUrl}
+                />
+              </div>
+              <button
+                className="btn btn-primary"
+                disabled={testing || !testUrl.trim()}
+                onClick={sendTest}
+              >
+                <Icons.Send size={15} /> {testing ? "Sending…" : "Send notetaker"}
+              </button>
+            </div>
+            <p style={{ fontSize: 11.5, color: "var(--fg-muted)" }}>
+              Works with Google Meet, Zoom and Teams links. The bot joins as “{name}”.
+            </p>
           </div>
         )}
       </div>
