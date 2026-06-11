@@ -18,7 +18,9 @@
     "check": "biome check",
     "fix": "biome check --write",
     "typecheck": "tsc --noEmit",
-    "test": "playwright test"
+    "bench": "dotenv -e .env.e2e -- next dev -p 3100",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.81",
@@ -58,6 +60,7 @@
     "@types/node": "^22.19.19",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
+    "dotenv-cli": "^11.0.0",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
     "typescript": "^5.9.3",
