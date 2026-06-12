@@ -10,7 +10,9 @@ import { createGateway, generateText, type LanguageModel } from "ai";
 // inside DurableAgent) so this stays a simple one-shot server call.
 
 const CORS = {
-  "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "*",
+  ...(process.env.ALLOWED_ORIGIN
+    ? { "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN }
+    : {}),
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "content-type, x-llm-provider, x-llm-key, x-llm-model",
 };

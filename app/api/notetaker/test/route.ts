@@ -1,9 +1,9 @@
 // Send the AmpUp Notetaker to a meeting NOW: a "test the notetaker" action for
 // the settings page. Proxies to the backend recall endpoint, which dispatches a
 // real Recall bot to join the given meeting URL.
-const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN;
 const CORS = {
-  "Access-Control-Allow-Origin": ALLOW_ORIGIN,
+  ...(ALLOW_ORIGIN ? { "Access-Control-Allow-Origin": ALLOW_ORIGIN } : {}),
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "content-type, x-ampup-mcp-key, authorization",
 };
