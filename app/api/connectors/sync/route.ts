@@ -124,13 +124,13 @@ export async function GET(req: Request) {
 
   const sync: Record<string, SyncEntry> = {};
   for (const [intg, objects] of byIntegration) {
-    const anyInProgress = objects.some((o) => isInProgress(o.status));
-    const anyCompleted = objects.some((o) => isCompleted(o.status));
-    const status: SyncEntry["status"] = anyInProgress
-      ? "syncing"
-      : anyCompleted
-        ? "synced"
-        : "idle";
+    // An object at 100% counts as done even if its row still says in_progress
+    // (Ampersand finished replaying but the status flip lags), so we never show
+    // a misleading "Syncing 100%".
+    const atFull = (o: ObjectStatus) => o.percentage != null && o.percentage >= 100;
+    const anyActive = objects.some((o) => isInProgress(o.status) && !atFull(o));
+    const anyDone = objects.some((o) => isCompleted(o.status) || atFull(o));
+    const status: SyncEntry["status"] = anyActive ? "syncing" : anyDone ? "synced" : "idle";
 
     let recordsProcessed: number | null = null;
     let recordsTotal: number | null = null;
