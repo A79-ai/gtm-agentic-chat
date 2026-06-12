@@ -10,16 +10,16 @@ importers:
     dependencies:
       '@ai-sdk/anthropic':
         specifier: 3.0.81
-        version: 3.0.81(zod@3.25.76)
+        version: 3.0.81(zod@4.3.6)
       '@ai-sdk/google':
         specifier: 3.0.80
-        version: 3.0.80(zod@3.25.76)
+        version: 3.0.80(zod@4.3.6)
       '@ai-sdk/openai':
         specifier: ^3.0.0
-        version: 3.0.68(zod@3.25.76)
+        version: 3.0.68(zod@4.3.6)
       '@ai-sdk/react':
         specifier: ^3.0.0
-        version: 3.0.199(react@19.2.7)(zod@3.25.76)
+        version: 3.0.199(react@19.2.7)(zod@4.3.6)
       '@amp-labs/react':
         specifier: ^2
         version: 2.15.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(eslint@10.4.1(jiti@2.7.0))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -31,7 +31,7 @@ importers:
         version: 1.5.0(@types/react@19.2.17)(date-fns@4.1.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
-        version: 1.29.0(zod@3.25.76)
+        version: 1.29.0(zod@4.3.6)
       '@streamdown/cjk':
         specifier: ^1.0.3
         version: 1.0.3(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.2.7)(unified@11.0.5)
@@ -46,10 +46,10 @@ importers:
         version: 1.0.2(react@19.2.7)
       '@workflow/ai':
         specifier: ^4.1.2
-        version: 4.1.2(@opentelemetry/api@1.9.1)(ai@6.0.197(zod@3.25.76))(workflow@4.3.1(@nestjs/common@11.1.24(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.24(@nestjs/common@11.1.24(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3)(chokidar@5.0.0))(@swc/core@1.15.3)(next@16.2.7(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3))
+        version: 4.1.2(@opentelemetry/api@1.9.1)(ai@6.0.197(zod@4.3.6))(workflow@4.3.1(@nestjs/common@11.1.24(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.24(@nestjs/common@11.1.24(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3)(chokidar@5.0.0))(@swc/core@1.15.3)(next@16.2.7(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3))
       ai:
         specifier: ^6.0.197
-        version: 6.0.197(zod@3.25.76)
+        version: 6.0.197(zod@4.3.6)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -2103,16 +2103,16 @@ packages:
     peerDependencies:
       zod: 4.3.6
 
-  '@xhmikosr/archive-type@8.0.1':
-    resolution: {integrity: sha512-toXuiWChyfOpEiCPsIw6HGHaNji5LVkvB6EREL548vGWr+hGaehwxG4LzN20vm9aGFXwnA/Jty8yW2/SmV+1zQ==}
+  '@xhmikosr/archive-type@8.1.0':
+    resolution: {integrity: sha512-EXOjEbnZFE5c/nFMf4FOrEURVanzHpnkPYmnmr78u02/8hAhE0FMq8p9TK1IM0/bFr5VcyBUY0gfLm8f7dKy+Q==}
     engines: {node: '>=20'}
 
   '@xhmikosr/bin-check@8.2.1':
     resolution: {integrity: sha512-DNruLq+kalxcE7JeDxtqrN9kyWjLW8VqsQPLRTwD1t9ck/1rF4qBL0mX5Fe2/xLOMjo5wPb67BNX2kSAhzfLjA==}
     engines: {node: '>=20'}
 
-  '@xhmikosr/bin-wrapper@14.2.5':
-    resolution: {integrity: sha512-MXfD5mNdc9xQM4/I4O7uWSdQqeZPTYRQSfddUtfH9oUeVkDUTnX4HI2udTsvDEs7ptv2ywHE9UfxlMUs+79wFw==}
+  '@xhmikosr/bin-wrapper@14.3.0':
+    resolution: {integrity: sha512-rDYWjJ/xmH2vhcGUj6ZdUBmJghKPAlQNhzQY2LxI/6CTE2W/TMhnnrTlpET3TfYql6koTYD2sUiO/t9ew1JaCQ==}
     engines: {node: '>=20'}
 
   '@xhmikosr/decompress-tar@9.0.1':
@@ -2127,16 +2127,16 @@ packages:
     resolution: {integrity: sha512-1JXu2b6yrpm5EuBoOzMU57B4qrHXJKWQQ7LlMynNEiz85mEjDciO3ayf//GXaTLLCEKiHjWlU3q3THjgf7uODA==}
     engines: {node: '>=20'}
 
-  '@xhmikosr/decompress-unzip@8.1.1':
-    resolution: {integrity: sha512-/B+Z0qJflGn5UEtmMZ2qeKeXwexOycxaibYhMOyLcRPJriXs4IkoSngVUVZXLYViu9TdHyFWynC6NB4EWBg8cg==}
+  '@xhmikosr/decompress-unzip@8.2.0':
+    resolution: {integrity: sha512-ciiD6OsxR053GE6Bs72NBVGkm1oZoES06gTfMnm4xRtZUbN1IKDE/EbuBL4tYrMrzX1ZgjNlxcQ1WgL+/CGZcQ==}
     engines: {node: '>=20'}
 
   '@xhmikosr/decompress@11.1.3':
     resolution: {integrity: sha512-NiyhJq6z7ERsYghcnXZUI6ooDXgZtoB+G9eUsYhfSM4VLp2rKx9UxhKI1NEf1PqosrNPxG3bnSsr2UBVbNurlg==}
     engines: {node: '>=20'}
 
-  '@xhmikosr/downloader@16.1.3':
-    resolution: {integrity: sha512-jtQZZbO3xsRmDDeEz7m23ydgbW9YpVnOALNygmKNvjjuTuQwtcXGVJ9xWv4x7niElvziJrak+WUBmWYcFosolA==}
+  '@xhmikosr/downloader@16.2.0':
+    resolution: {integrity: sha512-5vFLFTOFdDyuPJ6DDaqFPviMnMLrjWvpvbTp+go+JDoyzUBLd4dTjb+1PXIRiUMvJSvlxjpC8GIVN8mYVhQfhg==}
     engines: {node: '>=20'}
 
   '@xhmikosr/os-filter-obj@4.1.0':
@@ -2158,6 +2158,11 @@ packages:
 
   acorn@8.16.0:
     resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
+
+  acorn@8.17.0:
+    resolution: {integrity: sha512-xRQbDb9BnwDafYNn6Vwl839DYVjqXYb1XVGtWAZ1kcDc6iwAL4hg3B1dZlRiuENFeO2H53gFG3in621AdERVAg==}
     engines: {node: '>=0.4.0'}
     hasBin: true
 
@@ -4733,6 +4738,11 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  semver@7.8.4:
+    resolution: {integrity: sha512-rUCObTnP32Q08R2uuIrt7r9PlEonuTmtuXYcW6s5kjdlj3xbnwe+21yXptAUYcMAABLkYYTtnmzb3w3EDZfueA==}
+    engines: {node: '>=10'}
+    hasBin: true
+
   send@0.19.2:
     resolution: {integrity: sha512-VMbMxbDeehAxpOtWJXlcUS5E8iXh6QmN+BkRX1GARS3wRaXEEgzCcB10gTQazO42tpNIya8xIyNx8fll1OFPrg==}
     engines: {node: '>= 0.8.0'}
@@ -5348,8 +5358,8 @@ packages:
     resolution: {integrity: sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==}
     engines: {node: '>=12'}
 
-  yauzl@3.3.2:
-    resolution: {integrity: sha512-Md9ankxxN23wncAN8s7+Tn3Co52zLUPMtnrLAbVCnfG5d2tKBFfmygYSgXlqFgXObtzIgqkx7aNgDBpso9+4qA==}
+  yauzl@3.4.0:
+    resolution: {integrity: sha512-jIH9yLR9wqr0wOS0TpBvo/g/2UgZH5qePVbjgRliiF0BYvOZyaBknKsF+x9Iht0O6sqgnB93rCICdOZFecJuDw==}
     engines: {node: '>=12'}
 
   yocto-queue@0.1.0:
@@ -5390,25 +5400,11 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/anthropic@3.0.81(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.27(zod@3.25.76)
-      zod: 3.25.76
-
   '@ai-sdk/anthropic@3.0.81(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 3.0.10
       '@ai-sdk/provider-utils': 4.0.27(zod@4.3.6)
       zod: 4.3.6
-    optional: true
-
-  '@ai-sdk/gateway@3.0.125(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.27(zod@3.25.76)
-      '@vercel/oidc': 3.2.0
-      zod: 3.25.76
 
   '@ai-sdk/gateway@3.0.125(zod@4.3.6)':
     dependencies:
@@ -5416,20 +5412,12 @@ snapshots:
       '@ai-sdk/provider-utils': 4.0.27(zod@4.3.6)
       '@vercel/oidc': 3.2.0
       zod: 4.3.6
-    optional: true
-
-  '@ai-sdk/google@3.0.80(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.27(zod@3.25.76)
-      zod: 3.25.76
 
   '@ai-sdk/google@3.0.80(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 3.0.10
       '@ai-sdk/provider-utils': 4.0.27(zod@4.3.6)
       zod: 4.3.6
-    optional: true
 
   '@ai-sdk/openai-compatible@2.0.48(zod@4.3.6)':
     dependencies:
@@ -5438,25 +5426,11 @@ snapshots:
       zod: 4.3.6
     optional: true
 
-  '@ai-sdk/openai@3.0.68(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.27(zod@3.25.76)
-      zod: 3.25.76
-
   '@ai-sdk/openai@3.0.68(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 3.0.10
       '@ai-sdk/provider-utils': 4.0.27(zod@4.3.6)
       zod: 4.3.6
-    optional: true
-
-  '@ai-sdk/provider-utils@4.0.27(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.10
-      '@standard-schema/spec': 1.1.0
-      eventsource-parser: 3.1.0
-      zod: 3.25.76
 
   '@ai-sdk/provider-utils@4.0.27(zod@4.3.6)':
     dependencies:
@@ -5464,16 +5438,15 @@ snapshots:
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.1.0
       zod: 4.3.6
-    optional: true
 
   '@ai-sdk/provider@3.0.10':
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@3.0.199(react@19.2.7)(zod@3.25.76)':
+  '@ai-sdk/react@3.0.199(react@19.2.7)(zod@4.3.6)':
     dependencies:
-      '@ai-sdk/provider-utils': 4.0.27(zod@3.25.76)
-      ai: 6.0.197(zod@3.25.76)
+      '@ai-sdk/provider-utils': 4.0.27(zod@4.3.6)
+      ai: 6.0.197(zod@4.3.6)
       react: 19.2.7
       swr: 2.4.1(react@19.2.7)
       throttleit: 2.1.0
@@ -6259,6 +6232,28 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@modelcontextprotocol/sdk@1.29.0(zod@4.3.6)':
+    dependencies:
+      '@hono/node-server': 1.19.14(hono@4.12.23)
+      ajv: 8.20.0
+      ajv-formats: 3.0.1(ajv@8.20.0)
+      content-type: 1.0.5
+      cors: 2.8.6
+      cross-spawn: 7.0.6
+      eventsource: 3.0.7
+      eventsource-parser: 3.1.0
+      express: 5.2.1
+      express-rate-limit: 8.5.2(express@5.2.1)
+      hono: 4.12.23
+      jose: 6.2.3
+      json-schema-typed: 8.0.2
+      pkce-challenge: 5.0.1
+      raw-body: 3.0.2
+      zod: 4.3.6
+      zod-to-json-schema: 3.25.2(zod@4.3.6)
+    transitivePeerDependencies:
+      - supports-color
+
   '@mswjs/interceptors@0.41.9':
     dependencies:
       '@open-draft/deferred-promise': 2.2.0
@@ -6877,11 +6872,11 @@ snapshots:
     dependencies:
       '@swc/core': 1.15.3
       '@swc/counter': 0.1.3
-      '@xhmikosr/bin-wrapper': 14.2.5
+      '@xhmikosr/bin-wrapper': 14.3.0
       commander: 8.3.0
       minimatch: 9.0.9
       piscina: 4.9.2
-      semver: 7.8.2
+      semver: 7.8.4
       slash: 3.0.0
       source-map: 0.7.6
       tinyglobby: 0.2.17
@@ -7256,11 +7251,11 @@ snapshots:
       mixpart: 0.0.6
       picocolors: 1.1.1
 
-  '@workflow/ai@4.1.2(@opentelemetry/api@1.9.1)(ai@6.0.197(zod@3.25.76))(workflow@4.3.1(@nestjs/common@11.1.24(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.24(@nestjs/common@11.1.24(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3)(chokidar@5.0.0))(@swc/core@1.15.3)(next@16.2.7(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3))':
+  '@workflow/ai@4.1.2(@opentelemetry/api@1.9.1)(ai@6.0.197(zod@4.3.6))(workflow@4.3.1(@nestjs/common@11.1.24(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.24(@nestjs/common@11.1.24(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3)(chokidar@5.0.0))(@swc/core@1.15.3)(next@16.2.7(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3))':
     dependencies:
       '@ai-sdk/provider': 3.0.10
       '@workflow/serde': 4.1.1
-      ai: 6.0.197(zod@3.25.76)
+      ai: 6.0.197(zod@4.3.6)
       workflow: 4.3.1(@nestjs/common@11.1.24(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.24(@nestjs/common@11.1.24(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3)(chokidar@5.0.0))(@swc/core@1.15.3)(next@16.2.7(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3)
       zod: 4.3.6
     optionalDependencies:
@@ -7510,7 +7505,7 @@ snapshots:
       ulid: 3.0.2
       zod: 4.3.6
 
-  '@xhmikosr/archive-type@8.0.1':
+  '@xhmikosr/archive-type@8.1.0':
     dependencies:
       file-type: 21.3.4
     transitivePeerDependencies:
@@ -7521,10 +7516,10 @@ snapshots:
       execa: 9.6.1
       isexe: 4.0.0
 
-  '@xhmikosr/bin-wrapper@14.2.5':
+  '@xhmikosr/bin-wrapper@14.3.0':
     dependencies:
       '@xhmikosr/bin-check': 8.2.1
-      '@xhmikosr/downloader': 16.1.3
+      '@xhmikosr/downloader': 16.2.0
       '@xhmikosr/os-filter-obj': 4.1.0
       binary-version-check: 6.1.0
     transitivePeerDependencies:
@@ -7564,11 +7559,10 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@xhmikosr/decompress-unzip@8.1.1':
+  '@xhmikosr/decompress-unzip@8.2.0':
     dependencies:
       file-type: 21.3.4
-      get-stream: 9.0.1
-      yauzl: 3.3.2
+      yauzl: 3.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -7577,7 +7571,7 @@ snapshots:
       '@xhmikosr/decompress-tar': 9.0.1
       '@xhmikosr/decompress-tarbz2': 9.0.2
       '@xhmikosr/decompress-targz': 9.0.1
-      '@xhmikosr/decompress-unzip': 8.1.1
+      '@xhmikosr/decompress-unzip': 8.2.0
       graceful-fs: 4.2.11
       strip-dirs: 3.0.0
     transitivePeerDependencies:
@@ -7585,15 +7579,14 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@xhmikosr/downloader@16.1.3':
+  '@xhmikosr/downloader@16.2.0':
     dependencies:
-      '@xhmikosr/archive-type': 8.0.1
+      '@xhmikosr/archive-type': 8.1.0
       '@xhmikosr/decompress': 11.1.3
       content-disposition: 2.0.1
       ext-name: 5.0.0
       file-type: 21.3.4
       filenamify: 7.0.1
-      get-stream: 9.0.1
       got: 14.6.6
     transitivePeerDependencies:
       - bare-abort-controller
@@ -7614,21 +7607,23 @@ snapshots:
       mime-types: 3.0.2
       negotiator: 1.0.0
 
-  acorn-jsx@5.3.2(acorn@8.16.0):
+  acorn-jsx@5.3.2(acorn@8.17.0):
     dependencies:
-      acorn: 8.16.0
+      acorn: 8.17.0
 
   acorn@8.16.0: {}
 
+  acorn@8.17.0: {}
+
   agent-base@7.1.4: {}
 
-  ai@6.0.197(zod@3.25.76):
+  ai@6.0.197(zod@4.3.6):
     dependencies:
-      '@ai-sdk/gateway': 3.0.125(zod@3.25.76)
+      '@ai-sdk/gateway': 3.0.125(zod@4.3.6)
       '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.27(zod@3.25.76)
+      '@ai-sdk/provider-utils': 4.0.27(zod@4.3.6)
       '@opentelemetry/api': 1.9.1
-      zod: 3.25.76
+      zod: 4.3.6
 
   ajv-formats@3.0.1(ajv@8.20.0):
     optionalDependencies:
@@ -7709,7 +7704,7 @@ snapshots:
   binary-version-check@6.1.0:
     dependencies:
       binary-version: 7.1.0
-      semver: 7.8.2
+      semver: 7.8.4
       semver-truncate: 3.0.0
 
   binary-version@7.1.0:
@@ -8465,8 +8460,8 @@ snapshots:
 
   espree@11.2.0:
     dependencies:
-      acorn: 8.16.0
-      acorn-jsx: 5.3.2(acorn@8.16.0)
+      acorn: 8.17.0
+      acorn-jsx: 5.3.2(acorn@8.17.0)
       eslint-visitor-keys: 5.0.1
 
   esprima@4.0.1: {}
@@ -10487,13 +10482,15 @@ snapshots:
 
   semver-truncate@3.0.0:
     dependencies:
-      semver: 7.8.2
+      semver: 7.8.4
 
   semver@6.3.1: {}
 
   semver@7.7.4: {}
 
   semver@7.8.2: {}
+
+  semver@7.8.4: {}
 
   send@0.19.2:
     dependencies:
@@ -11244,7 +11241,7 @@ snapshots:
       y18n: 5.0.8
       yargs-parser: 21.1.1
 
-  yauzl@3.3.2:
+  yauzl@3.4.0:
     dependencies:
       pend: 1.2.0
 
@@ -11261,6 +11258,10 @@ snapshots:
   zod-to-json-schema@3.25.2(zod@3.25.76):
     dependencies:
       zod: 3.25.76
+
+  zod-to-json-schema@3.25.2(zod@4.3.6):
+    dependencies:
+      zod: 4.3.6
 
   zod@3.25.76: {}
 
