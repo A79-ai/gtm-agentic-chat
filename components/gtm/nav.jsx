@@ -2,6 +2,7 @@
 // a consolidated Records flyout, and a Profile menu that absorbs the
 // secondary actions (notetaker, tweaks, replay onboarding, restart, sign out).
 import React, { useEffect, useRef, useState } from "react";
+import { isProFeatureLocked } from "@/lib/gtm/billing";
 import { CONFIG } from "@/lib/gtm/config";
 import { countOf, ENTITIES, ENTITY_ORDER, initials } from "@/lib/gtm/data";
 import { roleBadgeStyle, roleMeta } from "@/lib/gtm/roles";
@@ -124,7 +125,12 @@ function ProfileMenu({ anchor, profile, role, on, onClose }) {
       </div>
       <div className="menu-section">
         <Item icon={Icons.User} label="View profile" onClick={() => on("profile")} />
-        <Item icon={Icons.Brain} label="Notetaker" onClick={() => on("notetaker")} />
+        <Item
+          icon={Icons.Brain}
+          label="Notetaker"
+          onClick={() => on("notetaker")}
+          sub={isProFeatureLocked() ? "Pro" : undefined}
+        />
         {CONFIG.billing.enabled ? (
           <Item icon={Icons.Spark} label="Plans & billing" onClick={() => on("plans")} />
         ) : null}
