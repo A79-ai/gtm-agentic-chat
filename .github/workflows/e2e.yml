@@ -75,7 +75,7 @@ jobs:
         if: env.HAS_BENCH != 'true'
         run: echo "::notice::Bench specs skipped — set E2E_AMPUP_MCP_URL / E2E_AMPUP_MCP_API_KEY / E2E_AI_GATEWAY_API_KEY secrets to enable."
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
