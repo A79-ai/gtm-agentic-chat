@@ -5,6 +5,7 @@ import { DefaultChatTransport } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MessageResponse } from "@/components/ai-elements/message";
 import MCP_CATALOG from "@/config/mcp-catalog.json";
+import { recordActivity } from "@/lib/gtm/activity";
 import { agentFiles } from "@/lib/gtm/agents";
 import { apiFetch, getMcpKey } from "@/lib/gtm/auth";
 import { deleteConversation, listConversations, saveConversation } from "@/lib/gtm/conversations";
@@ -806,7 +807,29 @@ export function ChatScreen({
               headers["x-llm-model"] = llm.model;
             }
           }
-          const res = await fetch(url, { ...options, headers });
+          const t0 = Date.now();
+          // The transport bypasses apiFetch (it injects the key itself), so log
+          // the chat turn into the activity store directly to keep it visible.
+          const res = await fetch(url, { ...options, headers }).then(
+            (r) => {
+              recordActivity({
+                method: (options?.method || "POST").toUpperCase(),
+                path: "/api/chat",
+                status: r.status,
+                ms: Date.now() - t0,
+              });
+              return r;
+            },
+            (err) => {
+              recordActivity({
+                method: (options?.method || "POST").toUpperCase(),
+                path: "/api/chat",
+                status: 0,
+                ms: Date.now() - t0,
+              });
+              throw err;
+            }
+          );
           if (res.status === 402) {
             throw new Error("Add your own LLM API key in Settings → API keys to start chatting.");
           }

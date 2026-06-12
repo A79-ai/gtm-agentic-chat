@@ -1,7 +1,7 @@
 // App shell: router, rail / bottom-nav + records sheet, theme, tweaks
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { duplicateAgent, listAgents } from "@/lib/gtm/agents";
-import { AUTH0_ENABLED, apiFetch } from "@/lib/gtm/auth";
+import { AUTH0_ENABLED, apiFetch, useMcpKeyContext } from "@/lib/gtm/auth";
 import {
   billingStatus,
   getAccount,
@@ -21,6 +21,7 @@ import {
   getConnectors,
   useDataStatus,
 } from "@/lib/gtm/data";
+import { useSetupProgress } from "@/lib/gtm/setup";
 import { AgentBuilder } from "./agentbuilder";
 import { ChatScreen } from "./chat";
 import { ConnectorsScreen } from "./connectors";
@@ -365,6 +366,10 @@ export function App({ authUser, onAuth0Logout } = {}) {
   const [sheet, setSheet] = useState(false);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
+  // Armed once onboarding completes this session, so the setup poller knows a
+  // background seed is in flight and should keep polling past an early no-op.
+  const [setupArmed, setSetupArmed] = useState(false);
+  const { key: mcpKey } = useMcpKeyContext();
   const [profile, setProfile] = useState(() => {
     try {
       return JSON.parse(
@@ -462,6 +467,17 @@ export function App({ authUser, onAuth0Logout } = {}) {
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 2400);
   };
+  // Live setup-progress: poll the backend backfill status while the post-
+  // onboarding seed + calendar sync run, surface it in the notifications bell,
+  // and re-pull records once on completion (replaces the old fixed timers).
+  const setup = useSetupProgress({
+    enabled: AUTH0_ENABLED && Boolean(mcpKey),
+    armed: setupArmed,
+    onComplete: () => {
+      refresh();
+      showToast("Your workspace is ready", "success");
+    },
+  });
   const toggleTheme = () => t.setThemePref(themeResolved === "dark" ? "light" : "dark");
   const [, setBillingTick] = useState(0);
 
@@ -655,9 +671,9 @@ export function App({ authUser, onAuth0Logout } = {}) {
           "success"
         );
         // The backend seed (LLM-generated accounts/deals/meetings) lands
-        // asynchronously over a couple of minutes. Re-pull a few times so the
-        // new records surface without a manual reload.
-        [30, 75, 150, 240].forEach((s) => setTimeout(() => refresh(), s * 1000));
+        // asynchronously over a couple of minutes. Arm the setup poller so it
+        // tracks the backfills live and re-pulls records once on completion.
+        setSetupArmed(true);
       })
       .catch(() => {});
   };
@@ -706,6 +722,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
         profile={navProfile}
         role={me?.role}
         route={route}
+        setup={setup}
         themeResolved={themeResolved}
         toggleTheme={toggleTheme}
       />
