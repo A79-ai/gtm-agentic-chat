@@ -66,10 +66,10 @@ jobs:
             echo "NEXT_PUBLIC_ONBOARDING_ENABLED=false"
           } > .env.e2e
 
-      # Bench specs (chat + entity lists) against the single-org bench.
-      - name: Bench specs (chat + entities)
+      # Bench specs (chat + entity lists + file upload) against the single-org bench.
+      - name: Bench specs (chat + entities + file upload)
         if: env.HAS_BENCH == 'true'
-        run: pnpm exec playwright test e2e/chat.spec.ts e2e/entities.spec.ts
+        run: pnpm exec playwright test e2e/chat.spec.ts e2e/entities.spec.ts e2e/file-upload.spec.ts
 
       - name: Note skipped bench
         if: env.HAS_BENCH != 'true'

@@ -14,6 +14,8 @@ import {
   byId,
   ENTITIES,
   FIELDS,
+  ownerNameById,
+  recordById,
   related,
   SUGGESTIONS,
   subtitleOf,
@@ -564,18 +566,142 @@ function ContextPanel({ attached, onOpenRecord, onAttach, onRemove, open, onClos
   );
 }
 
-function contextPreamble(records, files = []) {
-  const blocks = [];
-  if (records.length) {
-    const lines = records
-      .map(
-        (r) => `- ${ENTITIES[r.type].label}: ${r.name}${subtitleOf(r) ? ` (${subtitleOf(r)})` : ""}`
-      )
-      .join("\n");
-    blocks.push(
-      `The user has attached these CRM records. Ground your answer in them and use tools to fetch more detail as needed:\n${lines}`
-    );
+// The CRM fields the client already holds for a record (from /api/records), so
+// we can hand them to the agent up front instead of it re-fetching via tools on
+// the first turn (get_opportunity / get_deal_context / list_opportunities / …).
+function seedFieldsFor(r) {
+  const owner = ownerNameById(r.ownerId);
+  if (r.type === "deal") {
+    return [
+      r.id && `id: ${r.id}`,
+      r.stage && `stage: ${r.stage}`,
+      r.amount && `amount: ${r.amount}`,
+      r.closeDate && `close date: ${r.closeDate}`,
+      r.accountName && `account: ${r.accountName}`,
+      owner && `owner: ${owner}`,
+      typeof r.tasksOpen === "number" && `open tasks: ${r.tasksOpen}`,
+    ]
+      .filter(Boolean)
+      .join(", ");
   }
+  if (r.type === "account") {
+    return [
+      r.industry && `industry: ${r.industry}`,
+      r.arr && `pipeline: ${r.arr}`,
+      typeof r.openOpps === "number" && `open opportunities: ${r.openOpps}`,
+      owner && `owner: ${owner}`,
+    ]
+      .filter(Boolean)
+      .join(", ");
+  }
+  if (r.type === "meeting") {
+    return [r.date && `date: ${r.date}`].filter(Boolean).join(", ");
+  }
+  return "";
+}
+
+// The signed-in user + their company. Two sources, merged so the agent always
+// knows who it's helping without a get_org / get_my_name round-trip:
+//   1. the onboarding profile the client already has (`ampup-profile:<userKey>`
+//      in localStorage) — the richest, and the only source of a company name;
+//   2. the server identity from /api/me (`me`) — authoritative and always
+//      present for an authenticated user. This is what fills the gap in
+//      multi-tenant, where a user who skipped onboarding has no profile at all.
+// Profile wins field-by-field; `me` backfills. (`me` carries org_id, not a
+// company name, so `company` stays profile-only — don't synthesize it from an id.)
+function identityContext(me) {
+  let p = null;
+  try {
+    let raw = typeof localStorage !== "undefined" && localStorage.getItem("ampup-profile");
+    if (!raw && typeof localStorage !== "undefined") {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k?.startsWith("ampup-profile")) {
+          raw = localStorage.getItem(k);
+          break;
+        }
+      }
+    }
+    p = raw ? JSON.parse(raw) : null;
+  } catch {
+    p = null;
+  }
+  const name = p?.name || me?.name || "";
+  const email = p?.email || me?.email || "";
+  const role = p?.role || me?.role || "";
+  const title = p?.title || me?.title || "";
+  const company = p?.company || "";
+  const bits = [
+    name && `name: ${name}`,
+    email && `email: ${email}`,
+    role && `role: ${role}`,
+    title && `title: ${title}`,
+    company && `company: ${company}`,
+  ].filter(Boolean);
+  return bits.length
+    ? `You are assisting this signed-in user (no need to look up who they are): ${bits.join(", ")}.`
+    : "";
+}
+
+// Grounding context for the SYSTEM prompt (not the user message): the attached
+// records with the fields the client already holds (so the agent answers without
+// re-fetching them) plus the signed-in user/org. Returned as a string the chat
+// route threads to the workflow as `systemContext`, injected per turn.
+function recordsSystemContext(records, identity, dealContexts) {
+  const blocks = [];
+  if (identity) {
+    blocks.push(identity);
+  }
+  if (records.length) {
+    // Seed the fields the client already has (no tool call needed); fall back to
+    // a thin reference only for records not yet in the local store.
+    const seeded = [];
+    const thin = [];
+    for (const r of records) {
+      const full = recordById(r.type, r.id);
+      const fields = full ? seedFieldsFor(full) : "";
+      if (fields) {
+        seeded.push(`- ${ENTITIES[r.type].label} "${r.name}" — ${fields}`);
+      } else {
+        thin.push(
+          `- ${ENTITIES[r.type].label}: ${r.name}${subtitleOf(r) ? ` (${subtitleOf(r)})` : ""}`
+        );
+      }
+    }
+    if (seeded.length) {
+      blocks.push(
+        "The user attached these CRM records, with their CURRENT details from the CRM below. " +
+          "Treat these values as authoritative and answer from them directly — do NOT call tools " +
+          "to re-fetch these records or fields. Call tools only for information not shown here " +
+          `(e.g. meeting transcripts, notes, or full activity history):\n${seeded.join("\n")}`
+      );
+    }
+    if (thin.length) {
+      blocks.push(
+        `The user has attached these CRM records. Ground your answer in them and use tools to fetch more detail as needed:\n${thin.join("\n")}`
+      );
+    }
+    // Rich, pre-fetched deal context for each attached deal — re-sent every turn
+    // (systemContext lives in the per-turn `instructions`, never in the durable
+    // history). Lets the agent assess progression without a get_deal_context call.
+    if (dealContexts) {
+      for (const r of records) {
+        const ctx = r.type === "deal" && dealContexts[r.id];
+        if (ctx) {
+          blocks.push(
+            `Full current context for the deal "${r.name}" (id ${r.id}) — assess progression from this; do NOT call get_deal_context for it:\n${ctx}`
+          );
+        }
+      }
+    }
+  }
+  return blocks.join("\n\n");
+}
+
+// File context stays in the USER message: inline file text is part of what the
+// user is asking about, and datasource refs point at per-turn uploads.
+function contextPreamble(files = []) {
+  const blocks = [];
   // Inlined files carry their full text, embed it directly so the agent
   // answers without any tool call.
   const inline = files.filter((f) => f.text);
@@ -703,6 +829,7 @@ export function ChatScreen({
   seedAttached,
   resume,
   agent,
+  me,
   onBack,
   onOpenRecord,
   onToast,
@@ -727,6 +854,31 @@ export function ChatScreen({
   const lastSavedSigRef = useRef(resume?.messages?.length ? convoSig(resume.messages) : "");
   const agentRef = useRef(agent);
   agentRef.current = agent;
+  // Signed-in user identity for grounding (who the agent is helping). The app
+  // shell passes `me` from /api/me; the standalone embed surface renders
+  // ChatScreen with no `me`, so fetch it here once as a fallback. Either way it
+  // rides into the system prompt via identityContext(), merged with the
+  // onboarding profile, on every turn.
+  const [fetchedMe, setFetchedMe] = useState(null);
+  const meRef = useRef(null);
+  meRef.current = me || fetchedMe;
+  useEffect(() => {
+    if (me) {
+      return; // app shell already supplied it; skip the redundant fetch
+    }
+    let alive = true;
+    apiFetch("/api/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (alive && d && !d.error) {
+          setFetchedMe(d);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [me]);
   const [histOpen, setHistOpen] = useState(false);
   const [attached, setAttached] = useState(() => (seedAttached || []).filter(Boolean));
   const [files, setFiles] = useState(() => (agent ? agentFiles(agent) : [])); // { datasourceId, fileName, status }
@@ -785,6 +937,37 @@ export function ChatScreen({
   const filesRef = useRef(files);
   filesRef.current = files;
 
+  // Pre-fetch the rich context for any attached deal (off the chat critical
+  // path), cached by deal id, so the first message can carry it and the agent
+  // assesses progression without a get_deal_context tool call mid-turn.
+  const [dealContexts, setDealContexts] = useState({});
+  const dealContextsRef = useRef(dealContexts);
+  dealContextsRef.current = dealContexts;
+  useEffect(() => {
+    const deals = attached.filter((r) => r.type === "deal" && !dealContextsRef.current[r.id]);
+    if (!deals.length) {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      for (const d of deals) {
+        try {
+          const res = await apiFetch(`/api/deal-context?id=${encodeURIComponent(d.id)}`).then((r) =>
+            r.json()
+          );
+          if (!cancelled && res?.context) {
+            setDealContexts((prev) => ({ ...prev, [d.id]: res.context }));
+          }
+        } catch {
+          /* best-effort: agent falls back to get_deal_context */
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [attached]);
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -841,15 +1024,32 @@ export function ChatScreen({
         },
         prepareSendMessagesRequest: ({ messages }) => {
           const last = messages[messages.length - 1];
-          const pre = contextPreamble(attachedRef.current, filesRef.current);
-          const msg = pre
+          // Files stay in the user message; attached records + identity ride in
+          // the system prompt (systemContext) so the agent is grounded without
+          // re-fetching and the user's message stays clean.
+          const filePre = contextPreamble(filesRef.current);
+          const msg = filePre
             ? {
                 ...last,
                 parts: (last.parts || []).map((p) =>
-                  p.type === "text" ? { ...p, text: `${pre}\n\n${p.text}` } : p
+                  p.type === "text" ? { ...p, text: `${filePre}\n\n${p.text}` } : p
                 ),
               }
             : last;
+          // Identity + attached-record grounding (incl. each attached deal's rich
+          // get_deal_context) on EVERY turn it's attached, not just the first.
+          // systemContext is folded into the agent's `instructions` per turn (see
+          // workflows/chat.ts processTurn) and is NEVER pushed into the durable
+          // message history — so re-sending is what keeps the context present.
+          // Drop it after turn 1 and the model loses the deal context and falls
+          // back to a mid-turn get_deal_context call (or a stale paraphrase). The
+          // pre-fetch is cached per deal id, so this re-sends bytes, not API calls.
+          const systemContext =
+            recordsSystemContext(
+              attachedRef.current,
+              identityContext(meRef.current),
+              dealContextsRef.current
+            ) || undefined;
           const ag = agentRef.current;
           const all = enabledMcpServers();
           // An agent scopes the chat to its server subset (by slug or id); a plain
@@ -864,6 +1064,7 @@ export function ChatScreen({
               mcpServers: servers,
               systemPrompt: ag?.systemPrompt || undefined,
               includeAmpup: ag ? ag.includeAmpup !== false : true,
+              systemContext,
             },
           };
         },
@@ -871,7 +1072,22 @@ export function ChatScreen({
     [conversationId]
   );
 
-  const { messages, sendMessage, status, setMessages, regenerate, error } = useChat({ transport });
+  // Live status line from the server's transient `data-status` parts (e.g.
+  // "Connecting to your tools…" during the first-turn MCP discovery). Transient
+  // parts arrive via onData and are NOT in message history, so we hold them in
+  // local state and show them in the pending-turn indicator below.
+  const [liveStatus, setLiveStatus] = useState(null);
+  const { messages, sendMessage, status, setMessages, regenerate, error } = useChat({
+    transport,
+    // Batch streamed chunk -> re-render to ~50ms so the high-frequency word
+    // deltas (esp. with server-side smoothing) don't thrash React.
+    experimental_throttle: 50,
+    onData: (part) => {
+      if (part?.type === "data-status") {
+        setLiveStatus(part.data?.text ?? null);
+      }
+    },
+  });
   // A failed send (e.g. the 402 "bring your own LLM key" gate) surfaces here as
   // `error`; without rendering it the turn silently does nothing. The key-gate
   // message is detected so we can route the user straight to Settings.
@@ -917,7 +1133,10 @@ export function ChatScreen({
     // then streaming resumes (looks like the turn ended early). Use a wider
     // window so normal inter-step gaps don't trip it; the 90s watchdog below
     // still catches genuine stalls, and a running tool re-engages immediately.
-    const t = setTimeout(() => setTurnBusy(false), 3500);
+    const t = setTimeout(() => {
+      setTurnBusy(false);
+      setLiveStatus(null);
+    }, 3500);
     return () => clearTimeout(t);
   }, [messages, turnBusy, status]);
   // Re-engage if the agent fires another tool after appearing to settle (a
@@ -1021,10 +1240,12 @@ export function ChatScreen({
   };
   const send = (t) => {
     setTurnBusy(true);
+    setLiveStatus(null);
     sendMessage({ text: t });
   };
   const doRegenerate = () => {
     setTurnBusy(true);
+    setLiveStatus(null);
     regenerate();
   };
 
@@ -1420,7 +1641,13 @@ export function ChatScreen({
                   <LogoMark size={17} />
                 </div>
                 <div className="bubble" style={{ flex: 1, minWidth: 0 }}>
-                  <LoadingIndicator />
+                  {liveStatus ? (
+                    <span className="msg-status" style={{ color: "var(--fg-muted)" }}>
+                      {liveStatus}
+                    </span>
+                  ) : (
+                    <LoadingIndicator />
+                  )}
                 </div>
               </div>
             )}

@@ -31,6 +31,8 @@ function EmbedChat() {
         <main className="main">
           <ChatScreen
             agent={null}
+            // No app shell here; ChatScreen self-fetches /api/me for grounding.
+            me={null}
             onBack={null}
             onNav={() => {}}
             onNewChat={() => {}}

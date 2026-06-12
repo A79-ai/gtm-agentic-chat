@@ -142,6 +142,7 @@ export async function POST(req: Request) {
     mcpServers,
     systemPrompt,
     includeAmpup,
+    systemContext,
   }: {
     conversationId: string;
     message: UIMessage;
@@ -149,6 +150,7 @@ export async function POST(req: Request) {
     mcpServers?: IncomingServer[];
     systemPrompt?: string;
     includeAmpup?: boolean;
+    systemContext?: string;
   } = await req.json();
 
   const mcpToken =
@@ -177,7 +179,11 @@ export async function POST(req: Request) {
   if (runId) {
     const run = getRun(runId);
     const tail = await run.getReadable().getTailIndex();
-    await turnHook.resume(`conv:${conversationId}`, { message, mcpToken });
+    await turnHook.resume(`conv:${conversationId}`, {
+      message,
+      mcpToken,
+      systemContext: typeof systemContext === "string" ? systemContext : undefined,
+    });
     return createUIMessageStreamResponse({
       stream: run.getReadable({ startIndex: tail + 1 }),
       headers: { ...CORS, "x-workflow-run-id": runId },
@@ -210,6 +216,7 @@ export async function POST(req: Request) {
     typeof systemPrompt === "string" ? systemPrompt : undefined,
     includeAmpup !== false,
     llmOpts,
+    typeof systemContext === "string" ? systemContext : undefined,
   ]);
   return createUIMessageStreamResponse({
     stream: run.readable,

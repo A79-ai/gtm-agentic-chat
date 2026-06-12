@@ -1,3 +1,13 @@
+<p align="center">
+  <a href="https://a79.ai">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./public/brand/ampup-logo-dark.png">
+      <source media="(prefers-color-scheme: light)" srcset="./public/brand/ampup-logo-light.png">
+      <img alt="AmpUp" src="./public/brand/ampup-logo-light.png" width="320">
+    </picture>
+  </a>
+</p>
+
 # GTM Agentic Starter Kit
 
 **An open, self-deployable agentic chat for go-to-market teams, over your own CRM, meetings/notetaker, and knowledge base.**
@@ -6,7 +16,7 @@ Pick an agent ("Deal Coach", "Outreach Writer", "Competitive Intel"), and it wor
 
 **This whole kit is open source (MIT) — fork it, self-host it, own it.** Want [Salesforce](https://www.salesforce.com), [Gong](https://www.gong.io), or [HubSpot](https://www.hubspot.com) wired up with **enterprise auth (SSO/SAML) and an SLA**? [AmpUp](https://a79.ai) can run that for you — reach out to **[support@ampup.ai](mailto:support@ampup.ai)**.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/a79-ai/gtm-agentic-chat)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FA79-ai%2Fgtm-agentic-chat&project-name=gtm-agentic-chat&repository-name=gtm-agentic-chat&env=AMPUP_MCP_URL,AMPUP_MCP_API_KEY,ANTHROPIC_API_KEY&envDescription=Your%20AmpUp%20MCP%20endpoint%20%2B%20API%20key%20and%20an%20Anthropic%20API%20key&envLink=https%3A%2F%2Fgithub.com%2FA79-ai%2Fgtm-agentic-chat%2Fblob%2Fmain%2F.env.example&demo-title=GTM%20Agentic%20Starter%20Kit&demo-description=Self-deployable%20agentic%20chat%20over%20your%20CRM%2C%20calls%20and%20notes&demo-url=https%3A%2F%2Fchat.ampup.ai&demo-image=https%3A%2F%2Fraw.githubusercontent.com%2FA79-ai%2Fgtm-agentic-chat%2Fmain%2Fpublic%2Fbrand%2Fsocial-preview.png)
 &nbsp;[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](./LICENSE)
 &nbsp;![Built with Next.js + Vercel AI SDK](https://img.shields.io/badge/built%20with-Next.js%20%2B%20Vercel%20AI%20SDK-black)
 
@@ -60,7 +70,7 @@ Pick an agent ("Deal Coach", "Outreach Writer", "Competitive Intel"), and it wor
 
 ## Deploy
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/a79-ai/gtm-agentic-chat)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FA79-ai%2Fgtm-agentic-chat&project-name=gtm-agentic-chat&repository-name=gtm-agentic-chat&env=AMPUP_MCP_URL,AMPUP_MCP_API_KEY,ANTHROPIC_API_KEY&envDescription=Your%20AmpUp%20MCP%20endpoint%20%2B%20API%20key%20and%20an%20Anthropic%20API%20key&envLink=https%3A%2F%2Fgithub.com%2FA79-ai%2Fgtm-agentic-chat%2Fblob%2Fmain%2F.env.example&demo-title=GTM%20Agentic%20Starter%20Kit&demo-description=Self-deployable%20agentic%20chat%20over%20your%20CRM%2C%20calls%20and%20notes&demo-url=https%3A%2F%2Fchat.ampup.ai&demo-image=https%3A%2F%2Fraw.githubusercontent.com%2FA79-ai%2Fgtm-agentic-chat%2Fmain%2Fpublic%2Fbrand%2Fsocial-preview.png)
 
 > The one-click Deploy button requires the repo to be **public**. If you're
 > viewing a private fork, clone it and deploy with the [Vercel CLI](https://vercel.com/docs/cli)
