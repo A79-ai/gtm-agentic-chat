@@ -44,6 +44,10 @@ Pick an agent ("Deal Coach", "Outreach Writer", "Competitive Intel"), and it wor
 
 ![Deal Coach grounded in a deal](./public/features/deal-coach.gif)
 
+**Bring your own LLM key**: chat runs on your own Anthropic, OpenAI or Google key — paste it in Settings, hit **Test key** to confirm it works, and you're chatting. It's stored only in your browser; the workspace key is reserved for internal & Pro users:
+
+![Bring your own LLM key — add it in Settings, test it, and chat](./public/features/byok.gif)
+
 **Fully responsive on mobile**: the same workspace and chat on a phone:
 
 ![Responsive mobile chat](./public/features/mobile-responsive.gif)
