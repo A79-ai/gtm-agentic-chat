@@ -5,6 +5,7 @@ import { AUTH0_ENABLED, apiFetch, useMcpKeyContext } from "@/lib/gtm/auth";
 import {
   billingStatus,
   getAccount,
+  isProFeatureLocked,
   isSignedUp,
   refreshBillingStatus,
   resetBilling,
@@ -275,6 +276,25 @@ function TrialBanner({ route, onUpgrade }) {
       <button className="btn btn-sm btn-primary" onClick={onUpgrade}>
         Upgrade
       </button>
+    </div>
+  );
+}
+
+// Upgrade gate shown in place of a Pro-only feature when the workspace isn't on
+// a paid plan (e.g. Notetaker during a free trial).
+function ProFeatureGate({ name, blurb, onUpgrade }) {
+  return (
+    <div className="screen">
+      <div className="card pro-gate">
+        <div className="pro-gate-badge">
+          <Icons.Spark size={14} /> Pro feature
+        </div>
+        <h2 className="pro-gate-title">{name} is a Pro feature</h2>
+        <p className="pro-gate-blurb">{blurb}</p>
+        <button className="btn btn-primary" onClick={onUpgrade}>
+          Upgrade to Pro
+        </button>
+      </div>
     </div>
   );
 }
@@ -748,7 +768,16 @@ export function App({ authUser, onAuth0Logout } = {}) {
         {route.name === "connectors" && (
           <ConnectorsScreen connectors={connectors} onToast={showToast} />
         )}
-        {route.name === "notetaker" && <NotetakerScreen onToast={showToast} />}
+        {route.name === "notetaker" &&
+          (isProFeatureLocked() ? (
+            <ProFeatureGate
+              blurb="Have an AI notetaker join your calls, transcribe them, and sync the notes to your CRM. Upgrade to Pro to turn it on."
+              name="Notetaker"
+              onUpgrade={() => go("plans")}
+            />
+          ) : (
+            <NotetakerScreen onToast={showToast} />
+          ))}
         {route.name === "files" && <FilesScreen onNewChat={openChat} />}
         {route.name === "plans" && <PlansScreen onToast={showToast} />}
         {route.name === "profile" && <ProfileScreen authUser={authUser} me={me} />}
