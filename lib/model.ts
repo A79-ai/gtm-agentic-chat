@@ -6,10 +6,14 @@
 //      ANTHROPIC_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY direct, else the Vercel
 //      AI Gateway via a plain "provider/model" string. Anthropic wins if set.
 //
-// DurableAgent wants the model as a string (gateway) or a factory function
-// (() => Promise<model>) so the workflow can reconstruct it on replay.
-import { anthropic, createAnthropic } from "@ai-sdk/anthropic";
-import { createGoogleGenerativeAI, google } from "@ai-sdk/google";
+// DurableAgent wants the model as a STRING (a gateway model id) or a
+// workflow-REGISTERED factory (a "use step" function whose closure inputs are
+// serializable strings). A plain runtime closure is NOT serializable — the
+// durable runtime devalue-serializes step args and crashes with "Cannot
+// stringify a function" — so every factory below is a registered step (see
+// stepAnthropic/etc.), mirroring @workflow/ai's own provider wrappers.
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createGateway } from "ai";
 
@@ -28,6 +32,36 @@ export type LlmOpts = {
   model?: string;
 };
 
+// Each factory returns a workflow-registered step (the "use step" directive):
+// the model is constructed INSIDE the step from serializable string inputs, so it
+// crosses the durable step boundary as a step reference + serialized args rather
+// than as an unserializable function. (apiKey is a string and rides along as a
+// step arg — the same place the key already lives in the persisted run input.)
+function stepAnthropic(apiKey: string, modelId: string) {
+  return async () => {
+    "use step";
+    return createAnthropic({ apiKey })(modelId);
+  };
+}
+function stepOpenAI(apiKey: string, modelId: string) {
+  return async () => {
+    "use step";
+    return createOpenAI({ apiKey })(modelId);
+  };
+}
+function stepGoogle(apiKey: string, modelId: string) {
+  return async () => {
+    "use step";
+    return createGoogleGenerativeAI({ apiKey })(modelId);
+  };
+}
+function stepGateway(apiKey: string, modelId: string) {
+  return async () => {
+    "use step";
+    return createGateway({ apiKey })(modelId);
+  };
+}
+
 export function resolveModel(opts?: LlmOpts): ResolvedModel {
   // 1. Bring-your-own key: build the chosen provider from the user's key.
   if (opts?.key && opts.provider) {
@@ -35,24 +69,14 @@ export function resolveModel(opts?: LlmOpts): ResolvedModel {
     const m = opts.model?.trim() || undefined;
     switch (opts.provider) {
       case "anthropic":
-        return {
-          model: async () => createAnthropic({ apiKey })(m ?? "claude-sonnet-4-6"),
-          provider: "anthropic",
-        };
+        return { model: stepAnthropic(apiKey, m ?? "claude-sonnet-4-6"), provider: "anthropic" };
       case "openai":
-        return {
-          model: async () => createOpenAI({ apiKey })(m ?? "gpt-4o"),
-          provider: "openai",
-        };
+        return { model: stepOpenAI(apiKey, m ?? "gpt-4o"), provider: "openai" };
       case "google":
-        return {
-          model: async () => createGoogleGenerativeAI({ apiKey })(m ?? "gemini-2.5-pro"),
-          provider: "google",
-        };
+        return { model: stepGoogle(apiKey, m ?? "gemini-2.5-pro"), provider: "google" };
       case "gateway": {
         const id = m ?? "anthropic/claude-sonnet-4.6";
-        const gw = createGateway({ apiKey });
-        return { model: async () => gw(id), provider: id.split("/")[0] };
+        return { model: stepGateway(apiKey, id), provider: id.split("/")[0] };
       }
       default:
         break;
@@ -65,13 +89,13 @@ export function resolveModel(opts?: LlmOpts): ResolvedModel {
 
   if (process.env.ANTHROPIC_API_KEY) {
     return {
-      model: async () => anthropic(bare ?? "claude-sonnet-4-6"),
+      model: stepAnthropic(process.env.ANTHROPIC_API_KEY, bare ?? "claude-sonnet-4-6"),
       provider: "anthropic",
     };
   }
   if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     return {
-      model: async () => google(bare ?? "gemini-2.5-pro"),
+      model: stepGoogle(process.env.GOOGLE_GENERATIVE_AI_API_KEY, bare ?? "gemini-2.5-pro"),
       provider: "google",
     };
   }
