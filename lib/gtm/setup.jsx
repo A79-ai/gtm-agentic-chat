@@ -34,8 +34,21 @@ function groupBackfills(backfills) {
   const groups = new Map();
   for (const b of backfills || []) {
     const key = b.integration_name || "Workspace";
-    const g = groups.get(key) || { integration: key, objects: [], total: 0, progress: 0, done: 0 };
+    const g = groups.get(key) || {
+      integration: key,
+      objects: [],
+      messages: [],
+      total: 0,
+      progress: 0,
+      done: 0,
+    };
     g.objects.push(friendlyObject(b.object_name));
+    // The backend sets a live progress message on in-flight tasks (e.g. the
+    // demo-content seed: "Created 4 accounts and 5 deals, adding more..."), so
+    // prefer it over the static object list to make the panel read like a feed.
+    if (typeof b.message === "string" && b.message.trim()) {
+      g.messages.push(b.message.trim());
+    }
     g.total += 1;
     g.progress += typeof b.progress === "number" ? b.progress : 0;
     const status = (b.status || "").toUpperCase();
@@ -46,7 +59,9 @@ function groupBackfills(backfills) {
   }
   return Array.from(groups.values()).map((g) => ({
     integration: g.integration,
-    label: g.objects.slice(0, 3).join(", ") + (g.objects.length > 3 ? "..." : ""),
+    label: g.messages.length
+      ? g.messages.at(-1)
+      : g.objects.slice(0, 3).join(", ") + (g.objects.length > 3 ? "..." : ""),
     progress: g.total ? g.progress / g.total : 0,
     done: g.done === g.total && g.total > 0,
   }));
