@@ -600,12 +600,17 @@ function seedFieldsFor(r) {
   return "";
 }
 
-// The signed-in user + their company, from the onboarding profile the client
-// already has (`ampup-profile:<userKey>` in localStorage). Seeded into the system
-// prompt so the agent knows who it's helping without a get_org / get_my_name
-// round-trip. (Full org config — ICP, settings — is best hydrated server-side;
-// this covers the identity basics.)
-function identityContext() {
+// The signed-in user + their company. Two sources, merged so the agent always
+// knows who it's helping without a get_org / get_my_name round-trip:
+//   1. the onboarding profile the client already has (`ampup-profile:<userKey>`
+//      in localStorage) — the richest, and the only source of a company name;
+//   2. the server identity from /api/me (`me`) — authoritative and always
+//      present for an authenticated user. This is what fills the gap in
+//      multi-tenant, where a user who skipped onboarding has no profile at all.
+// Profile wins field-by-field; `me` backfills. (`me` carries org_id, not a
+// company name, so `company` stays profile-only — don't synthesize it from an id.)
+function identityContext(me) {
+  let p = null;
   try {
     let raw = typeof localStorage !== "undefined" && localStorage.getItem("ampup-profile");
     if (!raw && typeof localStorage !== "undefined") {
@@ -617,22 +622,25 @@ function identityContext() {
         }
       }
     }
-    if (!raw) {
-      return "";
-    }
-    const p = JSON.parse(raw);
-    const bits = [
-      p.name && `name: ${p.name}`,
-      p.email && `email: ${p.email}`,
-      p.role && `role: ${p.role}`,
-      p.company && `company: ${p.company}`,
-    ].filter(Boolean);
-    return bits.length
-      ? `You are assisting this signed-in user (no need to look up who they are): ${bits.join(", ")}.`
-      : "";
+    p = raw ? JSON.parse(raw) : null;
   } catch {
-    return "";
+    p = null;
   }
+  const name = p?.name || me?.name || "";
+  const email = p?.email || me?.email || "";
+  const role = p?.role || me?.role || "";
+  const title = p?.title || me?.title || "";
+  const company = p?.company || "";
+  const bits = [
+    name && `name: ${name}`,
+    email && `email: ${email}`,
+    role && `role: ${role}`,
+    title && `title: ${title}`,
+    company && `company: ${company}`,
+  ].filter(Boolean);
+  return bits.length
+    ? `You are assisting this signed-in user (no need to look up who they are): ${bits.join(", ")}.`
+    : "";
 }
 
 // Grounding context for the SYSTEM prompt (not the user message): the attached
@@ -673,9 +681,9 @@ function recordsSystemContext(records, identity, dealContexts) {
         `The user has attached these CRM records. Ground your answer in them and use tools to fetch more detail as needed:\n${thin.join("\n")}`
       );
     }
-    // Rich, pre-fetched deal context (passed only on the first turn — after that
-    // it's already in the conversation history, so re-sending it just bloats the
-    // prompt). Lets the agent assess progression without a get_deal_context call.
+    // Rich, pre-fetched deal context for each attached deal — re-sent every turn
+    // (systemContext lives in the per-turn `instructions`, never in the durable
+    // history). Lets the agent assess progression without a get_deal_context call.
     if (dealContexts) {
       for (const r of records) {
         const ctx = r.type === "deal" && dealContexts[r.id];
@@ -821,6 +829,7 @@ export function ChatScreen({
   seedAttached,
   resume,
   agent,
+  me,
   onBack,
   onOpenRecord,
   onToast,
@@ -845,6 +854,31 @@ export function ChatScreen({
   const lastSavedSigRef = useRef(resume?.messages?.length ? convoSig(resume.messages) : "");
   const agentRef = useRef(agent);
   agentRef.current = agent;
+  // Signed-in user identity for grounding (who the agent is helping). The app
+  // shell passes `me` from /api/me; the standalone embed surface renders
+  // ChatScreen with no `me`, so fetch it here once as a fallback. Either way it
+  // rides into the system prompt via identityContext(), merged with the
+  // onboarding profile, on every turn.
+  const [fetchedMe, setFetchedMe] = useState(null);
+  const meRef = useRef(null);
+  meRef.current = me || fetchedMe;
+  useEffect(() => {
+    if (me) {
+      return; // app shell already supplied it; skip the redundant fetch
+    }
+    let alive = true;
+    apiFetch("/api/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (alive && d && !d.error) {
+          setFetchedMe(d);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [me]);
   const [histOpen, setHistOpen] = useState(false);
   const [attached, setAttached] = useState(() => (seedAttached || []).filter(Boolean));
   const [files, setFiles] = useState(() => (agent ? agentFiles(agent) : [])); // { datasourceId, fileName, status }
@@ -1002,14 +1036,19 @@ export function ChatScreen({
                 ),
               }
             : last;
-          // Heavy deal context only on the first turn (afterwards it's already in
-          // the conversation history; re-sending would just bloat the prompt).
-          const isFirstTurn = !runIdRef.current;
+          // Identity + attached-record grounding (incl. each attached deal's rich
+          // get_deal_context) on EVERY turn it's attached, not just the first.
+          // systemContext is folded into the agent's `instructions` per turn (see
+          // workflows/chat.ts processTurn) and is NEVER pushed into the durable
+          // message history — so re-sending is what keeps the context present.
+          // Drop it after turn 1 and the model loses the deal context and falls
+          // back to a mid-turn get_deal_context call (or a stale paraphrase). The
+          // pre-fetch is cached per deal id, so this re-sends bytes, not API calls.
           const systemContext =
             recordsSystemContext(
               attachedRef.current,
-              identityContext(),
-              isFirstTurn ? dealContextsRef.current : null
+              identityContext(meRef.current),
+              dealContextsRef.current
             ) || undefined;
           const ag = agentRef.current;
           const all = enabledMcpServers();
