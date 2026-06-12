@@ -804,6 +804,7 @@ export function App({ authUser, onAuth0Logout } = {}) {
           <ChatScreen
             agent={chatAgent}
             key={chatKey}
+            me={me}
             onBack={() => go("home")}
             onNav={go}
             onNewChat={() => openChat([])}
