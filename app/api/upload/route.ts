@@ -69,11 +69,31 @@ export async function POST(req: Request) {
     let datasourceId: number | null = null;
     let status = "";
     try {
-      const o = JSON.parse(r.content) as { id?: number; datasource_id?: number; status?: string };
+      const o = JSON.parse(r.content) as {
+        id?: number;
+        datasource_id?: number;
+        status?: string;
+        error?: string;
+      };
+      // The MCP call succeeds (r.ok) even when the tool reports a failed
+      // upload (e.g. unsupported type, blob-bucket error). Surface that as a
+      // failure instead of a null-id "success" the UI would treat as readable.
+      if (o.error || o.status === "failed") {
+        return Response.json(
+          { ok: false, error: o.error || "upload failed" },
+          { status: 502, headers: CORS }
+        );
+      }
       datasourceId = o.id ?? o.datasource_id ?? null;
       status = o.status || "";
     } catch {
       /* leave null, caller still gets ok */
+    }
+    if (datasourceId == null) {
+      return Response.json(
+        { ok: false, error: "upload did not return a datasource id" },
+        { status: 502, headers: CORS }
+      );
     }
     return Response.json(
       { ok: true, datasourceId, fileName: body.file_name, status },
