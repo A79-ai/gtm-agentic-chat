@@ -81,6 +81,41 @@ export function TBadge({ value, tone }) {
   );
 }
 
+// Compact per-connector sync indicator. Renders the Ampersand backfill (replay)
+// progress for a connected integration: a syncing pill (accent), a "Synced"
+// label (muted/positive), or nothing for idle / no data so we don't clutter.
+export function SyncIndicator({ entry, style }) {
+  if (!entry || entry.status === "idle") {
+    return null;
+  }
+  if (entry.status === "syncing") {
+    const detail =
+      entry.recordsProcessed != null && entry.recordsTotal != null
+        ? `${entry.recordsProcessed}/${entry.recordsTotal}`
+        : entry.percentage == null
+          ? ""
+          : `${entry.percentage}%`;
+    return e(
+      "span",
+      {
+        className: "badge badge-accent",
+        style: { padding: "2px 8px", fontSize: 11, gap: 5, ...style },
+      },
+      e(Icons.Refresh, { size: 11 }),
+      detail ? `Syncing · ${detail}` : "Syncing"
+    );
+  }
+  return e(
+    "span",
+    {
+      className: "badge badge-success",
+      style: { padding: "2px 8px", fontSize: 11, gap: 5, ...style },
+    },
+    e(Icons.Check, { size: 11 }),
+    "Synced"
+  );
+}
+
 export function ConnLogo({ logo, size = 48 }) {
   const Logo = Logos[logo];
   return e(

@@ -1,6 +1,7 @@
 // Connectors gallery screen
 import React, { Suspense, useEffect, useState } from "react";
 import { ampersandGroupRef, apiFetch, seedInstallation, useMcpKeyContext } from "@/lib/gtm/auth";
+import { syncFor, useConnectorSync } from "@/lib/gtm/connectorSync";
 import { CAT_TABS, getAmpersand, getConnectors, setConnectors } from "@/lib/gtm/data";
 import { AUTH_LABEL, MCP_CATALOG } from "@/lib/gtm/mcpCatalog";
 import {
@@ -11,7 +12,7 @@ import {
 } from "@/lib/gtm/mcpServers";
 import { Icons } from "./icons";
 import { McpServerModal } from "./McpServerModal";
-import { ConnLogo } from "./ui";
+import { ConnLogo, SyncIndicator } from "./ui";
 
 const AmpersandConnect = React.lazy(() => import("./AmpersandConnect"));
 
@@ -200,7 +201,7 @@ function McpCatalogCard({ i, onAdd, onConnect }) {
 // CRM connectors are Enterprise-only (self-serve connect is gated behind sales).
 const isEnterprise = (c) => c.cat === "CRM";
 
-function ConnectorCard({ c, onConnect, onContact, onManage }) {
+function ConnectorCard({ c, sync, onConnect, onContact, onManage }) {
   const connected = c.connected;
   const enterprise = isEnterprise(c);
   // Enterprise connections stay read-only; self-serve ones can be managed
@@ -221,6 +222,7 @@ function ConnectorCard({ c, onConnect, onContact, onManage }) {
                 Enterprise
               </span>
             )}
+            {connected && <SyncIndicator entry={sync} />}
           </div>
         </div>
       </div>
@@ -350,6 +352,7 @@ export function ConnectorsScreen({ connectors, onToast }) {
   useEffect(() => {
     setServers(listMcpServers());
   }, []);
+  const { sync } = useConnectorSync();
   const amp = getAmpersand();
 
   const refreshServers = () => setServers(listMcpServers());
@@ -441,7 +444,11 @@ export function ConnectorsScreen({ connectors, onToast }) {
   const matches = (...fields) => !q || fields.some((f) => (f || "").toLowerCase().includes(q));
   const showMcp = tab === "All" || tab === "MCP";
 
-  const ampList = conns.filter((c) => (tab === "All" || c.cat === tab) && matches(c.name, c.desc));
+  // Connected connectors render first; available ones after. Stable within each
+  // group (relies on Array.prototype.sort being stable in modern runtimes).
+  const ampList = conns
+    .filter((c) => (tab === "All" || c.cat === tab) && matches(c.name, c.desc))
+    .sort((a, b) => (b.connected ? 1 : 0) - (a.connected ? 1 : 0));
   const customList = showMcp ? servers.filter((s) => matches(s.name, s.url, s.slug)) : [];
   const addedUrls = new Set(servers.map((s) => (s.url || "").replace(/\/+$/, "")));
   const catalogList = showMcp
@@ -541,6 +548,7 @@ export function ConnectorsScreen({ connectors, onToast }) {
               onConnect={onConnect}
               onContact={onContact}
               onManage={onManage}
+              sync={syncFor(c, sync)}
             />
           ))}
           {customList.map((s) => (
