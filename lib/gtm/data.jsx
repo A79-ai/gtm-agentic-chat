@@ -328,6 +328,12 @@ export function setRecords(data) {
   reindex();
 }
 
+// Full record (all loaded fields) by type+id, or null if not in the store yet.
+// Used to seed a chat turn with details the client already holds, so the agent
+// doesn't spend the first turn re-fetching them via tools.
+export const recordById = (type, id) => (STORE[type] || []).find((r) => r.id === id) || null;
+export const ownerNameById = (id) => (STORE.owner || []).find((o) => o.id === id)?.name || "";
+
 // ---- Live connectors (real integration catalog + connected state) ----
 let CONNECTOR_STORE = [];
 let AMPERSAND = { configured: false, projectId: "", apiKey: "", groupRef: "", consumerRef: "" };

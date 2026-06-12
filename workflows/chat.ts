@@ -43,7 +43,14 @@ type ServerCfg = {
 
 const AMPUP_SLUG = "ampup";
 
-export const turnHook = defineHook<{ message: UIMessage; mcpToken?: string }>();
+export const turnHook = defineHook<{
+  message: UIMessage;
+  mcpToken?: string;
+  // Per-turn grounding context (attached records + identity), injected into the
+  // SYSTEM prompt for this turn — kept out of the user message, and refreshed
+  // each turn so it reflects whatever is attached now.
+  systemContext?: string;
+}>();
 
 function resolveCfg(server: ServerCfg): {
   slug: string;
@@ -111,6 +118,58 @@ function buildMcpTools(discovered: Discovered[]): ToolSet {
   return tools;
 }
 
+// The discovered tool block is large (the ampup server alone advertises ~289
+// tools ≈ 47k tokens) and identical across a conversation's turns. One ephemeral
+// cache_control breakpoint on the LAST tool makes Anthropic cache the whole tool
+// prefix (tools are cached before system/messages), so turns 2+ within the 5-min
+// TTL read it from cache: ~90% input-token cost cut, plus a server-side
+// prefill-skip (modest TTFT effect). Tool order is stable per conversation
+// (discovered once), so the cached prefix matches turn-to-turn.
+//
+// Honored by @ai-sdk/anthropic (Anthropic-direct); the field is ignored by other
+// providers, and Vercel AI Gateway passthrough is UNVERIFIED — confirm cache_read
+// tokens on the gateway path before relying on it there.
+function applyToolCacheBreakpoint(tools: ToolSet): ToolSet {
+  const names = Object.keys(tools);
+  if (names.length === 0) {
+    return tools;
+  }
+  const last = names[names.length - 1];
+  tools[last] = {
+    ...tools[last],
+    providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
+  } as ToolSet[string];
+  return tools;
+}
+
+// NOTE: server-side token smoothing (ai's smoothStream / a custom transform) is
+// NOT viable on this runtime. DurableAgent applies `experimental_transform` inside
+// `doStreamStep`, which is a "use step" — its args are devalue-serialized across
+// the durable boundary, so a transform CLOSURE crashes with "Cannot stringify a
+// function" (the same reason lib/model.ts makes the model a registered step
+// factory; a TransformStream factory can't be a registered step). Cadence
+// smoothing is therefore done on the client: useChat's `experimental_throttle`
+// batches chunk→render to a steady interval. True word-by-word reveal, if wanted,
+// also belongs on the client.
+
+// Emit an ephemeral status line to the durable stream. `transient: true` means
+// the client receives it via useChat's onData but it is NOT added to message
+// history (so it never persists or replays on reopen — it's pure live feedback).
+// Manual stream writes are only allowed inside a "use step", so this is its own
+// step. Used to fill the dead time before the first token — most importantly the
+// first-turn MCP discovery (tools/list), which can take 1-3s with nothing else on
+// screen but a content-free spinner.
+async function emitStatus(text: string) {
+  "use step";
+  const writer = getWritable<UIMessageChunk>().getWriter();
+  await writer.write({
+    type: "data-status",
+    data: { text },
+    transient: true,
+  } as unknown as UIMessageChunk);
+  writer.releaseLock();
+}
+
 export async function conversationWorkflow(
   conversationId: string,
   mcpToken: string | undefined,
@@ -118,7 +177,8 @@ export async function conversationWorkflow(
   customServers: ServerCfg[] = [],
   systemPrompt?: string,
   includeAmpup = true,
-  llmOpts?: LlmOpts
+  llmOpts?: LlmOpts,
+  firstSystemContext?: string
 ) {
   "use workflow";
 
@@ -138,6 +198,11 @@ export async function conversationWorkflow(
     ...(includeAmpup ? [{ slug: AMPUP_SLUG, token: mcpToken }] : []),
     ...(customServers || []).filter((s) => s && s.slug && s.slug !== AMPUP_SLUG),
   ];
+  // First-turn feedback: discovery (tools/list) below blocks the first token by
+  // 1-3s, so acknowledge immediately instead of leaving a content-free spinner.
+  if (startServers.length) {
+    await emitStatus("Connecting to your tools…");
+  }
   const discovered: Discovered[] = [];
   for (const s of startServers) {
     const defs = await discoverToolsStep(s);
@@ -146,18 +211,29 @@ export async function conversationWorkflow(
 
   // Rebuild the agent each turn so the ampup tool closures capture THIS turn's
   // (freshly re-minted) mcpToken. Custom-server cfgs are stable.
-  const processTurn = async (message: UIMessage, turnToken: string | undefined) => {
+  const processTurn = async (
+    message: UIMessage,
+    turnToken: string | undefined,
+    turnSystemContext?: string
+  ) => {
     history.push(...(await convertToModelMessages([message])));
+    await emitStatus("Thinking…");
     const turnDiscovered = discovered.map((d) =>
       d.slug === AMPUP_SLUG ? { ...d, cfg: { slug: AMPUP_SLUG, token: turnToken ?? mcpToken } } : d
     );
+    // Attached-record + identity context rides in the SYSTEM prompt (not the user
+    // message), refreshed per turn so it tracks the current attachments.
+    const turnInstructions =
+      turnSystemContext && turnSystemContext.trim()
+        ? `${instructions}\n\n${turnSystemContext.trim()}`
+        : instructions;
     const agent = new DurableAgent({
       model,
-      instructions,
-      tools: {
+      instructions: turnInstructions,
+      tools: applyToolCacheBreakpoint({
         ...buildMcpTools(turnDiscovered),
         ...buildServerTools(provider, WEB_SEARCH),
-      },
+      }),
     });
     try {
       const result = await agent.stream({
@@ -179,10 +255,10 @@ export async function conversationWorkflow(
     }
   };
 
-  await processTurn(first, mcpToken);
+  await processTurn(first, mcpToken, firstSystemContext);
 
   const hook = turnHook.create({ token: `conv:${conversationId}` });
-  for await (const { message, mcpToken: turnToken } of hook) {
-    await processTurn(message, turnToken);
+  for await (const { message, mcpToken: turnToken, systemContext } of hook) {
+    await processTurn(message, turnToken, systemContext);
   }
 }
