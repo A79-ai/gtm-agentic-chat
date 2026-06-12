@@ -1,8 +1,9 @@
 // Home launchpad: hero, connected sources, browse records, agents
 import React, { useState } from "react";
+import { syncFor, useConnectorSync } from "@/lib/gtm/connectorSync";
 import { countOf, ENTITIES, ENTITY_ORDER, recordsOf } from "@/lib/gtm/data";
 import { Icons, LogoMark, Logos } from "./icons";
-import { EntityIcon, TBadge, TONES } from "./ui";
+import { EntityIcon, SyncIndicator, TBadge, TONES } from "./ui";
 
 function AgentTile({ agent, connectors, onOpen, onEdit, onCopy }) {
   const Icon = Icons[agent.icon] || Icons.Spark;
@@ -195,7 +196,12 @@ export function HomeScreen({
   const [tab, setTab] = useState("All");
   const tabs = ["All", "Pipeline", "Calls", "Prospecting", "Research", "Customers"];
   const list = agents.filter((a) => tab === "All" || a.tag === tab);
-  const connected = connectors.filter((c) => c.connected);
+  const { sync } = useConnectorSync();
+  // Connected sources, in a stable (name-sorted) order.
+  const connected = connectors
+    .filter((c) => c.connected)
+    .slice()
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   const firstOf = (t) => {
     const r = recordsOf(t);
     return r.length ? [r[0]] : [];
@@ -281,6 +287,7 @@ export function HomeScreen({
                   {React.createElement(Logos[c.logo])}
                 </span>
                 {c.name}
+                <SyncIndicator entry={syncFor(c, sync)} style={{ marginLeft: 2 }} />
               </div>
             ))}
             <button
