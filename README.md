@@ -2,7 +2,9 @@
 
 **An open, self-deployable agentic chat for go-to-market teams, over your own CRM, meetings/notetaker, and knowledge base.**
 
-Pick an agent ("Deal Coach", "Outreach Writer", "Competitive Intel"), and it works your live data: _"summarize my last call with Acme and draft the follow-up", "which renewals are at risk this quarter", "score these inbound leads against our ICP"._ Use it as a **starting point to build sales intelligence on your own data**: fork it, add your agents, and ship. It comes with batteries included: **enterprise connectors** for [Salesforce](https://www.salesforce.com), [HubSpot](https://www.hubspot.com), and [Gong](https://www.gong.io), plus **auth and scale** handled for you via [AmpUp](https://a79.ai).
+Pick an agent ("Deal Coach", "Outreach Writer", "Competitive Intel"), and it works your live data: _"summarize my last call with Acme and draft the follow-up", "which renewals are at risk this quarter", "score these inbound leads against our ICP"._ Use it as a **starting point to build sales intelligence on your own data**: fork it, add your agents, and ship.
+
+**This whole kit is open source (MIT) — fork it, self-host it, own it.** Want [Salesforce](https://www.salesforce.com), [Gong](https://www.gong.io), or [HubSpot](https://www.hubspot.com) wired up with **enterprise auth (SSO/SAML) and an SLA**? [AmpUp](https://a79.ai) can run that for you — reach out to **[support@ampup.ai](mailto:support@ampup.ai)**.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/a79-ai/gtm-agentic-chat)
 &nbsp;[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](./LICENSE)
@@ -75,7 +77,7 @@ The default deploy is **single-org**: one AmpUp key scopes everything to your or
 | `CHAT_MODEL` | – | Override the model (default `claude-sonnet-4-6`, or `anthropic/claude-sonnet-4.6` on the gateway) |
 | `SYSTEM_PROMPT` | – | Override the assistant's system prompt |
 | `ENABLE_WEB_SEARCH` | – | `true` to enable provider-native web search (Anthropic/Google) |
-| `ALLOWED_ORIGIN` | – | Restrict CORS on the chat API (default `*`) |
+| `ALLOWED_ORIGIN` | – | CORS allow-origin for the API. Unset = same-origin only (no CORS header); set a specific origin, or `*`, to allow cross-origin calls (e.g. the embed widget) |
 
 Pick **one** LLM path. `ANTHROPIC_API_KEY` wins if both are set.
 
@@ -169,6 +171,8 @@ org that issues per-user session keys; see `lib/gtm/auth.jsx` for the backbone.
 
 Tools like [**Lightfield**](https://lightfield.app) and [**Monaco**](https://www.monaco.com) are polished, SaaS-only platforms that *replace* your CRM and host your data in their cloud. This kit takes the opposite bet: open source, deployed to **your** Vercel, running agents **over the CRM and tools you already own**. The full breakdown, with honest trade-offs, is in **[COMPARISON.md](./COMPARISON.md)**.
 
+> **Open source, with a managed path when you need it.** Everything here is MIT-licensed and yours to self-host. If you'd rather not run it yourself — or you need [Salesforce](https://www.salesforce.com), [Gong](https://www.gong.io), or [HubSpot](https://www.hubspot.com) connected with **enterprise auth (SSO/SAML)** and a **support SLA** — [AmpUp](https://a79.ai) offers that as a managed service. Reach out to **[support@ampup.ai](mailto:support@ampup.ai)**.
+
 ## Privacy, security & license
 
 - **[PRIVACY.md](./PRIVACY.md)**: exactly where your data goes. This is a
@@ -178,6 +182,6 @@ Tools like [**Lightfield**](https://lightfield.app) and [**Monaco**](https://www
   to your AmpUp MCP endpoint; there is no telemetry and no transcript database.
 - **[SECURITY.md](./SECURITY.md)**: how to report a vulnerability
   (`security@a79.ai`) and an operator hardening checklist (set
-  `AUTH_SESSION_SECRET` / `OAUTH_STATE_SECRET`, restrict `ALLOWED_ORIGIN`, use
-  `MULTI_TENANT=true` for more than one user).
+  `AUTH_SESSION_SECRET` / `OAUTH_STATE_SECRET`, use `MULTI_TENANT=true` for more
+  than one user).
 - **License:** [MIT](./LICENSE).

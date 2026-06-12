@@ -1,0 +1,54 @@
+name: Bug report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug! Please don't include secrets, API keys, or real
+        customer data in this report. For security vulnerabilities, **do not** use
+        this form — see [SECURITY.md](../blob/main/SECURITY.md).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, and what you expected instead.
+      placeholder: When I click X, Y happens. I expected Z.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to '...'
+        2. Click '...'
+        3. See error
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Deployment mode
+      options:
+        - Single-org (default)
+        - Multi-tenant (MULTI_TENANT=true + Auth0)
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: Where it runs + versions.
+      placeholder: Vercel / local `pnpm dev`, Node 20, browser Chrome 126
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or screenshots
+      description: Console output, Vercel function logs, or a screenshot. Redact secrets.
+      render: shell
+    validations:
+      required: false

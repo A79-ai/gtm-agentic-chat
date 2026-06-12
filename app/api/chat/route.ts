@@ -19,9 +19,9 @@ if (process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID && process.env.MULTI_TENANT !== "tru
   );
 }
 
-const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN;
 const CORS = {
-  "Access-Control-Allow-Origin": ALLOW_ORIGIN,
+  ...(ALLOW_ORIGIN ? { "Access-Control-Allow-Origin": ALLOW_ORIGIN } : {}),
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "content-type, x-ampup-mcp-key, authorization, x-workflow-run-id, x-llm-provider, x-llm-key, x-llm-model",

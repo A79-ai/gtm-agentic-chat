@@ -3,9 +3,9 @@ import { friendlyDate, taskSource } from "@/lib/recordMap";
 
 export const maxDuration = 60;
 
-const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN;
 const CORS = {
-  "Access-Control-Allow-Origin": ALLOW_ORIGIN,
+  ...(ALLOW_ORIGIN ? { "Access-Control-Allow-Origin": ALLOW_ORIGIN } : {}),
   "Access-Control-Allow-Methods": "GET, OPTIONS",
   "Access-Control-Allow-Headers": "content-type, x-ampup-mcp-key, authorization",
 };

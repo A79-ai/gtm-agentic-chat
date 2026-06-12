@@ -33,8 +33,11 @@ deployment should set the following explicitly:
   Vercel environment variables. Server secrets (`STRIPE_SECRET_KEY`,
   `STRIPE_WEBHOOK_SECRET`, `GOOGLE_CLIENT_SECRET`, `AMPUP_MCP_API_KEY`) are read
   server-side only and are never sent to the browser.
-- **Restrict CORS.** Set `ALLOWED_ORIGIN` to your deployment's own origin rather
-  than the `*` default before exposing the chat API publicly.
+- **CORS is same-origin by default.** The API routes send no
+  `Access-Control-Allow-Origin` header unless you set `ALLOWED_ORIGIN`, so the
+  browser blocks cross-origin calls out of the box. Only set `ALLOWED_ORIGIN`
+  (to a specific origin, or `*` to allow any site) if you intend to call the API
+  cross-origin — e.g. the embeddable chat widget hosted on another domain.
 - **Multi-tenant mode.** When serving more than one user, set `MULTI_TENANT=true`
   together with the Auth0 variables so data routes require a per-user minted key
   and never fall back to the shared `AMPUP_MCP_API_KEY`.

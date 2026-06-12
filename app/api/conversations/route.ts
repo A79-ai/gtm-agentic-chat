@@ -7,9 +7,9 @@
 // backend.
 const AMPUP_API_BASE =
   process.env.AMPUP_API_BASE || (process.env.AMPUP_MCP_URL || "").replace(/\/mcp\/?$/, "");
-const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+const ALLOW_ORIGIN = process.env.ALLOWED_ORIGIN;
 const CORS = {
-  "Access-Control-Allow-Origin": ALLOW_ORIGIN,
+  ...(ALLOW_ORIGIN ? { "Access-Control-Allow-Origin": ALLOW_ORIGIN } : {}),
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "content-type, x-ampup-mcp-key, authorization",
 };
