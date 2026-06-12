@@ -1,3 +1,13 @@
+<p align="center">
+  <a href="https://a79.ai">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./public/brand/ampup-logo-dark.png">
+      <source media="(prefers-color-scheme: light)" srcset="./public/brand/ampup-logo-light.png">
+      <img alt="AmpUp" src="./public/brand/ampup-logo-light.png" width="320">
+    </picture>
+  </a>
+</p>
+
 # GTM Agentic Starter Kit
 
 **An open, self-deployable agentic chat for go-to-market teams, over your own CRM, meetings/notetaker, and knowledge base.**
