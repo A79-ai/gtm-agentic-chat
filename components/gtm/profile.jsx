@@ -17,6 +17,8 @@ function ApiKeysPanel() {
   );
   const meta = LLM_PROVIDERS.find((p) => p.id === provider) || LLM_PROVIDERS[0];
 
+  const [testing, setTesting] = useState(false);
+
   const save = () => {
     if (!key.trim()) {
       setStatus("Enter a key first.");
@@ -25,6 +27,35 @@ function ApiKeysPanel() {
     setLlmKey({ provider, key: key.trim(), model: model.trim() });
     setKey("");
     setStatus(`Saved — chat now uses your ${meta.label} key.`);
+  };
+  const test = async () => {
+    const k = key.trim() || saved?.key;
+    if (!k) {
+      setStatus("Enter a key first.");
+      return;
+    }
+    setTesting(true);
+    setStatus(`Testing your ${meta.label} key…`);
+    try {
+      const res = await fetch("/api/llm/test", {
+        method: "POST",
+        headers: {
+          "x-llm-provider": provider,
+          "x-llm-key": k,
+          ...(model.trim() ? { "x-llm-model": model.trim() } : {}),
+        },
+      });
+      const data = await res.json().catch(() => ({}));
+      setStatus(
+        res.ok && data.ok
+          ? `✓ Your ${meta.label} key works${data.model ? ` (${data.model})` : ""}.`
+          : `✗ Key didn't work: ${data.error || res.statusText}`
+      );
+    } catch {
+      setStatus("✗ Couldn't reach the test endpoint. Check your connection.");
+    } finally {
+      setTesting(false);
+    }
   };
   const clear = () => {
     clearLlmKey();
@@ -108,6 +139,9 @@ function ApiKeysPanel() {
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <button className="btn btn-primary" onClick={save} type="button">
             Save key
+          </button>
+          <button className="btn" disabled={testing} onClick={test} type="button">
+            {testing ? "Testing…" : "Test key"}
           </button>
           <button className="btn" onClick={clear} type="button">
             Clear

@@ -848,7 +848,11 @@ export function ChatScreen({
     [conversationId]
   );
 
-  const { messages, sendMessage, status, setMessages, regenerate } = useChat({ transport });
+  const { messages, sendMessage, status, setMessages, regenerate, error } = useChat({ transport });
+  // A failed send (e.g. the 402 "bring your own LLM key" gate) surfaces here as
+  // `error`; without rendering it the turn silently does nothing. The key-gate
+  // message is detected so we can route the user straight to Settings.
+  const needsLlmKey = !!error && /LLM API key/i.test(error.message || "");
   // The durable run keeps its stream open across turns (preventClose), so the
   // transport `status` never settles back to "ready", it stays "streaming"
   // forever, which would leave the composer disabled and block every follow-up.
@@ -1264,6 +1268,45 @@ export function ChatScreen({
             >
               <Icons.X size={15} />
             </button>
+          </div>
+        )}
+
+        {error && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px var(--pad)",
+              borderBottom: "1px solid var(--border-subtle)",
+              background: "var(--accent-soft)",
+              fontSize: 13,
+            }}
+          >
+            <span style={{ color: "var(--accent)", display: "flex", flexShrink: 0 }}>
+              <Icons.Sparkle size={16} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0, color: "var(--fg-secondary)", lineHeight: 1.45 }}>
+              {needsLlmKey ? (
+                <>
+                  <strong style={{ color: "var(--fg-primary)", fontWeight: 600 }}>
+                    Add your LLM API key to start chatting.
+                  </strong>{" "}
+                  Bring your own Anthropic, OpenAI or Google key — it's stored only in your browser.
+                </>
+              ) : (
+                error.message
+              )}
+            </div>
+            {needsLlmKey && (
+              <button
+                className="btn btn-sm btn-primary"
+                onClick={() => (onNav ? onNav("profile") : null)}
+                style={{ flexShrink: 0 }}
+              >
+                <Icons.Sliders size={13} /> Open Settings
+              </button>
+            )}
           </div>
         )}
 
