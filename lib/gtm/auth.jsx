@@ -5,6 +5,7 @@
 
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { recordActivity } from "@/lib/gtm/activity";
 
 const AUTH0_DOMAIN = process.env.NEXT_PUBLIC_AUTH0_DOMAIN;
 const AUTH0_CLIENT_ID = process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID;
@@ -171,13 +172,19 @@ export function AuthGate({ children }) {
 // no /api/* request relies on the server env fallback when Auth0 is enabled.
 export function apiFetch(path, opts = {}) {
   const k = getMcpKey();
-  if (!k) {
-    return fetch(path, opts);
-  }
-  return fetch(path, {
-    ...opts,
-    headers: { ...(opts.headers || {}), "x-ampup-mcp-key": k },
-  });
+  const init = k ? { ...opts, headers: { ...(opts.headers || {}), "x-ampup-mcp-key": k } } : opts;
+  const method = (init.method || "GET").toUpperCase();
+  const t0 = Date.now();
+  return fetch(path, init).then(
+    (res) => {
+      recordActivity({ method, path: String(path), status: res.status, ms: Date.now() - t0 });
+      return res;
+    },
+    (err) => {
+      recordActivity({ method, path: String(path), status: 0, ms: Date.now() - t0 });
+      throw err;
+    }
+  );
 }
 
 // Seed a freshly-connected integration's meetings on install success (backfill

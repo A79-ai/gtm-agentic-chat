@@ -443,6 +443,26 @@ body {
 .navpop-item .nm { flex: 1; font-size: 13.5px; font-weight: 500; color: var(--fg-primary); }
 .navpop-item .ct { font-size: 12px; color: var(--fg-muted); }
 
+/* Notifications & Activity panel */
+.rail-dot { position: absolute; top: 7px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--rail-bg, var(--bg-page)); }
+.notif-pop { width: 308px; max-height: 460px; overflow-y: auto; padding-bottom: 6px; }
+.notif-list { padding: 2px 6px 8px; display: flex; flex-direction: column; gap: 1px; }
+.notif-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px; border-radius: var(--radius-md); }
+.notif-row:hover { background: var(--bg-muted); }
+.notif-ico { flex-shrink: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md); background: var(--bg-muted); color: var(--fg-muted); }
+.notif-ico.ok { color: var(--mint-base); }
+.notif-body { min-width: 0; flex: 1; }
+.notif-title { font-size: 13px; font-weight: 500; color: var(--fg-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notif-sub { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+.notif-method { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .03em; }
+.notif-status { font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
+.notif-method.ok, .notif-status.ok { color: var(--fg-secondary); }
+.notif-method.err, .notif-status.err { color: var(--danger, #d9534f); }
+.notif-dot { color: var(--border-default); }
+.notif-bar { margin-top: 6px; height: 4px; border-radius: var(--radius-full); background: var(--bg-muted); overflow: hidden; }
+.notif-bar > span { display: block; height: 100%; background: var(--accent); border-radius: var(--radius-full); transition: width var(--dur-med) var(--ease-out); }
+.notif-empty { padding: 10px 8px; font-size: 12.5px; color: var(--fg-muted); }
+
 /* Profile menu */
 .profile-menu { width: 272px; background: var(--bg-elevated); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); overflow: hidden; animation: popIn .16s ease both; }
 .profile-menu-head { display: flex; align-items: center; gap: 11px; padding: 14px; border-bottom: 1px solid var(--border-subtle); }

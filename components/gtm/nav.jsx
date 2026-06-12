@@ -6,6 +6,7 @@ import { CONFIG } from "@/lib/gtm/config";
 import { countOf, ENTITIES, ENTITY_ORDER, initials } from "@/lib/gtm/data";
 import { roleBadgeStyle, roleMeta } from "@/lib/gtm/roles";
 import { Icons, LogoMark } from "./icons";
+import { NotificationsPanel } from "./notifications";
 import { EntityIcon } from "./ui";
 
 // close on outside-click / Escape
@@ -152,17 +153,19 @@ export function SideNav({
   profile,
   role,
   on,
+  setup,
 }) {
-  const [flyout, setFlyout] = useState(null); // 'records' | 'profile' | null
+  const [flyout, setFlyout] = useState(null); // 'records' | 'profile' | 'notifications' | null
   const [anchor, setAnchor] = useState(null);
   const recordsActive = route.name === "list" || route.name === "detail";
+  const setupActive = Boolean(setup?.active);
 
   const openFly = (which, ev) => {
     const r = ev.currentTarget.getBoundingClientRect();
     setAnchor(
-      which === "records"
-        ? { left: r.right + 10, top: r.top - 6 }
-        : { left: r.right + 10, bottom: window.innerHeight - r.bottom - 6 }
+      which === "profile"
+        ? { left: r.right + 10, bottom: window.innerHeight - r.bottom - 6 }
+        : { left: r.right + 10, top: r.top - 6 }
     );
     setFlyout((f) => (f === which ? null : which));
   };
@@ -206,6 +209,14 @@ export function SideNav({
             onClick={() => go("connectors")}
             title="Connectors"
           />
+          <button
+            className={"rail-btn" + (flyout === "notifications" ? " active" : "")}
+            onClick={(ev) => openFly("notifications", ev)}
+            title="Notifications"
+          >
+            <Icons.Bell size={21} />
+            {setupActive && flyout !== "notifications" ? <span className="rail-dot" /> : null}
+          </button>
         </div>
         <button className="rail-btn" onClick={toggleTheme} title="Toggle theme">
           {React.createElement(themeResolved === "dark" ? Icons.Sun : Icons.Moon, { size: 20 })}
@@ -225,6 +236,9 @@ export function SideNav({
           onFiles={() => on("files")}
           onPick={openList}
         />
+      )}
+      {flyout === "notifications" && (
+        <NotificationsPanel anchor={anchor} onClose={() => setFlyout(null)} setup={setup} />
       )}
       {flyout === "profile" && (
         <ProfileMenu
