@@ -33,9 +33,11 @@ export function OPTIONS() {
 }
 
 // Whether the operator's OWN LLM key may power this caller's chat. Single-org
-// dev: always (the operator key IS the model). Multi-tenant: only internal
-// (Pro-allowlisted domain / admin) or paying-Pro users — verified server-side
-// against the caller's own key, never a client-asserted flag.
+// dev: always (the operator key IS the model). Multi-tenant: only FREE-TRIAL-org
+// visitors must bring their own key; real (non-free-trial) orgs — plus internal
+// (Pro-allowlisted domain / admin) and paying-Pro users — chat on the operator
+// key unrestricted. Everything is verified server-side against the caller's own
+// key, never a client-asserted flag.
 async function operatorKeyAllowed(mcpToken: string | undefined): Promise<boolean> {
   if (process.env.MULTI_TENANT !== "true") {
     return true;
@@ -51,9 +53,21 @@ async function operatorKeyAllowed(mcpToken: string | undefined): Promise<boolean
     if (!res.ok) {
       return false;
     }
-    const u = (await res.json()) as { email?: string; role?: string };
+    const u = (await res.json()) as {
+      email?: string;
+      role?: string;
+      is_free_trial_org?: boolean;
+    };
     const email = u.email || "";
     if (isProEmail(email) || u.role === "super_admin" || u.role === "admin") {
+      return true;
+    }
+    // Real (non-free-trial) orgs get operator-funded chat with no BYOK gate — only
+    // the shared free-trial org (chat.ampup.ai's self-serve visitors) is limited.
+    // `=== false` is intentional: an older AmpUp that doesn't return the field yet
+    // (undefined) falls through to the prior Stripe/402 behavior, so this is a
+    // safe no-op until the backend ships `is_free_trial_org`.
+    if (u.is_free_trial_org === false) {
       return true;
     }
     const stripe = getStripe();
