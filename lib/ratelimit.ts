@@ -93,13 +93,18 @@ export async function rateLimit(
   }
 }
 
-// Client IP from the standard proxy headers Vercel/Next set. Falls back to a
-// constant so a missing header degrades to a single shared bucket rather than
-// throwing (better to over-limit unknowns than to crash).
+// Client IP for the per-IP bucket. SECURITY: never trust the LEFTMOST
+// x-forwarded-for — it's the client-supplied value, so an attacker could rotate
+// it per request to dodge the limit entirely. Prefer Vercel's
+// `x-vercel-forwarded-for` (the real client IP, single value, set by the platform
+// and unforgeable by the client), then `x-real-ip`; only fall back to the LAST
+// hop of x-forwarded-for (the IP our own proxy appended). A missing header
+// degrades to one shared bucket rather than throwing.
 export function clientIp(req: Request): string {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) {
-    return xff.split(",")[0]?.trim() || "unknown";
+  const trusted = req.headers.get("x-vercel-forwarded-for") ?? req.headers.get("x-real-ip");
+  if (trusted) {
+    return trusted.split(",")[0]?.trim() || "unknown";
   }
-  return req.headers.get("x-real-ip")?.trim() || "unknown";
+  const xff = req.headers.get("x-forwarded-for");
+  return xff?.split(",").at(-1)?.trim() || "unknown";
 }
