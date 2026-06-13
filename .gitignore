@@ -21,3 +21,6 @@ deploy-prod.sh
 
 # local scratch (demo-recorder, frames, mp4s)
 claude_workspace/
+
+# Local demo-recording scratch (contains a live auth session in state.json)
+.demo/
