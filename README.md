@@ -22,6 +22,10 @@ Pick an agent ("Deal Coach", "Outreach Writer", "Competitive Intel"), and it wor
 
 ![Home: agents over your live CRM, calls and notes](./public/screenshots/01-home.png)
 
+**Watch it work, end to end** — log in, coach a deal over your live pipeline, dig into this week's meetings, then snap on a new MCP server (Sumble) in seconds:
+
+![End-to-end demo: log in, coach a deal, review meetings, and add an MCP server](./public/features/ampup-demo.gif)
+
 ---
 
 ## Who it's for
