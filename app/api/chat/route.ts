@@ -1,7 +1,14 @@
 import { createUIMessageStreamResponse, type UIMessage } from "ai";
 import { getRun, start } from "workflow/api";
+import {
+  classifyEntitlement,
+  type Entitlement,
+  gateDecision,
+  needsLegacyStripeCheck,
+} from "@/lib/entitlement";
 import { isProEmail } from "@/lib/gtm/pro";
 import type { LlmOpts } from "@/lib/model";
+import { clientIp, rateLimit } from "@/lib/ratelimit";
 import { isBlockedUrl } from "@/lib/ssrf";
 import { customerStatus, getStripe } from "@/lib/stripe";
 import { conversationWorkflow, turnHook } from "@/workflows/chat";
@@ -32,44 +39,160 @@ export function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS });
 }
 
-// Whether the operator's OWN LLM key may power this caller's chat. Single-org
-// dev: always (the operator key IS the model). Multi-tenant: only internal
-// (Pro-allowlisted domain / admin) or paying-Pro users — verified server-side
-// against the caller's own key, never a client-asserted flag.
-async function operatorKeyAllowed(mcpToken: string | undefined): Promise<boolean> {
+function apiBase(): string {
+  return (process.env.AMPUP_MCP_URL || "").replace(/\/mcp\/?$/, "");
+}
+
+// Bound the per-turn AmpUp calls. /user/me now runs on EVERY turn and the
+// increment is awaited before the stream returns, so a hung AmpUp (no response,
+// never erroring) would otherwise stall the turn until the function's 300s limit.
+// A timeout converts the hang into a fast error (mirrors lib/mcp.ts withTimeout).
+const ENT_FETCH_TIMEOUT_MS = Number(process.env.ENTITLEMENT_FETCH_TIMEOUT_MS) || 8000;
+
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ENT_FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Per-user entitlement cache, keyed on the SERVER-VALIDATED mcpToken (never a
+// client-supplied id — that would let a caller assert someone else's tier). The
+// per-user key is short-lived (re-minted every few minutes), so this naturally
+// scopes per session. In-process only; a cold instance re-fetches once. Its job
+// is to keep `/user/me` (and the legacy Stripe lookup) off the per-turn hot path
+// for burst follow-ups — the same problem the MCP tool cache solves in lib/mcp.ts.
+const ENT_TTL_MS = Number(process.env.ENTITLEMENT_CACHE_TTL_MS) || 60_000;
+const entCache = new Map<string, { ent: Entitlement; expires: number }>();
+
+function entCacheGet(token: string): Entitlement | undefined {
+  const hit = entCache.get(token);
+  return hit && hit.expires > Date.now() ? hit.ent : undefined;
+}
+function entCacheSet(token: string, ent: Entitlement): void {
+  // The key space (short-lived per-user tokens) is unbounded, so prune expired
+  // entries before growing the map — keeps a long-lived warm instance from
+  // accumulating dead tokens forever.
+  if (entCache.size > 5000) {
+    const now = Date.now();
+    for (const [k, v] of entCache) {
+      if (v.expires <= now) {
+        entCache.delete(k);
+      }
+    }
+  }
+  entCache.set(token, { ent, expires: Date.now() + ENT_TTL_MS });
+}
+
+// One /user/me call classifies the caller. The AmpUp backend folds entitlement
+// into that payload (`entitlement` + `free_turns_used`/`free_turns_limit`), so a
+// subscribed/free user is resolved WITHOUT a per-turn Stripe round-trip. The
+// legacy Stripe lookup runs only when the backend hasn't shipped the `entitlement`
+// field yet — i.e. behavior is unchanged until that field exists (no free tier,
+// non-Pro/non-subscribed callers still get blocked → 402).
+//
+// Returns a DEFINITIVE Entitlement, or THROWS on a transient failure (unreachable
+// AmpUp / non-2xx / Stripe hiccup). The throw is deliberately distinct from a
+// `blocked` verdict: the caller fails this turn closed but must NOT cache it, so a
+// momentary backend blip doesn't lock the user (or an unlimited user) out for the
+// whole cache TTL — the next turn re-checks.
+async function fetchEntitlement(mcpToken: string): Promise<Entitlement> {
+  const res = await fetchWithTimeout(`${apiBase()}/api/v1/user/me`, {
+    headers: { Authorization: `Bearer ${mcpToken}` },
+  });
+  if (!res.ok) {
+    throw new Error(`/user/me ${res.status}`);
+  }
+  const u = await res.json();
+  // Legacy deploys (no `entitlement` field) still need the Stripe lookup to tell
+  // a subscriber apart; the new payload is classified without any Stripe call.
+  let subscribed = false;
+  if (needsLegacyStripeCheck(u, isProEmail)) {
+    const stripe = getStripe();
+    if (stripe && u?.email) {
+      const st = await customerStatus(stripe, u.email);
+      subscribed = st.state === "subscribed";
+    }
+  }
+  return classifyEntitlement(u, { isPro: isProEmail, subscribed });
+}
+
+async function resolveEntitlement(mcpToken: string | undefined): Promise<Entitlement> {
   if (process.env.MULTI_TENANT !== "true") {
-    return true;
+    return { kind: "unlimited" };
   }
   if (!mcpToken) {
-    return false;
+    return { kind: "blocked" };
   }
-  const base = (process.env.AMPUP_MCP_URL || "").replace(/\/mcp\/?$/, "");
+  const cached = entCacheGet(mcpToken);
+  if (cached) {
+    return cached;
+  }
   try {
-    const res = await fetch(`${base}/api/v1/user/me`, {
+    const ent = await fetchEntitlement(mcpToken);
+    entCacheSet(mcpToken, ent); // cache only DEFINITIVE verdicts
+    return ent;
+  } catch (err) {
+    // Transient lookup failure: fail this turn closed (require the user's own key
+    // rather than silently spending the operator's) but DON'T cache — let the next
+    // turn re-check so a blip doesn't stick for the TTL.
+    console.error("[gtm] entitlement lookup failed:", err);
+    return { kind: "blocked" };
+  }
+}
+
+// Decide whether this turn may run on the operator key, and whether it should be
+// metered against the free allowance. BYOK turns are never gated or metered (the
+// caller pays their own key). NOTE: on a follow-up turn the conversation's model
+// is fixed at start (workflows/chat.ts), so a key added MID-conversation can't
+// actually take effect on that run — letting BYOK bypass here means an exhausted
+// free user can finish that one operator-funded thread for free. Bounded and
+// acceptable: new conversations correctly use their key.
+async function gateOperatorKey(
+  byok: boolean,
+  mcpToken: string | undefined
+): Promise<{ block: true } | { meter: boolean }> {
+  if (byok) {
+    return { meter: false };
+  }
+  return gateDecision(byok, await resolveEntitlement(mcpToken));
+}
+
+// Count one free-tier turn against the AmpUp per-user ledger. The increment
+// endpoint is the authoritative cap (enforced + returned server-side); we fold
+// its returned counts back into the cache so the NEXT turn blocks promptly once
+// the limit is hit, instead of waiting out the TTL. Best-effort: never fail a
+// turn because metering didn't record (worst case a few extra free turns).
+async function incrementFreeUsage(mcpToken: string | undefined): Promise<void> {
+  if (!mcpToken) {
+    return;
+  }
+  try {
+    const res = await fetchWithTimeout(`${apiBase()}/api/v1/user/usage/increment`, {
+      method: "POST",
       headers: { Authorization: `Bearer ${mcpToken}` },
     });
     if (!res.ok) {
-      return false;
+      return;
     }
-    const u = (await res.json()) as { email?: string; role?: string };
-    const email = u.email || "";
-    if (isProEmail(email) || u.role === "super_admin" || u.role === "admin") {
-      return true;
+    const u = (await res.json()) as { free_turns_used?: number; free_turns_limit?: number };
+    const limit = Number(u.free_turns_limit);
+    const used = Number(u.free_turns_used);
+    if (Number.isFinite(limit) && limit > 0) {
+      entCacheSet(mcpToken, used < limit ? { kind: "free", used, limit } : { kind: "blocked" });
     }
-    const stripe = getStripe();
-    if (stripe && email) {
-      const st = await customerStatus(stripe, email);
-      if (st.state === "subscribed") {
-        return true;
-      }
-    }
-    return false;
-  } catch {
-    // Best-effort: if the entitlement lookup fails, require the user's own key
-    // rather than silently spending the operator's.
-    return false;
+  } catch (err) {
+    console.error("[gtm] free-usage increment failed:", err);
   }
 }
+
+const LLM_KEY_REQUIRED = {
+  error: "llm_key_required",
+  message: "Add your own LLM API key in Settings → API keys to start chatting.",
+};
 
 /**
  * One durable run per conversation. The first turn starts the run; follow-ups
@@ -134,6 +257,43 @@ function normalizeServers(servers: IncomingServer[] | undefined): CustomServer[]
   return out;
 }
 
+// Per-turn backpressure on /api/chat. Two buckets: per CALLER (the per-user key,
+// or IP when there's no key) and a wider per-IP bucket to blunt a single host
+// cycling through keys. Tunable via env; defaults are generous for a human but
+// stop a hot loop / bot. No-ops entirely when no KV store is configured.
+const RL_WINDOW_SEC = Number(process.env.CHAT_RATELIMIT_WINDOW_SEC) || 60;
+const RL_PER_USER = Number(process.env.CHAT_RATELIMIT_PER_USER) || 30;
+const RL_PER_IP = Number(process.env.CHAT_RATELIMIT_PER_IP) || 60;
+
+function tooMany(resetSec: number): Response {
+  const retry = Math.max(1, resetSec);
+  return Response.json(
+    { error: "rate_limited", message: "Too many requests — slow down a moment." },
+    { status: 429, headers: { ...CORS, "Retry-After": String(retry) } }
+  );
+}
+
+// Returns a 429 Response if either bucket is over limit, else null. Checked
+// before any heavy work (entitlement, MCP discovery, the durable run).
+async function enforceRateLimits(
+  req: Request,
+  mcpToken: string | undefined
+): Promise<Response | null> {
+  const ip = clientIp(req);
+  const callerId = mcpToken ? `u:${mcpToken}` : `ip:${ip}`;
+  const [user, perIp] = await Promise.all([
+    rateLimit(callerId, { limit: RL_PER_USER, windowSec: RL_WINDOW_SEC }),
+    rateLimit(`ip:${ip}`, { limit: RL_PER_IP, windowSec: RL_WINDOW_SEC }),
+  ]);
+  if (!user.ok) {
+    return tooMany(user.resetSec);
+  }
+  if (!perIp.ok) {
+    return tooMany(perIp.resetSec);
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
   const {
     conversationId,
@@ -176,6 +336,27 @@ export async function POST(req: Request) {
     );
   }
 
+  // Backpressure before any heavy work (entitlement lookup, MCP discovery, the
+  // durable run). No-ops when no KV store is configured.
+  const limited = await enforceRateLimits(req, mcpToken);
+  if (limited) {
+    return limited;
+  }
+
+  // The caller's own LLM key (if any) wins; otherwise the operator key funds the
+  // turn — but only for verified internal/Pro callers or free-tier visitors with
+  // an allowance left. Read on EVERY turn (the client re-sends these headers) so
+  // the gate applies to follow-ups too, not just conversation start.
+  const llmProvider = req.headers.get("x-llm-provider") || undefined;
+  const llmKey = req.headers.get("x-llm-key") || undefined;
+  const llmModel = req.headers.get("x-llm-model") || undefined;
+  const byok = Boolean(llmKey && llmProvider);
+
+  const gate = await gateOperatorKey(byok, mcpToken);
+  if ("block" in gate) {
+    return Response.json(LLM_KEY_REQUIRED, { status: 402, headers: { ...CORS } });
+  }
+
   if (runId) {
     const run = getRun(runId);
     const tail = await run.getReadable().getTailIndex();
@@ -184,29 +365,20 @@ export async function POST(req: Request) {
       mcpToken,
       systemContext: typeof systemContext === "string" ? systemContext : undefined,
     });
+    // Count this follow-up turn (the conversation's model was fixed at start, so
+    // a free-tier turn here still spends the operator key).
+    if (gate.meter) {
+      await incrementFreeUsage(mcpToken);
+    }
     return createUIMessageStreamResponse({
       stream: run.getReadable({ startIndex: tail + 1 }),
       headers: { ...CORS, "x-workflow-run-id": runId },
     });
   }
 
-  // Pick the LLM key for this conversation: the caller's own key if supplied,
-  // otherwise the operator key — but only for verified internal/Pro callers.
-  const llmProvider = req.headers.get("x-llm-provider") || undefined;
-  const llmKey = req.headers.get("x-llm-key") || undefined;
-  const llmModel = req.headers.get("x-llm-model") || undefined;
-  let llmOpts: LlmOpts | undefined;
-  if (llmKey && llmProvider) {
-    llmOpts = { provider: llmProvider, key: llmKey, model: llmModel };
-  } else if (!(await operatorKeyAllowed(mcpToken))) {
-    return Response.json(
-      {
-        error: "llm_key_required",
-        message: "Add your own LLM API key in Settings → API keys to start chatting.",
-      },
-      { status: 402, headers: { ...CORS } }
-    );
-  }
+  const llmOpts: LlmOpts | undefined = byok
+    ? { provider: llmProvider, key: llmKey, model: llmModel }
+    : undefined;
 
   const run = await start(conversationWorkflow, [
     conversationId,
@@ -218,6 +390,10 @@ export async function POST(req: Request) {
     llmOpts,
     typeof systemContext === "string" ? systemContext : undefined,
   ]);
+  // Count the opening turn once the run has started.
+  if (gate.meter) {
+    await incrementFreeUsage(mcpToken);
+  }
   return createUIMessageStreamResponse({
     stream: run.readable,
     headers: { ...CORS, "x-workflow-run-id": run.runId },
