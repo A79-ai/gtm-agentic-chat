@@ -13,9 +13,11 @@ import { enterApp, isMultiTenant } from "./helpers";
 // TEXT_FILE_RE in chat.jsx) is read in the browser and its full contents are
 // embedded into the prompt via contextPreamble, so the agent answers with no
 // tool call. It deliberately does NOT exercise /api/upload or the read_file MCP
-// tool: against this bench upload_file returns {"id":null,"status":"uploading"}
-// (async id, never surfaced), so the binary/read_file path can't deliver a
-// datasource_id to the agent. See the file-upload bug note in the PR.
+// tool. Those work against a healthy org (upload_file returns a real
+// datasource_id synchronously and read_file reads it back), but the bench org
+// (webinardemo) has a broken blob backend — its bucket creation 500s — so a
+// binary upload genuinely fails there. Asserting the read_file path against this
+// bench would be testing that infra failure, not the feature, so it's left out.
 test.describe("file upload", () => {
   test.beforeEach(async ({ page }) => {
     await enterApp(page);
