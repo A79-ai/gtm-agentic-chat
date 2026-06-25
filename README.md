@@ -20,6 +20,12 @@ Pick an agent ("Deal Coach", "Outreach Writer", "Competitive Intel"), and it wor
 &nbsp;[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](./LICENSE)
 &nbsp;![Built with Next.js + Vercel AI SDK](https://img.shields.io/badge/built%20with-Next.js%20%2B%20Vercel%20AI%20SDK-black)
 
+<p align="center">
+  <a href="https://www.producthunt.com/products/ampup-gtm-agent?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-ampup-gtm-agent" target="_blank" rel="noopener noreferrer">
+    <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1180399&theme=light&t=1782345964898" alt="AmpUp · GTM Agent - Open-source AI chat for your GTM stack - own the base layer | Product Hunt" width="250" height="54">
+  </a>
+</p>
+
 ![Home: agents over your live CRM, calls and notes](./public/screenshots/01-home.png)
 
 **Watch it work, end to end** — log in, coach a deal over your live pipeline, dig into this week's meetings, then snap on a new MCP server (Sumble) in seconds:
