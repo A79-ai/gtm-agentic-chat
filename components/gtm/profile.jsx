@@ -19,14 +19,40 @@ function ApiKeysPanel() {
 
   const [testing, setTesting] = useState(false);
 
-  const save = () => {
-    if (!key.trim()) {
+  const save = async () => {
+    const k = key.trim();
+    if (!k) {
       setStatus("Enter a key first.");
       return;
     }
-    setLlmKey({ provider, key: key.trim(), model: model.trim() });
+    // Validate before persisting: a saved-but-invalid key otherwise surfaces only
+    // as a ~90s stall on the first chat turn (the durable workflow swallows the
+    // provider auth error). Catch it here instead.
+    setTesting(true);
+    setStatus(`Checking your ${meta.label} key…`);
+    try {
+      const res = await fetch("/api/llm/test", {
+        method: "POST",
+        headers: {
+          "x-llm-provider": provider,
+          "x-llm-key": k,
+          ...(model.trim() ? { "x-llm-model": model.trim() } : {}),
+        },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!(res.ok && data.ok)) {
+        setStatus(`✗ Key didn't work — not saved: ${data.error || res.statusText}`);
+        return;
+      }
+    } catch {
+      setStatus("✗ Couldn't reach the test endpoint. Check your connection — not saved.");
+      return;
+    } finally {
+      setTesting(false);
+    }
+    setLlmKey({ provider, key: k, model: model.trim() });
     setKey("");
-    setStatus(`Saved — chat now uses your ${meta.label} key.`);
+    setStatus(`✓ Saved — chat now uses your ${meta.label} key.`);
   };
   const test = async () => {
     const k = key.trim() || saved?.key;

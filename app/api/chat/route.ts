@@ -1,5 +1,6 @@
 import { createUIMessageStreamResponse, type UIMessage } from "ai";
 import { getRun, start } from "workflow/api";
+import { countTodaysUserMessages, freeTasteDailyCap } from "@/lib/gtm/freeTaste";
 import { isProEmail } from "@/lib/gtm/pro";
 import type { LlmOpts } from "@/lib/model";
 import { isBlockedUrl } from "@/lib/ssrf";
@@ -32,18 +33,42 @@ export function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS });
 }
 
-// Whether the operator's OWN LLM key may power this caller's chat. Single-org
-// dev: always (the operator key IS the model). Multi-tenant: only FREE-TRIAL-org
-// visitors must bring their own key; real (non-free-trial) orgs — plus internal
-// (Pro-allowlisted domain / admin) and paying-Pro users — chat on the operator
-// key unrestricted. Everything is verified server-side against the caller's own
-// key, never a client-asserted flag.
-async function operatorKeyAllowed(mcpToken: string | undefined): Promise<boolean> {
+// Whether the operator's OWN LLM key may power this caller's chat, and if not,
+// the message to show. Single-org dev: always (the operator key IS the model).
+// Multi-tenant: internal (Pro-allowlisted domain / admin), real (non-free-trial)
+// orgs, and paying-Pro users chat on the operator key unrestricted. Free-trial
+// (self-serve) visitors get a capped, operator-funded "free taste" each day and
+// then must bring their own key. Everything is verified server-side against the
+// caller's own key, never a client-asserted flag.
+type OperatorDecision = { allowed: true } | { allowed: false; message?: string };
+
+// Count today's operator-funded turns for a free-trial visitor from their own
+// persisted conversations. null = couldn't determine (fail open to the taste;
+// the Gateway spend cap is the hard backstop).
+async function countFreeTrialUsage(base: string, token: string): Promise<number | null> {
+  try {
+    const res = await fetch(
+      `${base}/api/v1/conversations?exclude_org_public=true&limit=50&offset=0`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!res.ok) {
+      return null;
+    }
+    const data = (await res.json()) as {
+      items?: { extra_metadata?: unknown; updated_at?: unknown }[];
+    };
+    return countTodaysUserMessages(data.items || [], Date.now());
+  } catch {
+    return null;
+  }
+}
+
+async function operatorKeyAllowed(mcpToken: string | undefined): Promise<OperatorDecision> {
   if (process.env.MULTI_TENANT !== "true") {
-    return true;
+    return { allowed: true };
   }
   if (!mcpToken) {
-    return false;
+    return { allowed: false };
   }
   const base = (process.env.AMPUP_MCP_URL || "").replace(/\/mcp\/?$/, "");
   try {
@@ -51,7 +76,7 @@ async function operatorKeyAllowed(mcpToken: string | undefined): Promise<boolean
       headers: { Authorization: `Bearer ${mcpToken}` },
     });
     if (!res.ok) {
-      return false;
+      return { allowed: false };
     }
     const u = (await res.json()) as {
       email?: string;
@@ -60,28 +85,44 @@ async function operatorKeyAllowed(mcpToken: string | undefined): Promise<boolean
     };
     const email = u.email || "";
     if (isProEmail(email) || u.role === "super_admin" || u.role === "admin") {
-      return true;
+      return { allowed: true };
     }
-    // Real (non-free-trial) orgs get operator-funded chat with no BYOK gate — only
-    // the shared free-trial org (chat.ampup.ai's self-serve visitors) is limited.
-    // `=== false` is intentional: an older AmpUp that doesn't return the field yet
-    // (undefined) falls through to the prior Stripe/402 behavior, so this is a
-    // safe no-op until the backend ships `is_free_trial_org`.
+    // Real (non-free-trial) orgs get operator-funded chat with no gate.
     if (u.is_free_trial_org === false) {
-      return true;
+      return { allowed: true };
     }
     const stripe = getStripe();
     if (stripe && email) {
       const st = await customerStatus(stripe, email);
       if (st.state === "subscribed") {
-        return true;
+        return { allowed: true };
       }
     }
-    return false;
+    // Free-trial / self-serve visitor: allow a capped, operator-funded taste
+    // each day so launch-day visitors can try chat without a key, then gate.
+    const cap = freeTasteDailyCap();
+    if (cap > 0) {
+      const used = await countFreeTrialUsage(base, mcpToken);
+      // Fail CLOSED on an undetermined count (null): never risk unbounded
+      // operator spend on a transient lookup failure — require BYOK instead.
+      if (used != null && used < cap) {
+        return { allowed: true };
+      }
+      if (used == null) {
+        return { allowed: false };
+      }
+      return {
+        allowed: false,
+        message:
+          `You've used your ${cap} free messages for today. Add your own LLM API key ` +
+          "in Settings → API keys to keep chatting, or book a demo for unlimited access.",
+      };
+    }
+    return { allowed: false };
   } catch {
     // Best-effort: if the entitlement lookup fails, require the user's own key
     // rather than silently spending the operator's.
-    return false;
+    return { allowed: false };
   }
 }
 
@@ -212,14 +253,19 @@ export async function POST(req: Request) {
   let llmOpts: LlmOpts | undefined;
   if (llmKey && llmProvider) {
     llmOpts = { provider: llmProvider, key: llmKey, model: llmModel };
-  } else if (!(await operatorKeyAllowed(mcpToken))) {
-    return Response.json(
-      {
-        error: "llm_key_required",
-        message: "Add your own LLM API key in Settings → API keys to start chatting.",
-      },
-      { status: 402, headers: { ...CORS } }
-    );
+  } else {
+    const decision = await operatorKeyAllowed(mcpToken);
+    if (!decision.allowed) {
+      return Response.json(
+        {
+          error: "llm_key_required",
+          message:
+            decision.message ??
+            "Add your own LLM API key in Settings → API keys to start chatting.",
+        },
+        { status: 402, headers: { ...CORS } }
+      );
+    }
   }
 
   const run = await start(conversationWorkflow, [
