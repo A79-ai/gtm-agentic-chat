@@ -103,8 +103,13 @@ async function operatorKeyAllowed(mcpToken: string | undefined): Promise<Operato
     const cap = freeTasteDailyCap();
     if (cap > 0) {
       const used = await countFreeTrialUsage(base, mcpToken);
-      if (used == null || used < cap) {
+      // Fail CLOSED on an undetermined count (null): never risk unbounded
+      // operator spend on a transient lookup failure — require BYOK instead.
+      if (used != null && used < cap) {
         return { allowed: true };
+      }
+      if (used == null) {
+        return { allowed: false };
       }
       return {
         allowed: false,
