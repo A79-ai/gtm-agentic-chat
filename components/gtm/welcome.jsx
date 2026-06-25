@@ -282,6 +282,22 @@ export function Welcome({ onLogin, onSignup, onGoogle }) {
               Open source. Star it on GitHub
               <Icons.Star size={13} style={{ color: T.accent }} />
             </a>
+
+            <a
+              href="https://www.producthunt.com/products/ampup-gtm-agent?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-ampup-gtm-agent"
+              rel="noopener noreferrer"
+              style={{ marginTop: 16, display: "inline-flex", width: "fit-content" }}
+              target="_blank"
+              title="Find us on Product Hunt"
+            >
+              <img
+                alt="AmpUp · GTM Agent - Open-source AI chat for your GTM stack | Product Hunt"
+                height={54}
+                src={`https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1180399&theme=${dark ? "dark" : "light"}`}
+                style={{ width: 250, height: 54 }}
+                width={250}
+              />
+            </a>
           </div>
         </div>
 
