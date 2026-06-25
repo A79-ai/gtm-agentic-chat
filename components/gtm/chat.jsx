@@ -1014,7 +1014,13 @@ export function ChatScreen({
             }
           );
           if (res.status === 402) {
-            throw new Error("Add your own LLM API key in Settings → API keys to start chatting.");
+            // Surface the server's message (e.g. "you've used your N free
+            // messages today") rather than a fixed string, so the banner can
+            // explain WHY the key is now needed.
+            const body = await res.json().catch(() => ({}));
+            throw new Error(
+              body?.message || "Add your own LLM API key in Settings → API keys to start chatting."
+            );
           }
           const id = res.headers.get("x-workflow-run-id");
           if (id) {
@@ -1534,7 +1540,7 @@ export function ChatScreen({
               {needsLlmKey ? (
                 <>
                   <strong style={{ color: "var(--fg-primary)", fontWeight: 600 }}>
-                    Add your LLM API key to start chatting.
+                    {error.message || "Add your LLM API key to start chatting."}
                   </strong>{" "}
                   Bring your own Anthropic, OpenAI or Google key — it's stored only in your browser.
                 </>
