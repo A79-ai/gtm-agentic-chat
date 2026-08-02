@@ -14,7 +14,7 @@ The "Recommended for GTM" cards on the Connectors page. Add an object per server
 | `domain` | used to fetch the brand logo (Google favicon) |
 | `desc` | one-line description on the card |
 | `url` | hosted MCP endpoint. Leave `""` for discovery-only (no Add/Connect) |
-| `auth` | `apikey` → one-click **Add** (paste a key) · `oauth` → **Connect** (OAuth popup) |
+| `auth` | `none` → one-click **Add** (no token) · `apikey` → one-click **Add** (paste a key) · `oauth` → **Connect** (OAuth popup) |
 | `noDcr` | set `true` for OAuth servers that need a pre-registered app (no dynamic client registration) → shown as "OAuth, soon" |
 | `docsUrl` | "Docs" link |
 

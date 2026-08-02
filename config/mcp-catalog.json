@@ -90,6 +90,16 @@
     "docsUrl": "https://docs.firecrawl.dev/"
   },
   {
+    "name": "Parallel Search",
+    "slug": "parallel-search",
+    "category": "Research",
+    "domain": "parallel.ai",
+    "desc": "Live web search and clean page content for current research.",
+    "url": "https://search.parallel.ai/mcp",
+    "auth": "none",
+    "docsUrl": "https://docs.parallel.ai/integrations/mcp/search-mcp"
+  },
+  {
     "name": "Stripe",
     "slug": "stripe",
     "category": "Payments",
